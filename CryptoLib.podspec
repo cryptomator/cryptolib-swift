@@ -1,0 +1,19 @@
+Pod::Spec.new do |s|
+  s.name             = 'CryptoLib'
+  s.version          = '0.1.0'
+  s.summary          = 'CryptoLib is an iOS crypto library to access Cryptomator vaults.'
+
+
+  s.homepage         = 'https://github.com/cryptomator/cryptolib-swift'
+  s.license          = { :type => 'AGPLv3', :file => 'LICENSE.txt' }
+  s.author           = { 'Philipp Schmid' => 'philipp.schmid@skymatic.de' }
+  s.source           = { :git => 'https://github.com/cryptomator/cryptolib-swift.git', :tag => s.version.to_s }
+  s.social_media_url = 'https://twitter.com/Cryptomator'
+
+  s.public_header_files = 'CryptoLib/CryptoLib.h'
+  s.ios.deployment_target = '8.0'
+  s.swift_version = '5.0'
+    
+  s.source_files = 'CryptoLib/**/*{swift,h,m}'
+  
+end
