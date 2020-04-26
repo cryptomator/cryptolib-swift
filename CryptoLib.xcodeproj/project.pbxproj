@@ -7,10 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		09D994438BAA505986957D1A /* libPods-CryptoLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D8F927A885B3AC17754363D1 /* libPods-CryptoLib.a */; };
 		4A7C213C2451F2AC00DE81E6 /* CryptoLib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4A7C21322451F2AC00DE81E6 /* CryptoLib.framework */; };
-		4A7C21412451F2AC00DE81E6 /* CryptoLibTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A7C21402451F2AC00DE81E6 /* CryptoLibTests.swift */; };
 		4A7C21432451F2AD00DE81E6 /* CryptoLib.h in Headers */ = {isa = PBXBuildFile; fileRef = 4A7C21352451F2AC00DE81E6 /* CryptoLib.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		52D51418B3FFF0E212F47BAA /* libPods-CryptoLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A239569B6D7676AE64227515 /* libPods-CryptoLib.a */; };
+		9E9BB812245412E900F9FF51 /* Cryptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9BB811245412E900F9FF51 /* Cryptor.swift */; };
+		9E9BB8142454708600F9FF51 /* Masterkey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9BB8132454708600F9FF51 /* Masterkey.swift */; };
+		9E9BB81624558DFF00F9FF51 /* MasterkeyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9BB81524558DFF00F9FF51 /* MasterkeyTests.swift */; };
+		9E9BB818245590C100F9FF51 /* libCryptoSwift.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9E9BB817245590C100F9FF51 /* libCryptoSwift.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -30,9 +33,12 @@
 		4A7C21352451F2AC00DE81E6 /* CryptoLib.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CryptoLib.h; sourceTree = "<group>"; };
 		4A7C21362451F2AC00DE81E6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4A7C213B2451F2AC00DE81E6 /* CryptoLibTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CryptoLibTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		4A7C21402451F2AC00DE81E6 /* CryptoLibTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptoLibTests.swift; sourceTree = "<group>"; };
 		4A7C21422451F2AD00DE81E6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		D8F927A885B3AC17754363D1 /* libPods-CryptoLib.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CryptoLib.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		9E9BB811245412E900F9FF51 /* Cryptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cryptor.swift; sourceTree = "<group>"; };
+		9E9BB8132454708600F9FF51 /* Masterkey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Masterkey.swift; sourceTree = "<group>"; };
+		9E9BB81524558DFF00F9FF51 /* MasterkeyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterkeyTests.swift; sourceTree = "<group>"; };
+		9E9BB817245590C100F9FF51 /* libCryptoSwift.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libCryptoSwift.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		A239569B6D7676AE64227515 /* libPods-CryptoLib.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CryptoLib.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -40,7 +46,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				09D994438BAA505986957D1A /* libPods-CryptoLib.a in Frameworks */,
+				9E9BB818245590C100F9FF51 /* libCryptoSwift.a in Frameworks */,
+				52D51418B3FFF0E212F47BAA /* libPods-CryptoLib.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -58,7 +65,8 @@
 		33F96BB57BB41A059EFBA16D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				D8F927A885B3AC17754363D1 /* libPods-CryptoLib.a */,
+				9E9BB817245590C100F9FF51 /* libCryptoSwift.a */,
+				A239569B6D7676AE64227515 /* libPods-CryptoLib.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -88,6 +96,8 @@
 			children = (
 				4A7C21352451F2AC00DE81E6 /* CryptoLib.h */,
 				4A7C21362451F2AC00DE81E6 /* Info.plist */,
+				9E9BB811245412E900F9FF51 /* Cryptor.swift */,
+				9E9BB8132454708600F9FF51 /* Masterkey.swift */,
 			);
 			path = CryptoLib;
 			sourceTree = "<group>";
@@ -95,7 +105,7 @@
 		4A7C213F2451F2AC00DE81E6 /* CryptoLibTests */ = {
 			isa = PBXGroup;
 			children = (
-				4A7C21402451F2AC00DE81E6 /* CryptoLibTests.swift */,
+				9E9BB81524558DFF00F9FF51 /* MasterkeyTests.swift */,
 				4A7C21422451F2AD00DE81E6 /* Info.plist */,
 			);
 			path = CryptoLibTests;
@@ -107,7 +117,6 @@
 				04D286DFEF49CAB9C0242FB8 /* Pods-CryptoLib.debug.xcconfig */,
 				46CE315EF43B1FF833C7A4FB /* Pods-CryptoLib.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -174,6 +183,7 @@
 				TargetAttributes = {
 					4A7C21312451F2AC00DE81E6 = {
 						CreatedOnToolsVersion = 11.4;
+						LastSwiftMigration = 1100;
 					};
 					4A7C213A2451F2AC00DE81E6 = {
 						CreatedOnToolsVersion = 11.4;
@@ -246,6 +256,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9E9BB812245412E900F9FF51 /* Cryptor.swift in Sources */,
+				9E9BB8142454708600F9FF51 /* Masterkey.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -253,7 +265,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4A7C21412451F2AC00DE81E6 /* CryptoLibTests.swift in Sources */,
+				9E9BB81624558DFF00F9FF51 /* MasterkeyTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -319,7 +331,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -376,7 +388,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
@@ -392,6 +404,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 04D286DFEF49CAB9C0242FB8 /* Pods-CryptoLib.debug.xcconfig */;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -405,9 +418,11 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.skymatic.CryptoLib;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -417,6 +432,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 46CE315EF43B1FF833C7A4FB /* Pods-CryptoLib.release.xcconfig */;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -430,6 +446,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.skymatic.CryptoLib;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
@@ -440,7 +457,9 @@
 		};
 		4A7C214A2451F2AD00DE81E6 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 04D286DFEF49CAB9C0242FB8 /* Pods-CryptoLib.debug.xcconfig */;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_FILE = CryptoLibTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -458,6 +477,7 @@
 		4A7C214B2451F2AD00DE81E6 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_FILE = CryptoLibTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
