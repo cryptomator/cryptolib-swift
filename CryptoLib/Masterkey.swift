@@ -63,18 +63,16 @@ public class Masterkey {
 		let pw = [UInt8](password.precomposedStringWithCanonicalMapping.utf8)
 		let salt = [UInt8](Data(base64Encoded: jsonData.scryptSalt)!)
 		let saltAndPepper = salt + pepper
-		let kek = try? Scrypt(password: pw, salt: saltAndPepper, dkLen: kCCKeySizeAES256, N: jsonData.scryptCostParam, r: jsonData.scryptBlockSize, p: 1).calculate()
-		
-		if kek == nil {
+		guard let kek = try? Scrypt(password: pw, salt: saltAndPepper, dkLen: kCCKeySizeAES256, N: jsonData.scryptCostParam, r: jsonData.scryptBlockSize, p: 1).calculate() else {
 			debugPrint("scrypt failed")
 			return nil;
 		}
 		
 		let wrappedMasterKey = [UInt8](Data(base64Encoded: jsonData.primaryMasterKey)!)
-		let unwrappedMasterKey = unwrapMasterKey(wrappedKey: wrappedMasterKey, kek: kek!)
+		let unwrappedMasterKey = unwrapMasterKey(wrappedKey: wrappedMasterKey, kek: kek)
 		
 		let wrappedHmacKey = [UInt8](Data(base64Encoded: jsonData.hmacMasterKey)!)
-		let unwrappedHmacKey = unwrapMasterKey(wrappedKey: wrappedHmacKey, kek: kek!)
+		let unwrappedHmacKey = unwrapMasterKey(wrappedKey: wrappedHmacKey, kek: kek)
 		
 		if (unwrappedMasterKey != nil) && (unwrappedHmacKey != nil) {
 			return createFromRaw(aesMasterKey: unwrappedMasterKey!, macMasterKey: unwrappedHmacKey!)
