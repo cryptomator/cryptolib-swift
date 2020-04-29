@@ -81,9 +81,10 @@ public class Masterkey {
 		}
 	}
 	
-	static func createFromRaw(aesMasterKey: [UInt8], macMasterKey: [UInt8]) -> Masterkey {
-		assert(aesMasterKey.count == kCCKeySizeAES256)
-		assert(macMasterKey.count == kCCKeySizeAES256)
+	internal static func createFromRaw(aesMasterKey: [UInt8], macMasterKey: [UInt8]) -> Masterkey {
+		// TODO CMAC implementation doesn't support 256 bit keys yet -.-
+		// assert(aesMasterKey.count == kCCKeySizeAES256)
+		// assert(macMasterKey.count == kCCKeySizeAES256)
 		return Masterkey(aesMasterKey: aesMasterKey, macMasterKey: macMasterKey)
 	}
 	
