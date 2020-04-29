@@ -10,10 +10,13 @@
 		4A7C213C2451F2AC00DE81E6 /* CryptoLib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4A7C21322451F2AC00DE81E6 /* CryptoLib.framework */; };
 		4A7C21432451F2AD00DE81E6 /* CryptoLib.h in Headers */ = {isa = PBXBuildFile; fileRef = 4A7C21352451F2AC00DE81E6 /* CryptoLib.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		52D51418B3FFF0E212F47BAA /* libPods-CryptoLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A239569B6D7676AE64227515 /* libPods-CryptoLib.a */; };
+		9E44EEA624599C6900A37B01 /* AesSiv.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E44EEA524599C6900A37B01 /* AesSiv.swift */; };
+		9E44EEA92459AB1500A37B01 /* AesSivTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E44EEA724599C7800A37B01 /* AesSivTests.swift */; };
 		9E9BB812245412E900F9FF51 /* Cryptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9BB811245412E900F9FF51 /* Cryptor.swift */; };
 		9E9BB8142454708600F9FF51 /* Masterkey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9BB8132454708600F9FF51 /* Masterkey.swift */; };
 		9E9BB81624558DFF00F9FF51 /* MasterkeyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9BB81524558DFF00F9FF51 /* MasterkeyTests.swift */; };
 		9E9BB818245590C100F9FF51 /* libCryptoSwift.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9E9BB817245590C100F9FF51 /* libCryptoSwift.a */; };
+		A32DA6F6C54D8A5A6845B19E /* libPods-CryptoLibTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DE9E50AD12277D0A1DC543FF /* libPods-CryptoLibTests.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -27,18 +30,23 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		04D286DFEF49CAB9C0242FB8 /* Pods-CryptoLib.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CryptoLib.debug.xcconfig"; path = "Target Support Files/Pods-CryptoLib/Pods-CryptoLib.debug.xcconfig"; sourceTree = "<group>"; };
+		080BF9098EF20B4D273353B2 /* Pods-CryptoLibTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CryptoLibTests.debug.xcconfig"; path = "Target Support Files/Pods-CryptoLibTests/Pods-CryptoLibTests.debug.xcconfig"; sourceTree = "<group>"; };
+		187D073CD93DB036796D77DC /* Pods-CryptoLibTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CryptoLibTests.release.xcconfig"; path = "Target Support Files/Pods-CryptoLibTests/Pods-CryptoLibTests.release.xcconfig"; sourceTree = "<group>"; };
 		46CE315EF43B1FF833C7A4FB /* Pods-CryptoLib.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CryptoLib.release.xcconfig"; path = "Target Support Files/Pods-CryptoLib/Pods-CryptoLib.release.xcconfig"; sourceTree = "<group>"; };
 		4A7C21322451F2AC00DE81E6 /* CryptoLib.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CryptoLib.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4A7C21352451F2AC00DE81E6 /* CryptoLib.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CryptoLib.h; sourceTree = "<group>"; };
 		4A7C21362451F2AC00DE81E6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4A7C213B2451F2AC00DE81E6 /* CryptoLibTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CryptoLibTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4A7C21422451F2AD00DE81E6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9C0CDC395FD6C0670C07B37C /* Pods-CryptoLib.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CryptoLib.debug.xcconfig"; path = "Target Support Files/Pods-CryptoLib/Pods-CryptoLib.debug.xcconfig"; sourceTree = "<group>"; };
+		9E44EEA524599C6900A37B01 /* AesSiv.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AesSiv.swift; sourceTree = "<group>"; };
+		9E44EEA724599C7800A37B01 /* AesSivTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AesSivTests.swift; sourceTree = "<group>"; };
 		9E9BB811245412E900F9FF51 /* Cryptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cryptor.swift; sourceTree = "<group>"; };
 		9E9BB8132454708600F9FF51 /* Masterkey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Masterkey.swift; sourceTree = "<group>"; };
 		9E9BB81524558DFF00F9FF51 /* MasterkeyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterkeyTests.swift; sourceTree = "<group>"; };
 		9E9BB817245590C100F9FF51 /* libCryptoSwift.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libCryptoSwift.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		A239569B6D7676AE64227515 /* libPods-CryptoLib.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CryptoLib.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		DE9E50AD12277D0A1DC543FF /* libPods-CryptoLibTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CryptoLibTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -67,6 +75,7 @@
 			children = (
 				9E9BB817245590C100F9FF51 /* libCryptoSwift.a */,
 				A239569B6D7676AE64227515 /* libPods-CryptoLib.a */,
+				DE9E50AD12277D0A1DC543FF /* libPods-CryptoLibTests.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -98,6 +107,7 @@
 				4A7C21362451F2AC00DE81E6 /* Info.plist */,
 				9E9BB811245412E900F9FF51 /* Cryptor.swift */,
 				9E9BB8132454708600F9FF51 /* Masterkey.swift */,
+				9E44EEA524599C6900A37B01 /* AesSiv.swift */,
 			);
 			path = CryptoLib;
 			sourceTree = "<group>";
@@ -107,6 +117,7 @@
 			children = (
 				9E9BB81524558DFF00F9FF51 /* MasterkeyTests.swift */,
 				4A7C21422451F2AD00DE81E6 /* Info.plist */,
+				9E44EEA724599C7800A37B01 /* AesSivTests.swift */,
 			);
 			path = CryptoLibTests;
 			sourceTree = "<group>";
@@ -114,8 +125,10 @@
 		D7D76AD3F7F6155DB2723364 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				04D286DFEF49CAB9C0242FB8 /* Pods-CryptoLib.debug.xcconfig */,
 				46CE315EF43B1FF833C7A4FB /* Pods-CryptoLib.release.xcconfig */,
+				9C0CDC395FD6C0670C07B37C /* Pods-CryptoLib.debug.xcconfig */,
+				080BF9098EF20B4D273353B2 /* Pods-CryptoLibTests.debug.xcconfig */,
+				187D073CD93DB036796D77DC /* Pods-CryptoLibTests.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -157,6 +170,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 4A7C21492451F2AD00DE81E6 /* Build configuration list for PBXNativeTarget "CryptoLibTests" */;
 			buildPhases = (
+				B0398845BD49B4481C76093F /* [CP] Check Pods Manifest.lock */,
 				4A7C21372451F2AC00DE81E6 /* Sources */,
 				4A7C21382451F2AC00DE81E6 /* Frameworks */,
 				4A7C21392451F2AC00DE81E6 /* Resources */,
@@ -249,6 +263,28 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
+		B0398845BD49B4481C76093F /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-CryptoLibTests-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -258,6 +294,7 @@
 			files = (
 				9E9BB812245412E900F9FF51 /* Cryptor.swift in Sources */,
 				9E9BB8142454708600F9FF51 /* Masterkey.swift in Sources */,
+				9E44EEA624599C6900A37B01 /* AesSiv.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -265,6 +302,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9E44EEA92459AB1500A37B01 /* AesSivTests.swift in Sources */,
 				9E9BB81624558DFF00F9FF51 /* MasterkeyTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -402,7 +440,7 @@
 		};
 		4A7C21472451F2AD00DE81E6 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 04D286DFEF49CAB9C0242FB8 /* Pods-CryptoLib.debug.xcconfig */;
+			baseConfigurationReference = 9C0CDC395FD6C0670C07B37C /* Pods-CryptoLib.debug.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
@@ -412,7 +450,6 @@
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				INFOPLIST_FILE = CryptoLib/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -440,7 +477,6 @@
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				INFOPLIST_FILE = CryptoLib/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -457,9 +493,8 @@
 		};
 		4A7C214A2451F2AD00DE81E6 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 04D286DFEF49CAB9C0242FB8 /* Pods-CryptoLib.debug.xcconfig */;
+			baseConfigurationReference = 080BF9098EF20B4D273353B2 /* Pods-CryptoLibTests.debug.xcconfig */;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_FILE = CryptoLibTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -476,8 +511,8 @@
 		};
 		4A7C214B2451F2AD00DE81E6 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 187D073CD93DB036796D77DC /* Pods-CryptoLibTests.release.xcconfig */;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_FILE = CryptoLibTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
