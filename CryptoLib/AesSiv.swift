@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import CryptoSwift
 import CommonCrypto
 
 enum AesSivError: Error {
@@ -53,8 +52,8 @@ public class AesSiv {
 		return plaintext
 	}
 	
-	internal static func aesCtr(aesKey: [UInt8], iv: [UInt8], plaintext: [UInt8]) throws -> [UInt8] {
-		assert(aesKey.count == kCCKeySizeAES256 || aesKey.count == kCCKeySizeAES128, "aesKey expected to be 128 or 256 bit")
+	internal static func aesCtr(aesKey key: [UInt8], iv: [UInt8], plaintext: [UInt8]) throws -> [UInt8] {
+		assert(key.count == kCCKeySizeAES256 || key.count == kCCKeySizeAES128, "aesKey expected to be 128 or 256 bit")
 		
 		// clear out the 31st and 63rd bit (see https://tools.ietf.org/html/rfc5297#section-2.5)
 		var ctr = iv
@@ -62,7 +61,7 @@ public class AesSiv {
 		ctr[12] &= 0x7F
 		
 		var cryptor: CCCryptorRef?
-		var status = CCCryptorCreateWithMode(CCOperation(kCCEncrypt), CCMode(kCCModeCTR), CCAlgorithm(kCCAlgorithmAES), CCPadding(ccNoPadding), ctr, aesKey, aesKey.count, nil, 0, 0, CCModeOptions(kCCModeOptionCTR_BE), &cryptor)
+		var status = CCCryptorCreateWithMode(CCOperation(kCCEncrypt), CCMode(kCCModeCTR), CCAlgorithm(kCCAlgorithmAES), CCPadding(ccNoPadding), ctr, key, key.count, nil, 0, 0, CCModeOptions(kCCModeOptionCTR_BE), &cryptor)
 		guard status == kCCSuccess, cryptor != nil else {
 			throw AesSivError.invalidParameter("failed to initialize cryptor")
 		}
@@ -93,16 +92,14 @@ public class AesSiv {
 			throw AesSivError.invalidParameter("too many ad")
 		}
 		
-		let mac = try CMAC.init(key: macKey)
-		
 		// RFC 5297 defines a n == 0 case here. Where n is the length of the input vector:
 		// S1 = associatedData1, S2 = associatedData2, ... Sn = plaintext
 		// Since this method is invoked only by encrypt/decrypt, we always have a plaintext.
 		// Thus n > 0
 		
-		var d = try mac.authenticate(zero)
+		var d = try cmac(macKey: macKey, data: zero)
 		for s in ad {
-			d = xor(dbl(d), try mac.authenticate(s))
+			d = xor(dbl(d), try cmac(macKey: macKey, data: s))
 		}
 		
 		let t: [UInt8]
@@ -112,7 +109,61 @@ public class AesSiv {
 			t = xor(dbl(d), pad(plaintext))
 		}
 		
-		return try mac.authenticate(t)
+		return try cmac(macKey: macKey, data: t)
+	}
+	
+	internal static func cmac(macKey key: [UInt8], data: [UInt8]) throws -> [UInt8] {
+		// subkey generation:
+		let l = try aes(key: key, plaintext: zero)
+		let k1 = l[0] & 0x80 == 0x00 ? shiftLeft(l) : dbl(l)
+		let k2 = k1[0] & 0x80 == 0x00 ? shiftLeft(k1) : dbl(k1)
+		
+		// determine number of blocks:
+		let n = (data.count + 15) / 16
+		let lastBlockIdx: Int
+		let lastBlockComplete: Bool
+		if n == 0 {
+			lastBlockIdx = 0
+			lastBlockComplete = false
+		} else {
+			lastBlockIdx = n - 1
+			lastBlockComplete = data.count % 16 == 0
+		}
+		
+		// blocks 0..<n:
+		var mac = [UInt8](repeating: 0x00, count: 16)
+		for i in 0..<lastBlockIdx {
+			let block = Array(data[(16*i)..<(16*(i+1))])
+			let y = xor(mac, block)
+			mac = try aes(key: key, plaintext: y)
+		}
+		
+		// block n:
+		var lastBlock = Array(data[(16*lastBlockIdx)...])
+		if lastBlockComplete {
+			lastBlock = xor(lastBlock, k1)
+		} else {
+			lastBlock = xor(pad(lastBlock), k2)
+		}
+		let y = xor(mac, lastBlock)
+		mac = try aes(key: key, plaintext: y)
+
+		return mac
+	}
+	
+	private static func aes(key: [UInt8], plaintext: [UInt8]) throws -> [UInt8] {
+		assert(key.count == kCCKeySizeAES128 || key.count == kCCKeySizeAES192 || key.count == kCCKeySizeAES256)
+		assert(plaintext.count == kCCBlockSizeAES128, "Attempt to run AES-ECB for plaintext != one single block")
+		
+		var ciphertext = [UInt8](repeating: 0x00, count: kCCBlockSizeAES128)
+		var ciphertextLen = 0
+		let status = CCCrypt(CCOperation(kCCEncrypt), CCAlgorithm(kCCAlgorithmAES), CCOptions(kCCOptionECBMode), key, key.count, nil, plaintext, plaintext.count, &ciphertext, kCCBlockSizeAES128, &ciphertextLen)
+		
+		guard status == kCCSuccess else {
+			throw AesSivError.invalidParameter("AES failed")
+		}
+		
+		return ciphertext
 	}
 	
 	private static func shiftLeft(_ input: [UInt8]) -> [UInt8] {
