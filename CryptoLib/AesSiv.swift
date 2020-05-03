@@ -160,7 +160,7 @@ public class AesSiv {
 		let status = CCCrypt(CCOperation(kCCEncrypt), CCAlgorithm(kCCAlgorithmAES), CCOptions(kCCOptionECBMode), key, key.count, nil, plaintext, plaintext.count, &ciphertext, kCCBlockSizeAES128, &ciphertextLen)
 		
 		guard status == kCCSuccess else {
-			throw AesSivError.invalidParameter("AES failed")
+			throw AesSivError.encryptionFailedWithStatus(status)
 		}
 		
 		return ciphertext
