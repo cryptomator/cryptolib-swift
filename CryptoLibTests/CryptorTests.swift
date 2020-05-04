@@ -20,10 +20,16 @@ class CryptorTests: XCTestCase {
 		
 		XCTAssertNotNil(masterkey)
     }
+	
+	func testEncryptDirId() {
+		let cryptor = Cryptor.init(masterKey: masterkey)
+		
+		let rootDir = cryptor.encryptDirId("")
+		XCTAssertEqual("VLWEHT553J5DR7OZLRJAYDIWFCXZABOD", rootDir)
 
-    override func tearDown() {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
+		let testDir = cryptor.encryptDirId("918acfbd-a467-3f77-93f1-f4a44f9cfe9c")
+		XCTAssertEqual("7C3USOO3VU7IVQRKFMRFV3QE4VEZJECV", testDir)
+	}
 
     func testEncryptAndDecryptName() {
 		continueAfterFailure = false

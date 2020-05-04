@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import CommonCrypto
 import SwiftBase32
 
 extension Data {
@@ -36,6 +37,16 @@ public class Cryptor {
 	
 	// MARK: -
 	// MARK: Path Encryption and Decryption:
+	
+	public func encryptDirId(_ dirIdStr: String) -> String? {
+		let dirIdBytes = [UInt8](dirIdStr.utf8)
+		guard let encrypted = try? AesSiv.encrypt(aesKey: masterKey.aesMasterKey, macKey: masterKey.macMasterKey, plaintext: dirIdBytes) else {
+			return nil
+		}
+		var digest = [UInt8](repeating: 0x00, count: Int(CC_SHA1_DIGEST_LENGTH))
+		CC_SHA1(encrypted, UInt32(encrypted.count) as CC_LONG, &digest)
+		return Data(digest).base32EncodedString
+	}
 	
 	public func encryptFileName(_ cleartextName: String, dirId: Data, encoding: FileNameEncoding = .base64url) -> String? {
 		// encrypt:
