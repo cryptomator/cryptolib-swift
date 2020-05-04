@@ -17,4 +17,5 @@ Pod::Spec.new do |s|
     
   s.source_files = 'CryptoLib/**/*{swift,h,m}'
   
+  s.dependency 'CryptoSwift', '~> 1.3'
 end
