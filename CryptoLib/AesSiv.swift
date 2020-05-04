@@ -22,7 +22,7 @@ public class AesSiv {
 	
 	public static func encrypt(aesKey: [UInt8], macKey: [UInt8], plaintext: [UInt8], ad: [UInt8]...) throws -> [UInt8] {
 		if (plaintext.count > UInt32.max - 16) {
-			throw AesSivError.invalidParameter("ciphertext must be at least 16 bytes")
+			throw AesSivError.invalidParameter("plaintext must not be longer than 2^32 - 16 bytes")
 		}
 		let iv = try s2v(macKey: macKey, plaintext: plaintext, ad: ad)
 		let ciphertext = try aesCtr(aesKey: aesKey, iv: iv, plaintext: plaintext)

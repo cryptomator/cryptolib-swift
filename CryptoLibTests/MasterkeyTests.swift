@@ -19,17 +19,17 @@ class MasterkeyTests: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 	
-	func testWrapAndUnwrapKey() {
+	func testWrapAndUnwrapKey() throws {
 		let rawKey = [UInt8](repeating: 0x77, count: 32)
 		let kek = [UInt8](repeating: 0x55, count: 32)
-		let wrapped = Masterkey.wrapMasterKey(rawKey: rawKey, kek: kek)
+		let wrapped = try Masterkey.wrapMasterKey(rawKey: rawKey, kek: kek)
 		XCTAssertNotNil(wrapped)
-		let unwrapped = Masterkey.unwrapMasterKey(wrappedKey: wrapped!, kek: kek)
+		let unwrapped = try Masterkey.unwrapMasterKey(wrappedKey: wrapped, kek: kek)
 		XCTAssertNotNil(unwrapped)
 		XCTAssertEqual(rawKey, unwrapped)
 	}
 
-    func testCreateFromMasterkeyFile() {
+    func testCreateFromMasterkeyFile() throws {
 		let expectedKeys = [UInt8](repeating: 0x00, count: 32)
 		let jsonData = """
 		{
@@ -43,11 +43,65 @@ class MasterkeyTests: XCTestCase {
 		}
 		""".data(using: .utf8)!
 		
-		let masterKey = Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "asd")
+		let masterKey = try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "asd")
 		
 		XCTAssertNotNil(masterKey)
-		XCTAssertEqual(expectedKeys, masterKey?.aesMasterKey)
-		XCTAssertEqual(expectedKeys, masterKey?.macMasterKey)
+		XCTAssertEqual(expectedKeys, masterKey.aesMasterKey)
+		XCTAssertEqual(expectedKeys, masterKey.macMasterKey)
+    }
+	
+	func testCreateFromMasterkeyFileWithWrongPassword() throws {
+		let jsonData = """
+		{
+			"version": 3,
+			"scryptSalt": "AAAAAAAAAAA=",
+			"scryptCostParam": 2,
+			"scryptBlockSize": 8,
+			"primaryMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
+			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
+			"versionMac": "iUmRRHITuyJsJbVNqGNw+82YQ4A3Rma7j/y1v0DCVLA="
+		}
+		""".data(using: .utf8)!
+
+		XCTAssertThrowsError(try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "qwe"), "invalid password", { error in
+			XCTAssertEqual(error as! MasterkeyError, MasterkeyError.invalidPassword)
+		})
+    }
+	
+	func testCreateFromMasterkeyFileWithMalformedJson1() throws {
+		let jsonData = """
+		{
+			"version": 3,
+			"scryptSalt": "AAAAAAAAAAA=",
+			"scryptCostParam": 2,
+			"scryptBlockSize": 8,
+			"primaryMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q!!",
+			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
+			"versionMac": "iUmRRHITuyJsJbVNqGNw+82YQ4A3Rma7j/y1v0DCVLA="
+		}
+		""".data(using: .utf8)!
+
+		XCTAssertThrowsError(try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "asd"), "invalid password", { error in
+			XCTAssertEqual(error as! MasterkeyError, MasterkeyError.malformedMasterkeyFile("invalid base64 data in primaryMasterKey"))
+		})
+    }
+	
+	func testCreateFromMasterkeyFileWithMalformedJson2() throws {
+		let jsonData = """
+		{
+			"version": 3,
+			"scryptSalt": "AAAAAAAAAAA=",
+			"scryptCostParam": 2,
+			"scryptBlockSize": 8,
+			"primaryMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
+			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q!!",
+			"versionMac": "iUmRRHITuyJsJbVNqGNw+82YQ4A3Rma7j/y1v0DCVLA="
+		}
+		""".data(using: .utf8)!
+
+		XCTAssertThrowsError(try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "asd"), "invalid password", { error in
+			XCTAssertEqual(error as! MasterkeyError, MasterkeyError.malformedMasterkeyFile("invalid base64 data in hmacMasterKey"))
+		})
     }
 
 }
