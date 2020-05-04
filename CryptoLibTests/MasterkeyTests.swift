@@ -68,6 +68,24 @@ class MasterkeyTests: XCTestCase {
 		})
     }
 	
+	func testCreateFromMasterkeyFileWithInvalidVersionMac() throws {
+		let jsonData = """
+		{
+			"version": 3,
+			"scryptSalt": "AAAAAAAAAAA=",
+			"scryptCostParam": 2,
+			"scryptBlockSize": 8,
+			"primaryMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
+			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
+			"versionMac": "iUmRRHITuyJsJbVNqGNw+82YQ4A3Rma7j/y1v0DCVLa="
+		}
+		""".data(using: .utf8)!
+
+		XCTAssertThrowsError(try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "asd"), "invalid password", { error in
+			XCTAssertEqual(error as! MasterkeyError, MasterkeyError.malformedMasterkeyFile("incorrect version or versionMac"))
+		})
+    }
+	
 	func testCreateFromMasterkeyFileWithMalformedJson1() throws {
 		let jsonData = """
 		{
@@ -101,6 +119,24 @@ class MasterkeyTests: XCTestCase {
 
 		XCTAssertThrowsError(try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "asd"), "invalid password", { error in
 			XCTAssertEqual(error as! MasterkeyError, MasterkeyError.malformedMasterkeyFile("invalid base64 data in hmacMasterKey"))
+		})
+    }
+	
+	func testCreateFromMasterkeyFileWithMalformedJson3() throws {
+		let jsonData = """
+		{
+			"version": 3,
+			"scryptSalt": "AAAAAAAAAAA=",
+			"scryptCostParam": 2,
+			"scryptBlockSize": 8,
+			"primaryMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
+			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
+			"versionMac": "iUmRRHITuyJsJbVN"
+		}
+		""".data(using: .utf8)!
+
+		XCTAssertThrowsError(try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "asd"), "invalid password", { error in
+			XCTAssertEqual(error as! MasterkeyError, MasterkeyError.malformedMasterkeyFile("invalid base64 data in versionMac"))
 		})
     }
 

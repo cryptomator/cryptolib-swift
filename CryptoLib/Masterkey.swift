@@ -77,6 +77,21 @@ public class Masterkey {
 		}
 		let macKey = try unwrapMasterKey(wrappedKey: wrappedHmacKey.bytes, kek: kek)
 		
+		// time-constant version MAC check:
+		guard let storedVersionMac = Data(base64Encoded: jsonData.versionMac), storedVersionMac.count == CC_SHA256_DIGEST_LENGTH else {
+			throw MasterkeyError.malformedMasterkeyFile("invalid base64 data in versionMac")
+		}
+		var calculatedVersionMac = [UInt8](repeating: 0x00, count: Int(CC_SHA256_DIGEST_LENGTH))
+		let versionBytes = withUnsafeBytes(of: UInt32(jsonData.version).bigEndian, Array.init)
+		CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), macKey, macKey.count, versionBytes, versionBytes.count, &calculatedVersionMac)
+		var diff : UInt8 = 0x00
+		for i in 0..<calculatedVersionMac.count {
+			diff |= calculatedVersionMac[i] ^ storedVersionMac[i]
+		}
+		if diff != 0x00 {
+			throw MasterkeyError.malformedMasterkeyFile("incorrect version or versionMac")
+		}
+		
 		return createFromRaw(aesMasterKey: aesKey, macMasterKey: macKey)
 	}
 	
