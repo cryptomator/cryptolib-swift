@@ -20,6 +20,10 @@ extension Data {
 	
 }
 
+public enum FileNameEncoding {
+	case base64url
+}
+
 public class Cryptor {
 	
 	private let masterKey: Masterkey
@@ -28,23 +32,34 @@ public class Cryptor {
 		self.masterKey = masterKey;
 	}
 	
+	// MARK: -
 	// MARK: Path Encryption and Decryption:
 	
-	public func encryptFileName(cleartextName: String, directoryId: Data) -> String? {
+	public func encryptFileName(cleartextName: String, directoryId: Data, encoding: FileNameEncoding = .base64url) -> String? {
+		// encrypt:
 		let cleartext = [UInt8](cleartextName.precomposedStringWithCanonicalMapping.utf8)
-		if let ciphertext = try? AesSiv.encrypt(aesKey: masterKey.aesMasterKey, macKey: masterKey.macMasterKey, plaintext: cleartext, ad: directoryId.bytes) {
-			return Data(ciphertext).base64UrlEncodedString()
-		} else {
-			return nil
-		}
-	}
-	
-	public func decryptFileName(ciphertextName: String, directoryId: Data) -> String? {
-		guard let ciphertextData = Data(base64UrlEncoded: ciphertextName) else {
-			debugPrint("can not decode base64 string", ciphertextName)
+		guard let ciphertext = try? AesSiv.encrypt(aesKey: masterKey.aesMasterKey, macKey: masterKey.macMasterKey, plaintext: cleartext, ad: directoryId.bytes) else {
 			return nil
 		}
 		
+		// encode:
+		switch encoding {
+		case .base64url: return Data(ciphertext).base64UrlEncodedString()
+		}
+	}
+	
+	public func decryptFileName(ciphertextName: String, directoryId: Data, encoding: FileNameEncoding = .base64url) -> String? {
+		// decode:
+		let maybeCiphertextData : Data? = {
+			switch encoding {
+			case .base64url: return Data(base64UrlEncoded: ciphertextName)
+			}
+		}()
+		guard let ciphertextData = maybeCiphertextData else {
+			return nil
+		}
+		
+		// decrypt:
 		if let cleartext = try? AesSiv.decrypt(aesKey: masterKey.aesMasterKey, macKey: masterKey.macMasterKey, ciphertext: ciphertextData.bytes, ad: directoryId.bytes) {
 			return String(data: Data(cleartext), encoding: .utf8)
 		} else {
@@ -52,6 +67,7 @@ public class Cryptor {
 		}
 	}
 	
+	// MARK: -
 	// MARK: File Content Encryption and Decryption
 	
 	func encryptSingleChunk(chunkNumber: UInt64, nonce: [UInt8], cleartext: [UInt8], fileKey: [UInt8]) -> [UInt8] {
