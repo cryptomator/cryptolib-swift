@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import SwiftBase32
 
 extension Data {
 	
@@ -22,6 +23,7 @@ extension Data {
 
 public enum FileNameEncoding {
 	case base64url
+	case base32
 }
 
 public class Cryptor {
@@ -35,24 +37,26 @@ public class Cryptor {
 	// MARK: -
 	// MARK: Path Encryption and Decryption:
 	
-	public func encryptFileName(cleartextName: String, directoryId: Data, encoding: FileNameEncoding = .base64url) -> String? {
+	public func encryptFileName(_ cleartextName: String, dirId: Data, encoding: FileNameEncoding = .base64url) -> String? {
 		// encrypt:
 		let cleartext = [UInt8](cleartextName.precomposedStringWithCanonicalMapping.utf8)
-		guard let ciphertext = try? AesSiv.encrypt(aesKey: masterKey.aesMasterKey, macKey: masterKey.macMasterKey, plaintext: cleartext, ad: directoryId.bytes) else {
+		guard let ciphertext = try? AesSiv.encrypt(aesKey: masterKey.aesMasterKey, macKey: masterKey.macMasterKey, plaintext: cleartext, ad: dirId.bytes) else {
 			return nil
 		}
 		
 		// encode:
 		switch encoding {
 		case .base64url: return Data(ciphertext).base64UrlEncodedString()
+		case .base32: return Data(ciphertext).base32EncodedString
 		}
 	}
 	
-	public func decryptFileName(ciphertextName: String, directoryId: Data, encoding: FileNameEncoding = .base64url) -> String? {
+	public func decryptFileName(_ ciphertextName: String, dirId: Data, encoding: FileNameEncoding = .base64url) -> String? {
 		// decode:
 		let maybeCiphertextData : Data? = {
 			switch encoding {
 			case .base64url: return Data(base64UrlEncoded: ciphertextName)
+			case .base32: return ciphertextName.base32DecodedData
 			}
 		}()
 		guard let ciphertextData = maybeCiphertextData else {
@@ -60,7 +64,7 @@ public class Cryptor {
 		}
 		
 		// decrypt:
-		if let cleartext = try? AesSiv.decrypt(aesKey: masterKey.aesMasterKey, macKey: masterKey.macMasterKey, ciphertext: ciphertextData.bytes, ad: directoryId.bytes) {
+		if let cleartext = try? AesSiv.decrypt(aesKey: masterKey.aesMasterKey, macKey: masterKey.macMasterKey, ciphertext: ciphertextData.bytes, ad: dirId.bytes) {
 			return String(data: Data(cleartext), encoding: .utf8)
 		} else {
 			return nil

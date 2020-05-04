@@ -32,10 +32,10 @@ class CryptorTests: XCTestCase {
 		let dirId = "foo".data(using: .utf8)!
 		let originalName = "hello.txt"
 		
-		let ciphertextName = cryptor.encryptFileName(cleartextName: originalName, directoryId: dirId)
+		let ciphertextName = cryptor.encryptFileName(originalName, dirId: dirId)
 		XCTAssertNotNil(ciphertextName)
 		
-		let cleartextName = cryptor.decryptFileName(ciphertextName: ciphertextName!, directoryId: dirId)
+		let cleartextName = cryptor.decryptFileName(ciphertextName!, dirId: dirId)
 		XCTAssertNotNil(cleartextName)
 		XCTAssertEqual(originalName, cleartextName!)
 		
