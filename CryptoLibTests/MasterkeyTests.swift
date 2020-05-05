@@ -33,13 +33,13 @@ class MasterkeyTests: XCTestCase {
 		let expectedKeys = [UInt8](repeating: 0x00, count: 32)
 		let jsonData = """
 		{
-			"version": 3,
+			"version": 7,
 			"scryptSalt": "AAAAAAAAAAA=",
 			"scryptCostParam": 2,
 			"scryptBlockSize": 8,
 			"primaryMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
 			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
-			"versionMac": "iUmRRHITuyJsJbVNqGNw+82YQ4A3Rma7j/y1v0DCVLA="
+			"versionMac": "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g="
 		}
 		""".data(using: .utf8)!
 		
@@ -53,13 +53,13 @@ class MasterkeyTests: XCTestCase {
 	func testCreateFromMasterkeyFileWithWrongPassword() throws {
 		let jsonData = """
 		{
-			"version": 3,
+			"version": 7,
 			"scryptSalt": "AAAAAAAAAAA=",
 			"scryptCostParam": 2,
 			"scryptBlockSize": 8,
 			"primaryMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
 			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
-			"versionMac": "iUmRRHITuyJsJbVNqGNw+82YQ4A3Rma7j/y1v0DCVLA="
+			"versionMac": "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g="
 		}
 		""".data(using: .utf8)!
 
@@ -71,13 +71,13 @@ class MasterkeyTests: XCTestCase {
 	func testCreateFromMasterkeyFileWithInvalidVersionMac() throws {
 		let jsonData = """
 		{
-			"version": 3,
+			"version": 7,
 			"scryptSalt": "AAAAAAAAAAA=",
 			"scryptCostParam": 2,
 			"scryptBlockSize": 8,
 			"primaryMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
 			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
-			"versionMac": "iUmRRHITuyJsJbVNqGNw+82YQ4A3Rma7j/y1v0DCVLa="
+			"versionMac": "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+G="
 		}
 		""".data(using: .utf8)!
 
@@ -89,13 +89,13 @@ class MasterkeyTests: XCTestCase {
 	func testCreateFromMasterkeyFileWithMalformedJson1() throws {
 		let jsonData = """
 		{
-			"version": 3,
+			"version": 7,
 			"scryptSalt": "AAAAAAAAAAA=",
 			"scryptCostParam": 2,
 			"scryptBlockSize": 8,
 			"primaryMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q!!",
 			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
-			"versionMac": "iUmRRHITuyJsJbVNqGNw+82YQ4A3Rma7j/y1v0DCVLA="
+			"versionMac": "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g="
 		}
 		""".data(using: .utf8)!
 
@@ -107,13 +107,13 @@ class MasterkeyTests: XCTestCase {
 	func testCreateFromMasterkeyFileWithMalformedJson2() throws {
 		let jsonData = """
 		{
-			"version": 3,
+			"version": 7,
 			"scryptSalt": "AAAAAAAAAAA=",
 			"scryptCostParam": 2,
 			"scryptBlockSize": 8,
 			"primaryMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
 			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q!!",
-			"versionMac": "iUmRRHITuyJsJbVNqGNw+82YQ4A3Rma7j/y1v0DCVLA="
+			"versionMac": "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g="
 		}
 		""".data(using: .utf8)!
 
@@ -125,13 +125,13 @@ class MasterkeyTests: XCTestCase {
 	func testCreateFromMasterkeyFileWithMalformedJson3() throws {
 		let jsonData = """
 		{
-			"version": 3,
+			"version": 7,
 			"scryptSalt": "AAAAAAAAAAA=",
 			"scryptCostParam": 2,
 			"scryptBlockSize": 8,
 			"primaryMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
 			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
-			"versionMac": "iUmRRHITuyJsJbVN"
+			"versionMac": "cn2sAK6l"
 		}
 		""".data(using: .utf8)!
 
