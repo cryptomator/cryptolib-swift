@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'CryptomatorCryptoLib'
-  s.version          = ENV['LIB_VERSION'] || 'SNAPSHOT'
+  s.version          = ENV['LIB_VERSION'] || '0.0.1-snapshot'
   s.summary          = 'CryptomatorCryptoLib is an iOS crypto library to access Cryptomator vaults.'
 
   s.homepage         = 'https://github.com/cryptomator/cryptolib-swift'
