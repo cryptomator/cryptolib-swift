@@ -1,0 +1,15 @@
+name: Build
+
+on:
+  [push]
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: pod install
+      - name: Build and test
+        run: xcodebuild -workspace 'CryptoLib.xcworkspace' -scheme 'CryptoLib' -destination 'OS=13.4,name=iPhone 11 Pro' clean test | xcpretty
