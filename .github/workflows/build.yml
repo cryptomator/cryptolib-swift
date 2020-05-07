@@ -12,4 +12,4 @@ jobs:
       - name: Install dependencies
         run: pod install
       - name: Build and test
-        run: xcodebuild -workspace 'CryptoLib.xcworkspace' -scheme 'CryptoLib' -destination 'OS=13.4,name=iPhone 11 Pro' clean test | xcpretty
+        run: set -o pipefail && env NSUnbufferedIO=YES xcodebuild -workspace 'CryptoLib.xcworkspace' -scheme 'CryptoLib' -destination 'OS=13.4.1,name=iPhone 11 Pro' clean test | xcpretty
