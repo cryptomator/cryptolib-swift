@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		4A7C213C2451F2AC00DE81E6 /* CryptoLib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4A7C21322451F2AC00DE81E6 /* CryptoLib.framework */; };
 		4A7C21432451F2AD00DE81E6 /* CryptoLib.h in Headers */ = {isa = PBXBuildFile; fileRef = 4A7C21352451F2AC00DE81E6 /* CryptoLib.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		52D51418B3FFF0E212F47BAA /* libPods-CryptoLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A239569B6D7676AE64227515 /* libPods-CryptoLib.a */; };
+		7980E962F1389ACDDCEBB596 /* libPods-CryptoLibTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26296374923D6A536A006295 /* libPods-CryptoLibTests.a */; };
 		9E35C4EB24576A3D0006E50C /* CryptorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E35C4EA24576A3D0006E50C /* CryptorTests.swift */; };
 		9E44EEA624599C6900A37B01 /* AesSiv.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E44EEA524599C6900A37B01 /* AesSiv.swift */; };
 		9E44EEA92459AB1500A37B01 /* AesSivTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E44EEA724599C7800A37B01 /* AesSivTests.swift */; };
@@ -17,7 +17,7 @@
 		9E9BB8142454708600F9FF51 /* Masterkey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9BB8132454708600F9FF51 /* Masterkey.swift */; };
 		9E9BB81624558DFF00F9FF51 /* MasterkeyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9BB81524558DFF00F9FF51 /* MasterkeyTests.swift */; };
 		9E9BB818245590C100F9FF51 /* libCryptoSwift.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9E9BB817245590C100F9FF51 /* libCryptoSwift.a */; };
-		A32DA6F6C54D8A5A6845B19E /* libPods-CryptoLibTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DE9E50AD12277D0A1DC543FF /* libPods-CryptoLibTests.a */; };
+		AAC7D038BEF14DA7788F6090 /* libPods-CryptoLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 085645A8AA97369573B917E8 /* libPods-CryptoLib.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -32,7 +32,9 @@
 
 /* Begin PBXFileReference section */
 		080BF9098EF20B4D273353B2 /* Pods-CryptoLibTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CryptoLibTests.debug.xcconfig"; path = "Target Support Files/Pods-CryptoLibTests/Pods-CryptoLibTests.debug.xcconfig"; sourceTree = "<group>"; };
+		085645A8AA97369573B917E8 /* libPods-CryptoLib.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CryptoLib.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		187D073CD93DB036796D77DC /* Pods-CryptoLibTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CryptoLibTests.release.xcconfig"; path = "Target Support Files/Pods-CryptoLibTests/Pods-CryptoLibTests.release.xcconfig"; sourceTree = "<group>"; };
+		26296374923D6A536A006295 /* libPods-CryptoLibTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CryptoLibTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		46CE315EF43B1FF833C7A4FB /* Pods-CryptoLib.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CryptoLib.release.xcconfig"; path = "Target Support Files/Pods-CryptoLib/Pods-CryptoLib.release.xcconfig"; sourceTree = "<group>"; };
 		4A7C21322451F2AC00DE81E6 /* CryptoLib.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CryptoLib.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4A7C21352451F2AC00DE81E6 /* CryptoLib.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CryptoLib.h; sourceTree = "<group>"; };
@@ -47,8 +49,6 @@
 		9E9BB8132454708600F9FF51 /* Masterkey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Masterkey.swift; sourceTree = "<group>"; };
 		9E9BB81524558DFF00F9FF51 /* MasterkeyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterkeyTests.swift; sourceTree = "<group>"; };
 		9E9BB817245590C100F9FF51 /* libCryptoSwift.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libCryptoSwift.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		A239569B6D7676AE64227515 /* libPods-CryptoLib.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CryptoLib.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		DE9E50AD12277D0A1DC543FF /* libPods-CryptoLibTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CryptoLibTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,7 +57,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9E9BB818245590C100F9FF51 /* libCryptoSwift.a in Frameworks */,
-				52D51418B3FFF0E212F47BAA /* libPods-CryptoLib.a in Frameworks */,
+				AAC7D038BEF14DA7788F6090 /* libPods-CryptoLib.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -66,7 +66,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4A7C213C2451F2AC00DE81E6 /* CryptoLib.framework in Frameworks */,
-				A32DA6F6C54D8A5A6845B19E /* libPods-CryptoLibTests.a in Frameworks */,
+				7980E962F1389ACDDCEBB596 /* libPods-CryptoLibTests.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -77,8 +77,8 @@
 			isa = PBXGroup;
 			children = (
 				9E9BB817245590C100F9FF51 /* libCryptoSwift.a */,
-				A239569B6D7676AE64227515 /* libPods-CryptoLib.a */,
-				DE9E50AD12277D0A1DC543FF /* libPods-CryptoLibTests.a */,
+				085645A8AA97369573B917E8 /* libPods-CryptoLib.a */,
+				26296374923D6A536A006295 /* libPods-CryptoLibTests.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
