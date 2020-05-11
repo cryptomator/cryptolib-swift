@@ -31,10 +31,12 @@ public class Masterkey {
 
 	private(set) var aesMasterKey: [UInt8]
 	private(set) var macMasterKey: [UInt8]
+	public let version: Int
 
-	private init(aesMasterKey: [UInt8], macMasterKey: [UInt8]) {
+	private init(aesMasterKey: [UInt8], macMasterKey: [UInt8], version: Int) {
 		self.aesMasterKey = aesMasterKey
 		self.macMasterKey = macMasterKey
+		self.version = version
 	}
 	
 	deinit {
@@ -92,13 +94,13 @@ public class Masterkey {
 			throw MasterkeyError.malformedMasterkeyFile("incorrect version or versionMac")
 		}
 		
-		return createFromRaw(aesMasterKey: aesKey, macMasterKey: macKey)
+		return createFromRaw(aesMasterKey: aesKey, macMasterKey: macKey, version: jsonData.version)
 	}
 	
-	internal static func createFromRaw(aesMasterKey: [UInt8], macMasterKey: [UInt8]) -> Masterkey {
+	internal static func createFromRaw(aesMasterKey: [UInt8], macMasterKey: [UInt8], version: Int) -> Masterkey {
 		assert(aesMasterKey.count == kCCKeySizeAES256)
 		assert(macMasterKey.count == kCCKeySizeAES256)
-		return Masterkey(aesMasterKey: aesMasterKey, macMasterKey: macMasterKey)
+		return Masterkey(aesMasterKey: aesMasterKey, macMasterKey: macMasterKey, version: version)
 	}
 	
 	// MARK: -

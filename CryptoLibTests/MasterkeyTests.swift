@@ -46,6 +46,7 @@ class MasterkeyTests: XCTestCase {
 		let masterKey = try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "asd")
 		
 		XCTAssertNotNil(masterKey)
+		XCTAssertEqual(7, masterKey.version)
 		XCTAssertEqual(expectedKeys, masterKey.aesMasterKey)
 		XCTAssertEqual(expectedKeys, masterKey.macMasterKey)
     }

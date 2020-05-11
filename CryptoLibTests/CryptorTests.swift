@@ -16,7 +16,7 @@ class CryptorTests: XCTestCase {
     override func setUp() {
 		let aesKey: [UInt8] = Array(repeating: 0x55, count: 32)
 		let macKey: [UInt8] = Array(repeating: 0x77, count: 32)
-		masterkey = Masterkey.createFromRaw(aesMasterKey: aesKey, macMasterKey: macKey)
+		masterkey = Masterkey.createFromRaw(aesMasterKey: aesKey, macMasterKey: macKey, version: 7)
 		
 		XCTAssertNotNil(masterkey)
     }
