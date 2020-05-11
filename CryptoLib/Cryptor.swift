@@ -22,9 +22,13 @@ extension Data {
 	
 }
 
-public enum FileNameEncoding {
+public enum FileNameEncoding : String {
 	case base64url
 	case base32
+}
+
+enum CryptorError: Error, Equatable {
+	case invalidCiphertext(_ reason: String? = nil)
 }
 
 public class Cryptor {
@@ -38,22 +42,17 @@ public class Cryptor {
 	// MARK: -
 	// MARK: Path Encryption and Decryption:
 	
-	public func encryptDirId(_ dirIdStr: String) -> String? {
-		let dirIdBytes = [UInt8](dirIdStr.utf8)
-		guard let encrypted = try? AesSiv.encrypt(aesKey: masterKey.aesMasterKey, macKey: masterKey.macMasterKey, plaintext: dirIdBytes) else {
-			return nil
-		}
+	public func encryptDirId(_ dirId: Data) throws -> String {
+		let encrypted = try AesSiv.encrypt(aesKey: masterKey.aesMasterKey, macKey: masterKey.macMasterKey, plaintext: dirId.bytes)
 		var digest = [UInt8](repeating: 0x00, count: Int(CC_SHA1_DIGEST_LENGTH))
 		CC_SHA1(encrypted, UInt32(encrypted.count) as CC_LONG, &digest)
 		return Data(digest).base32EncodedString
 	}
 	
-	public func encryptFileName(_ cleartextName: String, dirId: Data, encoding: FileNameEncoding = .base64url) -> String? {
+	public func encryptFileName(_ cleartextName: String, dirId: Data, encoding: FileNameEncoding = .base64url) throws -> String {
 		// encrypt:
 		let cleartext = [UInt8](cleartextName.precomposedStringWithCanonicalMapping.utf8)
-		guard let ciphertext = try? AesSiv.encrypt(aesKey: masterKey.aesMasterKey, macKey: masterKey.macMasterKey, plaintext: cleartext, ad: dirId.bytes) else {
-			return nil
-		}
+		let ciphertext = try AesSiv.encrypt(aesKey: masterKey.aesMasterKey, macKey: masterKey.macMasterKey, plaintext: cleartext, ad: dirId.bytes)
 		
 		// encode:
 		switch encoding {
@@ -62,7 +61,7 @@ public class Cryptor {
 		}
 	}
 	
-	public func decryptFileName(_ ciphertextName: String, dirId: Data, encoding: FileNameEncoding = .base64url) -> String? {
+	public func decryptFileName(_ ciphertextName: String, dirId: Data, encoding: FileNameEncoding = .base64url) throws -> String {
 		// decode:
 		let maybeCiphertextData : Data? = {
 			switch encoding {
@@ -71,14 +70,15 @@ public class Cryptor {
 			}
 		}()
 		guard let ciphertextData = maybeCiphertextData else {
-			return nil
+			throw CryptorError.invalidCiphertext("Can't \(encoding.rawValue)-decode ciphertext name: \(ciphertextName)")
 		}
 		
 		// decrypt:
-		if let cleartext = try? AesSiv.decrypt(aesKey: masterKey.aesMasterKey, macKey: masterKey.macMasterKey, ciphertext: ciphertextData.bytes, ad: dirId.bytes) {
-			return String(data: Data(cleartext), encoding: .utf8)
+		let cleartext = try AesSiv.decrypt(aesKey: masterKey.aesMasterKey, macKey: masterKey.macMasterKey, ciphertext: ciphertextData.bytes, ad: dirId.bytes)
+		if let str = String(data: Data(cleartext), encoding: .utf8) {
+			return str
 		} else {
-			return nil
+			throw CryptorError.invalidCiphertext("Unable to decode cleartext using UTF-8.")
 		}
 	}
 	

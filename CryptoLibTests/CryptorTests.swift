@@ -21,29 +21,29 @@ class CryptorTests: XCTestCase {
 		XCTAssertNotNil(masterkey)
     }
 	
-	func testEncryptDirId() {
+	func testEncryptDirId() throws {
 		let cryptor = Cryptor.init(masterKey: masterkey)
 		
-		let rootDir = cryptor.encryptDirId("")
+		let rootDir = try cryptor.encryptDirId("".data(using: .utf8)!)
 		XCTAssertEqual("VLWEHT553J5DR7OZLRJAYDIWFCXZABOD", rootDir)
 
-		let testDir = cryptor.encryptDirId("918acfbd-a467-3f77-93f1-f4a44f9cfe9c")
+		let testDir = try cryptor.encryptDirId("918acfbd-a467-3f77-93f1-f4a44f9cfe9c".data(using: .utf8)!)
 		XCTAssertEqual("7C3USOO3VU7IVQRKFMRFV3QE4VEZJECV", testDir)
 	}
 
-    func testEncryptAndDecryptName() {
+    func testEncryptAndDecryptName() throws {
 		continueAfterFailure = false
 		
 		let cryptor = Cryptor.init(masterKey: masterkey)
 		let dirId = "foo".data(using: .utf8)!
 		let originalName = "hello.txt"
 		
-		let ciphertextName = cryptor.encryptFileName(originalName, dirId: dirId)
+		let ciphertextName = try cryptor.encryptFileName(originalName, dirId: dirId)
 		XCTAssertNotNil(ciphertextName)
 		
-		let cleartextName = cryptor.decryptFileName(ciphertextName!, dirId: dirId)
+		let cleartextName = try cryptor.decryptFileName(ciphertextName, dirId: dirId)
 		XCTAssertNotNil(cleartextName)
-		XCTAssertEqual(originalName, cleartextName!)
+		XCTAssertEqual(originalName, cleartextName)
 		
     }
 
