@@ -7,6 +7,7 @@
 --commas inline
 --importgrouping testable-bottom
 --indent tab
+--self init-only
 --swiftversion 5.1
 --tabwidth 4
 
