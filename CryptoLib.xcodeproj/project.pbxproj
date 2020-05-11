@@ -108,9 +108,9 @@
 			children = (
 				4A7C21352451F2AC00DE81E6 /* CryptoLib.h */,
 				4A7C21362451F2AC00DE81E6 /* Info.plist */,
+				9E44EEA524599C6900A37B01 /* AesSiv.swift */,
 				9E9BB811245412E900F9FF51 /* Cryptor.swift */,
 				9E9BB8132454708600F9FF51 /* Masterkey.swift */,
-				9E44EEA524599C6900A37B01 /* AesSiv.swift */,
 			);
 			path = CryptoLib;
 			sourceTree = "<group>";
@@ -118,10 +118,10 @@
 		4A7C213F2451F2AC00DE81E6 /* CryptoLibTests */ = {
 			isa = PBXGroup;
 			children = (
-				9E9BB81524558DFF00F9FF51 /* MasterkeyTests.swift */,
-				9E35C4EA24576A3D0006E50C /* CryptorTests.swift */,
 				4A7C21422451F2AD00DE81E6 /* Info.plist */,
 				9E44EEA724599C7800A37B01 /* AesSivTests.swift */,
+				9E35C4EA24576A3D0006E50C /* CryptorTests.swift */,
+				9E9BB81524558DFF00F9FF51 /* MasterkeyTests.swift */,
 			);
 			path = CryptoLibTests;
 			sourceTree = "<group>";

@@ -1,0 +1,15 @@
+# file options
+
+--exclude Pods
+
+# format options
+
+--commas inline
+--importgrouping testable-bottom
+--indent tab
+--swiftversion 5.1
+--tabwidth 4
+
+# rules
+
+--enable isEmpty

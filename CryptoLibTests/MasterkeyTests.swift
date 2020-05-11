@@ -10,15 +10,14 @@ import XCTest
 @testable import CryptoLib
 
 class MasterkeyTests: XCTestCase {
+	override func setUp() {
+		// Put setup code here. This method is called before the invocation of each test method in the class.
+	}
 
-    override func setUp() {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-    }
+	override func tearDown() {
+		// Put teardown code here. This method is called after the invocation of each test method in the class.
+	}
 
-    override func tearDown() {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
-	
 	func testWrapAndUnwrapKey() throws {
 		let rawKey = [UInt8](repeating: 0x77, count: 32)
 		let kek = [UInt8](repeating: 0x55, count: 32)
@@ -29,7 +28,7 @@ class MasterkeyTests: XCTestCase {
 		XCTAssertEqual(rawKey, unwrapped)
 	}
 
-    func testCreateFromMasterkeyFile() throws {
+	func testCreateFromMasterkeyFile() throws {
 		let expectedKeys = [UInt8](repeating: 0x00, count: 32)
 		let jsonData = """
 		{
@@ -42,15 +41,15 @@ class MasterkeyTests: XCTestCase {
 			"versionMac": "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g="
 		}
 		""".data(using: .utf8)!
-		
+
 		let masterKey = try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "asd")
-		
+
 		XCTAssertNotNil(masterKey)
 		XCTAssertEqual(7, masterKey.version)
 		XCTAssertEqual(expectedKeys, masterKey.aesMasterKey)
 		XCTAssertEqual(expectedKeys, masterKey.macMasterKey)
-    }
-	
+	}
+
 	func testCreateFromMasterkeyFileWithWrongPassword() throws {
 		let jsonData = """
 		{
@@ -64,11 +63,11 @@ class MasterkeyTests: XCTestCase {
 		}
 		""".data(using: .utf8)!
 
-		XCTAssertThrowsError(try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "qwe"), "invalid password", { error in
+		XCTAssertThrowsError(try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "qwe"), "invalid password") { error in
 			XCTAssertEqual(error as! MasterkeyError, MasterkeyError.invalidPassword)
-		})
-    }
-	
+		}
+	}
+
 	func testCreateFromMasterkeyFileWithInvalidVersionMac() throws {
 		let jsonData = """
 		{
@@ -82,11 +81,11 @@ class MasterkeyTests: XCTestCase {
 		}
 		""".data(using: .utf8)!
 
-		XCTAssertThrowsError(try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "asd"), "invalid password", { error in
+		XCTAssertThrowsError(try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "asd"), "invalid password") { error in
 			XCTAssertEqual(error as! MasterkeyError, MasterkeyError.malformedMasterkeyFile("incorrect version or versionMac"))
-		})
-    }
-	
+		}
+	}
+
 	func testCreateFromMasterkeyFileWithMalformedJson1() throws {
 		let jsonData = """
 		{
@@ -100,11 +99,11 @@ class MasterkeyTests: XCTestCase {
 		}
 		""".data(using: .utf8)!
 
-		XCTAssertThrowsError(try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "asd"), "invalid password", { error in
+		XCTAssertThrowsError(try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "asd"), "invalid password") { error in
 			XCTAssertEqual(error as! MasterkeyError, MasterkeyError.malformedMasterkeyFile("invalid base64 data in primaryMasterKey"))
-		})
-    }
-	
+		}
+	}
+
 	func testCreateFromMasterkeyFileWithMalformedJson2() throws {
 		let jsonData = """
 		{
@@ -118,11 +117,11 @@ class MasterkeyTests: XCTestCase {
 		}
 		""".data(using: .utf8)!
 
-		XCTAssertThrowsError(try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "asd"), "invalid password", { error in
+		XCTAssertThrowsError(try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "asd"), "invalid password") { error in
 			XCTAssertEqual(error as! MasterkeyError, MasterkeyError.malformedMasterkeyFile("invalid base64 data in hmacMasterKey"))
-		})
-    }
-	
+		}
+	}
+
 	func testCreateFromMasterkeyFileWithMalformedJson3() throws {
 		let jsonData = """
 		{
@@ -136,9 +135,8 @@ class MasterkeyTests: XCTestCase {
 		}
 		""".data(using: .utf8)!
 
-		XCTAssertThrowsError(try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "asd"), "invalid password", { error in
+		XCTAssertThrowsError(try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "asd"), "invalid password") { error in
 			XCTAssertEqual(error as! MasterkeyError, MasterkeyError.malformedMasterkeyFile("invalid base64 data in versionMac"))
-		})
-    }
-
+		}
+	}
 }
