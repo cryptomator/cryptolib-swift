@@ -16,7 +16,7 @@ extension Data {
 	}
 
 	public func base64UrlEncodedString(options: Data.Base64EncodingOptions = []) -> String {
-		base64EncodedString(options: options).replacingOccurrences(of: "+", with: "-").replacingOccurrences(of: "/", with: "_")
+		return base64EncodedString(options: options).replacingOccurrences(of: "+", with: "-").replacingOccurrences(of: "/", with: "_")
 	}
 }
 
@@ -81,10 +81,10 @@ public class Cryptor {
 	// MARK: - File Content Encryption and Decryption
 
 	func encryptSingleChunk(chunkNumber _: UInt64, nonce _: [UInt8], cleartext _: [UInt8], fileKey _: [UInt8]) -> [UInt8] {
-		[UInt8]() // TODO:
+		return [UInt8]() // TODO:
 	}
 
 	func decryptSingleChunk(chunkNumber _: UInt64, nonce _: [UInt8], ciphertext _: [UInt8], fileKey _: [UInt8]) -> [UInt8] {
-		[UInt8]() // TODO:
+		return [UInt8]() // TODO:
 	}
 }
