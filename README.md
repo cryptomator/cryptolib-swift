@@ -1,4 +1,6 @@
 [![Version](http://img.shields.io/cocoapods/v/CryptomatorCryptoLib.svg)](https://cocoapods.org/pods/CryptomatorCryptoLib)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/dba85991a19942bab0d3d587522397ef)](https://www.codacy.com/gh/cryptomator/cryptolib-swift)
+[![Codacy Badge](https://app.codacy.com/project/badge/Coverage/dba85991a19942bab0d3d587522397ef)](https://www.codacy.com/gh/cryptomator/cryptolib-swift)
 
 High level wrapper for cryptographic operations used by Cryptomator iOS App
 
