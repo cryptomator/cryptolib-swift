@@ -44,4 +44,16 @@ class CryptorTests: XCTestCase {
 		XCTAssertNotNil(cleartextName)
 		XCTAssertEqual(originalName, cleartextName)
 	}
+
+	func testEncryptAndDecryptSingleChunk() throws {
+		let cryptor = Cryptor(masterKey: masterkey)
+		let nonce = [UInt8](repeating: 0x00, count: 16)
+		let filekey = [UInt8](repeating: 0x00, count: 32)
+		let cleartext = "hello world".data(using: .ascii)!
+
+		let encrypted = try cryptor.encryptSingleChunk(cleartext.bytes, chunkNumber: 0, headerNonce: nonce, fileKey: filekey)
+		let decrypted = try cryptor.decryptSingleChunk(encrypted, chunkNumber: 0, headerNonce: nonce, fileKey: filekey)
+
+		XCTAssertEqual(cleartext.bytes, decrypted)
+	}
 }

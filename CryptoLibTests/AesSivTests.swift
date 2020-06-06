@@ -62,7 +62,7 @@ class AesSivTests: XCTestCase {
 		XCTAssertEqual(expected, result)
 	}
 
-	func testAesCtr() {
+	func testCtr() {
 		let aesKey: [UInt8] = [
 			0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,
 			0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F
@@ -84,7 +84,7 @@ class AesSivTests: XCTestCase {
 			0x1B, 0x12, 0x34, 0x8E, 0xBC, 0x19, 0x5E, 0xC7
 		]
 
-		let result = try? AesSiv.aesCtr(aesKey: aesKey, iv: iv, plaintext: plaintext)
+		let result = try? AesSiv.ctr(aesKey: aesKey, iv: iv, plaintext: plaintext)
 
 		XCTAssertEqual(expected, result)
 	}

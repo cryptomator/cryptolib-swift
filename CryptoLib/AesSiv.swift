@@ -24,7 +24,7 @@ public class AesSiv {
 			throw AesSivError.invalidParameter("plaintext must not be longer than 2^32 - 16 bytes")
 		}
 		let iv = try s2v(macKey: macKey, plaintext: plaintext, ad: ad)
-		let ciphertext = try aesCtr(aesKey: aesKey, iv: iv, plaintext: plaintext)
+		let ciphertext = try ctr(aesKey: aesKey, iv: iv, plaintext: plaintext)
 		return iv + ciphertext
 	}
 
@@ -34,7 +34,7 @@ public class AesSiv {
 		}
 		let iv = Array(ciphertext[..<16])
 		let actualCiphertext = Array(ciphertext[16...])
-		let plaintext = try aesCtr(aesKey: aesKey, iv: iv, plaintext: actualCiphertext)
+		let plaintext = try ctr(aesKey: aesKey, iv: iv, plaintext: actualCiphertext)
 		let control = try s2v(macKey: macKey, plaintext: plaintext, ad: ad)
 
 		// time-constant comparison
@@ -51,38 +51,12 @@ public class AesSiv {
 		return plaintext
 	}
 
-	internal static func aesCtr(aesKey key: [UInt8], iv: [UInt8], plaintext: [UInt8]) throws -> [UInt8] {
-		assert(key.count == kCCKeySizeAES256 || key.count == kCCKeySizeAES128, "aesKey expected to be 128 or 256 bit")
-
+	internal static func ctr(aesKey key: [UInt8], iv: [UInt8], plaintext: [UInt8]) throws -> [UInt8] {
 		// clear out the 31st and 63rd bit (see https://tools.ietf.org/html/rfc5297#section-2.5)
 		var ctr = iv
 		ctr[8] &= 0x7F
 		ctr[12] &= 0x7F
-
-		var cryptor: CCCryptorRef?
-		var status = CCCryptorCreateWithMode(CCOperation(kCCEncrypt), CCMode(kCCModeCTR), CCAlgorithm(kCCAlgorithmAES), CCPadding(ccNoPadding), ctr, key, key.count, nil, 0, 0, CCModeOptions(kCCModeOptionCTR_BE), &cryptor)
-		guard status == kCCSuccess, cryptor != nil else {
-			throw AesSivError.invalidParameter("failed to initialize cryptor")
-		}
-		defer {
-			CCCryptorRelease(cryptor)
-		}
-
-		let outlen = CCCryptorGetOutputLength(cryptor, plaintext.count, true)
-		var ciphertext = [UInt8](repeating: 0x00, count: outlen)
-
-		var numEncryptedBytes: Int = 0
-		status = CCCryptorUpdate(cryptor, plaintext, plaintext.count, &ciphertext, ciphertext.count, &numEncryptedBytes)
-		guard status == kCCSuccess else {
-			throw AesSivError.encryptionFailedWithStatus(status)
-		}
-
-		status = CCCryptorFinal(cryptor, &ciphertext, ciphertext.count, &numEncryptedBytes)
-		guard status == kCCSuccess else {
-			throw AesSivError.encryptionFailedWithStatus(status)
-		}
-
-		return ciphertext
+		return try AesCtr.compute(key: key, iv: ctr, data: plaintext)
 	}
 
 	internal static func s2v(macKey: [UInt8], plaintext: [UInt8], ad: [[UInt8]]) throws -> [UInt8] {

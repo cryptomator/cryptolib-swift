@@ -20,6 +20,12 @@ extension Data {
 	}
 }
 
+extension FixedWidthInteger {
+	public func byteArray() -> [UInt8] {
+		return withUnsafeBytes(of: self, { [UInt8]($0) })
+	}
+}
+
 public enum FileNameEncoding: String {
 	case base64url
 	case base32
@@ -27,6 +33,8 @@ public enum FileNameEncoding: String {
 
 enum CryptorError: Error, Equatable {
 	case invalidCiphertext(_ reason: String? = nil)
+	case csprngError
+	case unauthenticCiphertext
 }
 
 public class Cryptor {
@@ -80,11 +88,51 @@ public class Cryptor {
 
 	// MARK: - File Content Encryption and Decryption
 
-	func encryptSingleChunk(chunkNumber _: UInt64, nonce _: [UInt8], cleartext _: [UInt8], fileKey _: [UInt8]) -> [UInt8] {
-		return [UInt8]() // TODO:
+	func encryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {
+		var chunkNonce = [UInt8](repeating: 0x00, count: kCCBlockSizeAES128)
+		guard SecRandomCopyBytes(kSecRandomDefault, chunkNonce.count, &chunkNonce) == errSecSuccess else {
+			throw CryptorError.csprngError
+		}
+		let ciphertext = try AesCtr.compute(key: fileKey, iv: chunkNonce, data: chunk)
+		let toBeAuthenticated = headerNonce + chunkNumber.bigEndian.byteArray() + chunkNonce + ciphertext
+		var mac = [UInt8](repeating: 0x00, count: Int(CC_SHA256_DIGEST_LENGTH))
+		CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), masterKey.macMasterKey, masterKey.macMasterKey.count, toBeAuthenticated, toBeAuthenticated.count, &mac)
+		return chunkNonce + ciphertext + mac
 	}
 
-	func decryptSingleChunk(chunkNumber _: UInt64, nonce _: [UInt8], ciphertext _: [UInt8], fileKey _: [UInt8]) -> [UInt8] {
-		return [UInt8]() // TODO:
+	func decryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {
+		assert(chunk.count >= kCCBlockSizeAES128 + Int(CC_SHA256_DIGEST_LENGTH), "ciphertext chunk must at least contain nonce + mac")
+
+		// decompose chunk:
+		let beginOfMAC = chunk.count - Int(CC_SHA256_DIGEST_LENGTH)
+		let chunkNonce = [UInt8](chunk[0 ..< kCCBlockSizeAES128])
+		let ciphertext = [UInt8](chunk[kCCBlockSizeAES128 ..< beginOfMAC])
+		let expectedMAC = [UInt8](chunk[beginOfMAC...])
+
+		// check MAC:
+		let toBeAuthenticated = headerNonce + chunkNumber.bigEndian.byteArray() + chunkNonce + ciphertext
+		var mac = [UInt8](repeating: 0x00, count: Int(CC_SHA256_DIGEST_LENGTH))
+		CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), masterKey.macMasterKey, masterKey.macMasterKey.count, toBeAuthenticated, toBeAuthenticated.count, &mac)
+		guard checkMAC(expected: expectedMAC, actual: mac) else {
+			throw CryptorError.unauthenticCiphertext
+		}
+
+		// decrypt:
+		return try AesCtr.compute(key: fileKey, iv: chunkNonce, data: ciphertext)
+	}
+
+	// time constant comparison:
+	private func checkMAC(expected: [UInt8], actual: [UInt8]) -> Bool {
+		assert(expected.count == actual.count, "MACs expected to be of same length")
+
+		if #available(iOS 10.1, *) {
+			return timingsafe_bcmp(expected, actual, expected.count) == 0
+		} else {
+			var diff: UInt8 = 0
+			for i in 0 ..< expected.count {
+				diff |= expected[i] ^ actual[i]
+			}
+			return diff == 0
+		}
 	}
 }
