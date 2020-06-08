@@ -104,11 +104,11 @@ public class Masterkey {
 
 	static func wrapMasterKey(rawKey: [UInt8], kek: [UInt8]) throws -> [UInt8] {
 		assert(kek.count == kCCKeySizeAES256)
-		var wrapepdKeyLen = CCSymmetricWrappedSize(CCWrappingAlgorithm(kCCWRAPAES), rawKey.count)
-		var wrapepdKey = [UInt8](repeating: 0x00, count: wrapepdKeyLen)
-		let status = CCSymmetricKeyWrap(CCWrappingAlgorithm(kCCWRAPAES), CCrfc3394_iv, CCrfc3394_ivLen, kek, kek.count, rawKey, rawKey.count, &wrapepdKey, &wrapepdKeyLen)
+		var wrappedKeyLen = CCSymmetricWrappedSize(CCWrappingAlgorithm(kCCWRAPAES), rawKey.count)
+		var wrappedKey = [UInt8](repeating: 0x00, count: wrappedKeyLen)
+		let status = CCSymmetricKeyWrap(CCWrappingAlgorithm(kCCWRAPAES), CCrfc3394_iv, CCrfc3394_ivLen, kek, kek.count, rawKey, rawKey.count, &wrappedKey, &wrappedKeyLen)
 		if status == kCCSuccess {
-			return wrapepdKey
+			return wrappedKey
 		} else {
 			throw MasterkeyError.wrapFailed(status)
 		}
@@ -116,12 +116,12 @@ public class Masterkey {
 
 	static func unwrapMasterKey(wrappedKey: [UInt8], kek: [UInt8]) throws -> [UInt8] {
 		assert(kek.count == kCCKeySizeAES256)
-		var unwrapepdKeyLen = CCSymmetricUnwrappedSize(CCWrappingAlgorithm(kCCWRAPAES), wrappedKey.count)
-		var unwrapepdKey = [UInt8](repeating: 0x00, count: unwrapepdKeyLen)
-		let status = CCSymmetricKeyUnwrap(CCWrappingAlgorithm(kCCWRAPAES), CCrfc3394_iv, CCrfc3394_ivLen, kek, kek.count, wrappedKey, wrappedKey.count, &unwrapepdKey, &unwrapepdKeyLen)
+		var unwrappedKeyLen = CCSymmetricUnwrappedSize(CCWrappingAlgorithm(kCCWRAPAES), wrappedKey.count)
+		var unwrappedKey = [UInt8](repeating: 0x00, count: unwrappedKeyLen)
+		let status = CCSymmetricKeyUnwrap(CCWrappingAlgorithm(kCCWRAPAES), CCrfc3394_iv, CCrfc3394_ivLen, kek, kek.count, wrappedKey, wrappedKey.count, &unwrappedKey, &unwrappedKeyLen)
 		if status == kCCSuccess {
-			assert(unwrapepdKeyLen == kCCKeySizeAES256)
-			return unwrapepdKey
+			assert(unwrappedKeyLen == kCCKeySizeAES256)
+			return unwrappedKey
 		} else if status == kCCDecodeError {
 			throw MasterkeyError.invalidPassword
 		} else {
