@@ -131,7 +131,6 @@ public class Cryptor {
 
 	// MARK: - File Content Encryption and Decryption
 
-	// TODO: progress
 	func encryptContent(from cleartextURL: URL, to ciphertextURL: URL) throws {
 		// open cleartext input stream:
 		guard let cleartextStream = InputStream(url: cleartextURL) else {
@@ -149,6 +148,12 @@ public class Cryptor {
 		ciphertextStream.open()
 		defer { ciphertextStream.close() }
 
+		// encrypt:
+		try encryptContent(from: cleartextStream, to: ciphertextStream)
+	}
+
+	// TODO: progress
+	func encryptContent(from cleartextStream: InputStream, to ciphertextStream: OutputStream) throws {
 		// encrypt and write header:
 		let header = try createHeader()
 		let ciphertextHeader = try encryptHeader(header)
@@ -175,7 +180,6 @@ public class Cryptor {
 		}
 	}
 
-	// TODO: progress
 	func decryptContent(from ciphertextURL: URL, to cleartextURL: URL) throws {
 		// open ciphertext input stream:
 		guard let ciphertextStream = InputStream(url: ciphertextURL) else {
@@ -193,6 +197,12 @@ public class Cryptor {
 		cleartextStream.open()
 		defer { cleartextStream.close() }
 
+		// decrypt:
+		try decryptContent(from: ciphertextStream, to: cleartextStream)
+	}
+
+	// TODO: progress
+	func decryptContent(from ciphertextStream: InputStream, to cleartextStream: OutputStream) throws {
 		// read and decrypt file header:
 		var ciphertextHeader = [UInt8](repeating: 0x00, count: 88)
 		ciphertextStream.read(&ciphertextHeader, maxLength: ciphertextHeader.count)
