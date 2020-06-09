@@ -9,19 +9,13 @@
 import CommonCrypto
 import Foundation
 
-enum AesSivError: Error {
-	case invalidParameter(_ reason: String)
-	case encryptionFailedWithStatus(_ status: CCCryptorStatus)
-	case unauthenticCiphertext
-}
-
 public class AesSiv {
 	static let zero = [UInt8](repeating: 0x00, count: 16)
 	static let dblConst: UInt8 = 0x87
 
 	public static func encrypt(aesKey: [UInt8], macKey: [UInt8], plaintext: [UInt8], ad: [UInt8]...) throws -> [UInt8] {
 		if plaintext.count > UInt32.max - 16 {
-			throw AesSivError.invalidParameter("plaintext must not be longer than 2^32 - 16 bytes")
+			throw CryptoError.invalidParameter("plaintext must not be longer than 2^32 - 16 bytes")
 		}
 		let iv = try s2v(macKey: macKey, plaintext: plaintext, ad: ad)
 		let ciphertext = try ctr(aesKey: aesKey, iv: iv, plaintext: plaintext)
@@ -30,7 +24,7 @@ public class AesSiv {
 
 	static func decrypt(aesKey: [UInt8], macKey: [UInt8], ciphertext: [UInt8], ad: [UInt8]...) throws -> [UInt8] {
 		if ciphertext.count < 16 {
-			throw AesSivError.invalidParameter("ciphertext must be at least 16 bytes")
+			throw CryptoError.invalidParameter("ciphertext must be at least 16 bytes")
 		}
 		let iv = Array(ciphertext[..<16])
 		let actualCiphertext = Array(ciphertext[16...])
@@ -45,7 +39,7 @@ public class AesSiv {
 		}
 
 		guard diff == 0 else {
-			throw AesSivError.unauthenticCiphertext
+			throw CryptoError.unauthenticCiphertext
 		}
 
 		return plaintext
@@ -62,7 +56,7 @@ public class AesSiv {
 	internal static func s2v(macKey: [UInt8], plaintext: [UInt8], ad: [[UInt8]]) throws -> [UInt8] {
 		// Maximum permitted AD length is the block size in bits - 2
 		if ad.count > 126 {
-			throw AesSivError.invalidParameter("too many ad")
+			throw CryptoError.invalidParameter("too many ad")
 		}
 
 		// RFC 5297 defines a n == 0 case here. Where n is the length of the input vector:
@@ -133,7 +127,7 @@ public class AesSiv {
 		let status = CCCrypt(CCOperation(kCCEncrypt), CCAlgorithm(kCCAlgorithmAES), CCOptions(kCCOptionECBMode), key, key.count, nil, plaintext, plaintext.count, &ciphertext, kCCBlockSizeAES128, &ciphertextLen)
 
 		guard status == kCCSuccess else {
-			throw AesSivError.encryptionFailedWithStatus(status)
+			throw CryptoError.ccCryptorError(status)
 		}
 
 		return ciphertext

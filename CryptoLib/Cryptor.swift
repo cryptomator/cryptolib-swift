@@ -31,20 +31,25 @@ public enum FileNameEncoding: String {
 	case base32
 }
 
-enum CryptorError: Error, Equatable {
-	case invalidCiphertext(_ reason: String? = nil)
-	case csprngError
-	case unauthenticCiphertext
+struct FileHeader {
+	let nonce: [UInt8]
+	let contentKey: [UInt8]
 }
 
 public class Cryptor {
 	private let masterKey: Masterkey
+	private let csprng: CSPRNG
 
-	public init(masterKey: Masterkey) {
-		self.masterKey = masterKey
+	public convenience init(masterKey: Masterkey) {
+		self.init(masterKey: masterKey, csprng: CSPRNG())
 	}
 
-	// MARK: - Path Encryption and Decryption:
+	internal init(masterKey: Masterkey, csprng: CSPRNG) {
+		self.masterKey = masterKey
+		self.csprng = csprng
+	}
+
+	// MARK: - Path Encryption and Decryption
 
 	public func encryptDirId(_ dirId: Data) throws -> String {
 		let encrypted = try AesSiv.encrypt(aesKey: masterKey.aesMasterKey, macKey: masterKey.macMasterKey, plaintext: dirId.bytes)
@@ -74,7 +79,7 @@ public class Cryptor {
 			}
 		}()
 		guard let ciphertextData = maybeCiphertextData else {
-			throw CryptorError.invalidCiphertext("Can't \(encoding.rawValue)-decode ciphertext name: \(ciphertextName)")
+			throw CryptoError.invalidParameter("Can't \(encoding.rawValue)-decode ciphertext name: \(ciphertextName)")
 		}
 
 		// decrypt:
@@ -82,17 +87,140 @@ public class Cryptor {
 		if let str = String(data: Data(cleartext), encoding: .utf8) {
 			return str
 		} else {
-			throw CryptorError.invalidCiphertext("Unable to decode cleartext using UTF-8.")
+			throw CryptoError.invalidParameter("Unable to decode cleartext using UTF-8.")
 		}
+	}
+
+	// MARK: - File Header Encryption and Decryption
+
+	func createHeader() throws -> FileHeader {
+		let nonce = try csprng.createRandomBytes(size: kCCBlockSizeAES128)
+		let contentKey = try csprng.createRandomBytes(size: kCCKeySizeAES256)
+		return FileHeader(nonce: nonce, contentKey: contentKey)
+	}
+
+	func encryptHeader(_ header: FileHeader) throws -> [UInt8] {
+		let cleartext = [UInt8](repeating: 0xFF, count: 8) + header.contentKey
+		let ciphertext = try AesCtr.compute(key: masterKey.aesMasterKey, iv: header.nonce, data: cleartext)
+		let toBeAuthenticated = header.nonce + ciphertext
+		var mac = [UInt8](repeating: 0x00, count: Int(CC_SHA256_DIGEST_LENGTH))
+		CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), masterKey.macMasterKey, masterKey.macMasterKey.count, toBeAuthenticated, toBeAuthenticated.count, &mac)
+		return header.nonce + ciphertext + mac
+	}
+
+	func decryptHeader(_ header: [UInt8]) throws -> FileHeader {
+		// decompose header:
+		let beginOfMAC = header.count - Int(CC_SHA256_DIGEST_LENGTH)
+		let nonce = [UInt8](header[0 ..< kCCBlockSizeAES128])
+		let ciphertext = [UInt8](header[kCCBlockSizeAES128 ..< beginOfMAC])
+		let expectedMAC = [UInt8](header[beginOfMAC...])
+
+		// check MAC:
+		let toBeAuthenticated = nonce + ciphertext
+		var mac = [UInt8](repeating: 0x00, count: Int(CC_SHA256_DIGEST_LENGTH))
+		CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), masterKey.macMasterKey, masterKey.macMasterKey.count, toBeAuthenticated, toBeAuthenticated.count, &mac)
+		guard checkMAC(expected: expectedMAC, actual: mac) else {
+			throw CryptoError.unauthenticCiphertext
+		}
+
+		// decrypt:
+		let cleartext = try AesCtr.compute(key: masterKey.aesMasterKey, iv: nonce, data: ciphertext)
+		let contentKey = [UInt8](cleartext[8...])
+		return FileHeader(nonce: nonce, contentKey: contentKey)
 	}
 
 	// MARK: - File Content Encryption and Decryption
 
-	func encryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {
-		var chunkNonce = [UInt8](repeating: 0x00, count: kCCBlockSizeAES128)
-		guard SecRandomCopyBytes(kSecRandomDefault, chunkNonce.count, &chunkNonce) == errSecSuccess else {
-			throw CryptorError.csprngError
+	// TODO: progress
+	func encryptContent(from cleartextURL: URL, to ciphertextURL: URL) throws {
+		// open cleartext input stream:
+		guard let cleartextStream = InputStream(url: cleartextURL) else {
+			throw CryptoError.ioError
 		}
+		cleartextStream.schedule(in: .current, forMode: .default)
+		cleartextStream.open()
+		defer { cleartextStream.close() }
+
+		// open ciphertext output stream:
+		guard let ciphertextStream = OutputStream(url: ciphertextURL, append: false) else {
+			throw CryptoError.ioError
+		}
+		ciphertextStream.schedule(in: .current, forMode: .default)
+		ciphertextStream.open()
+		defer { ciphertextStream.close() }
+
+		// encrypt and write header:
+		let header = try createHeader()
+		let ciphertextHeader = try encryptHeader(header)
+		ciphertextStream.write(ciphertextHeader, maxLength: ciphertextHeader.count)
+
+		// encrypt and write content:
+		var chunkNumber: UInt64 = 0
+		while cleartextStream.hasBytesAvailable {
+			// read chunk:
+			var cleartextChunk = [UInt8](repeating: 0x00, count: 32 * 1024)
+			let length = cleartextStream.read(&cleartextChunk, maxLength: cleartextChunk.count)
+			guard length >= 0 else {
+				throw CryptoError.ioError
+			}
+			assert(length < cleartextChunk.count)
+			cleartextChunk.removeSubrange(length...)
+
+			// encrypt and write chunk:
+			let ciphertextChunk = try encryptSingleChunk(cleartextChunk, chunkNumber: chunkNumber, headerNonce: header.nonce, fileKey: header.contentKey)
+			ciphertextStream.write(ciphertextChunk, maxLength: ciphertextChunk.count)
+
+			// prepare next chunk:
+			chunkNumber += 1
+		}
+	}
+
+	// TODO: progress
+	func decryptContent(from ciphertextURL: URL, to cleartextURL: URL) throws {
+		// open ciphertext input stream:
+		guard let ciphertextStream = InputStream(url: ciphertextURL) else {
+			throw CryptoError.ioError
+		}
+		ciphertextStream.schedule(in: .current, forMode: .default)
+		ciphertextStream.open()
+		defer { ciphertextStream.close() }
+
+		// open cleartext output stream:
+		guard let cleartextStream = OutputStream(url: cleartextURL, append: false) else {
+			throw CryptoError.ioError
+		}
+		cleartextStream.schedule(in: .current, forMode: .default)
+		cleartextStream.open()
+		defer { cleartextStream.close() }
+
+		// read and decrypt file header:
+		var ciphertextHeader = [UInt8](repeating: 0x00, count: 88)
+		ciphertextStream.read(&ciphertextHeader, maxLength: ciphertextHeader.count)
+		let header = try decryptHeader(ciphertextHeader)
+
+		// decrypt content:
+		var chunkNumber: UInt64 = 0
+		while ciphertextStream.hasBytesAvailable {
+			// read chunk:
+			var ciphertextChunk = [UInt8](repeating: 0x00, count: 16 + 32 * 1024 + 32)
+			let length = ciphertextStream.read(&ciphertextChunk, maxLength: ciphertextChunk.count)
+			guard length >= 0 else {
+				throw CryptoError.ioError
+			}
+			assert(length < ciphertextChunk.count)
+			ciphertextChunk.removeSubrange(length...)
+
+			// decrypt and write chunk:
+			let cleartextChunk = try decryptSingleChunk(ciphertextHeader, chunkNumber: chunkNumber, headerNonce: header.nonce, fileKey: header.contentKey)
+			cleartextStream.write(cleartextChunk, maxLength: cleartextChunk.count)
+
+			// prepare next chunk:
+			chunkNumber += 1
+		}
+	}
+
+	func encryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {
+		let chunkNonce = try csprng.createRandomBytes(size: kCCBlockSizeAES128)
 		let ciphertext = try AesCtr.compute(key: fileKey, iv: chunkNonce, data: chunk)
 		let toBeAuthenticated = headerNonce + chunkNumber.bigEndian.byteArray() + chunkNonce + ciphertext
 		var mac = [UInt8](repeating: 0x00, count: Int(CC_SHA256_DIGEST_LENGTH))
@@ -114,14 +242,18 @@ public class Cryptor {
 		var mac = [UInt8](repeating: 0x00, count: Int(CC_SHA256_DIGEST_LENGTH))
 		CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), masterKey.macMasterKey, masterKey.macMasterKey.count, toBeAuthenticated, toBeAuthenticated.count, &mac)
 		guard checkMAC(expected: expectedMAC, actual: mac) else {
-			throw CryptorError.unauthenticCiphertext
+			throw CryptoError.unauthenticCiphertext
 		}
 
 		// decrypt:
 		return try AesCtr.compute(key: fileKey, iv: chunkNonce, data: ciphertext)
 	}
 
-	// time constant comparison:
+	// MARK: - Internal
+
+	/**
+	 Constant-time comparison
+	 */
 	private func checkMAC(expected: [UInt8], actual: [UInt8]) -> Bool {
 		assert(expected.count == actual.count, "MACs expected to be of same length")
 

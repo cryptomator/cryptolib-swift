@@ -8,11 +8,6 @@
 import CommonCrypto
 import Foundation
 
-enum AesCtrError: Error {
-	case invalidParameter(_ reason: String)
-	case encryptionFailedWithStatus(_ status: CCCryptorStatus)
-}
-
 internal class AesCtr {
 	/**
 	 High level AES-CTR wrapper around CommonCrypto primitives. Can be used for encryption and decryption (it is the same in CTR mode)
@@ -28,7 +23,7 @@ internal class AesCtr {
 		var cryptor: CCCryptorRef?
 		var status = CCCryptorCreateWithMode(CCOperation(kCCEncrypt), CCMode(kCCModeCTR), CCAlgorithm(kCCAlgorithmAES), CCPadding(ccNoPadding), iv, key, key.count, nil, 0, 0, CCModeOptions(kCCModeOptionCTR_BE), &cryptor)
 		guard status == kCCSuccess, cryptor != nil else {
-			throw AesCtrError.invalidParameter("failed to initialize cryptor")
+			throw CryptoError.invalidParameter("failed to initialize cryptor")
 		}
 		defer {
 			CCCryptorRelease(cryptor)
@@ -40,12 +35,12 @@ internal class AesCtr {
 		var numEncryptedBytes: Int = 0
 		status = CCCryptorUpdate(cryptor, data, data.count, &ciphertext, ciphertext.count, &numEncryptedBytes)
 		guard status == kCCSuccess else {
-			throw AesCtrError.encryptionFailedWithStatus(status)
+			throw CryptoError.ccCryptorError(status)
 		}
 
 		status = CCCryptorFinal(cryptor, &ciphertext, ciphertext.count, &numEncryptedBytes)
 		guard status == kCCSuccess else {
-			throw AesCtrError.encryptionFailedWithStatus(status)
+			throw CryptoError.ccCryptorError(status)
 		}
 
 		return ciphertext
