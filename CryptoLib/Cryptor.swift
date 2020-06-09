@@ -26,6 +26,19 @@ extension FixedWidthInteger {
 	}
 }
 
+extension InputStream {
+	public func read(maxLength: Int) throws -> [UInt8] {
+		var buffer = [UInt8](repeating: 0x00, count: maxLength)
+		let length = read(&buffer, maxLength: maxLength)
+		guard length >= 0 else {
+			throw streamError ?? CryptoError.ioError
+		}
+		assert(length < buffer.count)
+		buffer.removeSubrange(length...)
+		return buffer
+	}
+}
+
 public enum FileNameEncoding: String {
 	case base64url
 	case base32
@@ -162,20 +175,9 @@ public class Cryptor {
 		// encrypt and write content:
 		var chunkNumber: UInt64 = 0
 		while cleartextStream.hasBytesAvailable {
-			// read chunk:
-			var cleartextChunk = [UInt8](repeating: 0x00, count: 32 * 1024)
-			let length = cleartextStream.read(&cleartextChunk, maxLength: cleartextChunk.count)
-			guard length >= 0 else {
-				throw CryptoError.ioError
-			}
-			assert(length < cleartextChunk.count)
-			cleartextChunk.removeSubrange(length...)
-
-			// encrypt and write chunk:
+			let cleartextChunk = try cleartextStream.read(maxLength: 32 * 1024)
 			let ciphertextChunk = try encryptSingleChunk(cleartextChunk, chunkNumber: chunkNumber, headerNonce: header.nonce, fileKey: header.contentKey)
 			ciphertextStream.write(ciphertextChunk, maxLength: ciphertextChunk.count)
-
-			// prepare next chunk:
 			chunkNumber += 1
 		}
 	}
@@ -204,27 +206,15 @@ public class Cryptor {
 	// TODO: progress
 	func decryptContent(from ciphertextStream: InputStream, to cleartextStream: OutputStream) throws {
 		// read and decrypt file header:
-		var ciphertextHeader = [UInt8](repeating: 0x00, count: 88)
-		ciphertextStream.read(&ciphertextHeader, maxLength: ciphertextHeader.count)
+		let ciphertextHeader = try ciphertextStream.read(maxLength: 88)
 		let header = try decryptHeader(ciphertextHeader)
 
 		// decrypt content:
 		var chunkNumber: UInt64 = 0
 		while ciphertextStream.hasBytesAvailable {
-			// read chunk:
-			var ciphertextChunk = [UInt8](repeating: 0x00, count: 16 + 32 * 1024 + 32)
-			let length = ciphertextStream.read(&ciphertextChunk, maxLength: ciphertextChunk.count)
-			guard length >= 0 else {
-				throw CryptoError.ioError
-			}
-			assert(length < ciphertextChunk.count)
-			ciphertextChunk.removeSubrange(length...)
-
-			// decrypt and write chunk:
-			let cleartextChunk = try decryptSingleChunk(ciphertextHeader, chunkNumber: chunkNumber, headerNonce: header.nonce, fileKey: header.contentKey)
+			let ciphertextChunk = try ciphertextStream.read(maxLength: 16 + 32 * 1024 + 32)
+			let cleartextChunk = try decryptSingleChunk(ciphertextChunk, chunkNumber: chunkNumber, headerNonce: header.nonce, fileKey: header.contentKey)
 			cleartextStream.write(cleartextChunk, maxLength: cleartextChunk.count)
-
-			// prepare next chunk:
 			chunkNumber += 1
 		}
 	}
