@@ -42,12 +42,12 @@ class MasterkeyTests: XCTestCase {
 		}
 		""".data(using: .utf8)!
 
-		let masterKey = try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "asd")
+		let masterkey = try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "asd")
 
-		XCTAssertNotNil(masterKey)
-		XCTAssertEqual(7, masterKey.version)
-		XCTAssertEqual(expectedKeys, masterKey.aesMasterKey)
-		XCTAssertEqual(expectedKeys, masterKey.macMasterKey)
+		XCTAssertNotNil(masterkey)
+		XCTAssertEqual(7, masterkey.version)
+		XCTAssertEqual(expectedKeys, masterkey.aesMasterKey)
+		XCTAssertEqual(expectedKeys, masterkey.macMasterKey)
 	}
 
 	func testCreateFromMasterkeyFileWithWrongPassword() throws {

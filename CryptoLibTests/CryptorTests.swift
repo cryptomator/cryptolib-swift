@@ -21,7 +21,7 @@ class CryptorTests: XCTestCase {
 	}
 
 	func testEncryptDirId() throws {
-		let cryptor = Cryptor(masterKey: masterkey)
+		let cryptor = Cryptor(masterkey: masterkey)
 
 		let rootDir = try cryptor.encryptDirId("".data(using: .utf8)!)
 		XCTAssertEqual("VLWEHT553J5DR7OZLRJAYDIWFCXZABOD", rootDir)
@@ -33,7 +33,7 @@ class CryptorTests: XCTestCase {
 	func testEncryptAndDecryptName() throws {
 		continueAfterFailure = false
 
-		let cryptor = Cryptor(masterKey: masterkey)
+		let cryptor = Cryptor(masterkey: masterkey)
 		let dirId = "foo".data(using: .utf8)!
 		let originalName = "hello.txt"
 
@@ -46,14 +46,14 @@ class CryptorTests: XCTestCase {
 	}
 
 	func testCreateHeader() throws {
-		let cryptor = Cryptor(masterKey: masterkey, csprng: CSPRNGMock())
+		let cryptor = Cryptor(masterkey: masterkey, csprng: CSPRNGMock())
 		let header = try cryptor.createHeader()
 		XCTAssertEqual([UInt8](repeating: 0xF0, count: 16), header.nonce)
 		XCTAssertEqual([UInt8](repeating: 0xF0, count: 32), header.contentKey)
 	}
 
 	func testEncryptHeader() throws {
-		let cryptor = Cryptor(masterKey: masterkey, csprng: CSPRNGMock())
+		let cryptor = Cryptor(masterkey: masterkey, csprng: CSPRNGMock())
 		let header = try cryptor.createHeader()
 		let encrypted = try cryptor.encryptHeader(header)
 		let expected: [UInt8] = [
@@ -73,7 +73,7 @@ class CryptorTests: XCTestCase {
 	}
 
 	func testDecryptHeader() throws {
-		let cryptor = Cryptor(masterKey: masterkey, csprng: CSPRNGMock())
+		let cryptor = Cryptor(masterkey: masterkey, csprng: CSPRNGMock())
 		let ciphertext: [UInt8] = [
 			0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0,
 			0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0,
@@ -97,7 +97,7 @@ class CryptorTests: XCTestCase {
 	}
 
 	func testEncryptAndDecryptSingleChunk() throws {
-		let cryptor = Cryptor(masterKey: masterkey)
+		let cryptor = Cryptor(masterkey: masterkey)
 		let nonce = [UInt8](repeating: 0x00, count: 16)
 		let filekey = [UInt8](repeating: 0x00, count: 32)
 		let cleartext = "hello world".data(using: .ascii)!

@@ -50,22 +50,22 @@ struct FileHeader {
 }
 
 public class Cryptor {
-	private let masterKey: Masterkey
+	private let masterkey: Masterkey
 	private let csprng: CSPRNG
 
-	public convenience init(masterKey: Masterkey) {
-		self.init(masterKey: masterKey, csprng: CSPRNG())
+	public convenience init(masterkey: Masterkey) {
+		self.init(masterkey: masterkey, csprng: CSPRNG())
 	}
 
-	internal init(masterKey: Masterkey, csprng: CSPRNG) {
-		self.masterKey = masterKey
+	internal init(masterkey: Masterkey, csprng: CSPRNG) {
+		self.masterkey = masterkey
 		self.csprng = csprng
 	}
 
 	// MARK: - Path Encryption and Decryption
 
 	public func encryptDirId(_ dirId: Data) throws -> String {
-		let encrypted = try AesSiv.encrypt(aesKey: masterKey.aesMasterKey, macKey: masterKey.macMasterKey, plaintext: dirId.bytes)
+		let encrypted = try AesSiv.encrypt(aesKey: masterkey.aesMasterKey, macKey: masterkey.macMasterKey, plaintext: dirId.bytes)
 		var digest = [UInt8](repeating: 0x00, count: Int(CC_SHA1_DIGEST_LENGTH))
 		CC_SHA1(encrypted, UInt32(encrypted.count) as CC_LONG, &digest)
 		return Data(digest).base32EncodedString
@@ -74,7 +74,7 @@ public class Cryptor {
 	public func encryptFileName(_ cleartextName: String, dirId: Data, encoding: FileNameEncoding = .base64url) throws -> String {
 		// encrypt:
 		let cleartext = [UInt8](cleartextName.precomposedStringWithCanonicalMapping.utf8)
-		let ciphertext = try AesSiv.encrypt(aesKey: masterKey.aesMasterKey, macKey: masterKey.macMasterKey, plaintext: cleartext, ad: dirId.bytes)
+		let ciphertext = try AesSiv.encrypt(aesKey: masterkey.aesMasterKey, macKey: masterkey.macMasterKey, plaintext: cleartext, ad: dirId.bytes)
 
 		// encode:
 		switch encoding {
@@ -96,7 +96,7 @@ public class Cryptor {
 		}
 
 		// decrypt:
-		let cleartext = try AesSiv.decrypt(aesKey: masterKey.aesMasterKey, macKey: masterKey.macMasterKey, ciphertext: ciphertextData.bytes, ad: dirId.bytes)
+		let cleartext = try AesSiv.decrypt(aesKey: masterkey.aesMasterKey, macKey: masterkey.macMasterKey, ciphertext: ciphertextData.bytes, ad: dirId.bytes)
 		if let str = String(data: Data(cleartext), encoding: .utf8) {
 			return str
 		} else {
@@ -114,10 +114,10 @@ public class Cryptor {
 
 	func encryptHeader(_ header: FileHeader) throws -> [UInt8] {
 		let cleartext = [UInt8](repeating: 0xFF, count: 8) + header.contentKey
-		let ciphertext = try AesCtr.compute(key: masterKey.aesMasterKey, iv: header.nonce, data: cleartext)
+		let ciphertext = try AesCtr.compute(key: masterkey.aesMasterKey, iv: header.nonce, data: cleartext)
 		let toBeAuthenticated = header.nonce + ciphertext
 		var mac = [UInt8](repeating: 0x00, count: Int(CC_SHA256_DIGEST_LENGTH))
-		CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), masterKey.macMasterKey, masterKey.macMasterKey.count, toBeAuthenticated, toBeAuthenticated.count, &mac)
+		CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), masterkey.macMasterKey, masterkey.macMasterKey.count, toBeAuthenticated, toBeAuthenticated.count, &mac)
 		return header.nonce + ciphertext + mac
 	}
 
@@ -131,13 +131,13 @@ public class Cryptor {
 		// check MAC:
 		let toBeAuthenticated = nonce + ciphertext
 		var mac = [UInt8](repeating: 0x00, count: Int(CC_SHA256_DIGEST_LENGTH))
-		CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), masterKey.macMasterKey, masterKey.macMasterKey.count, toBeAuthenticated, toBeAuthenticated.count, &mac)
+		CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), masterkey.macMasterKey, masterkey.macMasterKey.count, toBeAuthenticated, toBeAuthenticated.count, &mac)
 		guard checkMAC(expected: expectedMAC, actual: mac) else {
 			throw CryptoError.unauthenticCiphertext
 		}
 
 		// decrypt:
-		let cleartext = try AesCtr.compute(key: masterKey.aesMasterKey, iv: nonce, data: ciphertext)
+		let cleartext = try AesCtr.compute(key: masterkey.aesMasterKey, iv: nonce, data: ciphertext)
 		let contentKey = [UInt8](cleartext[8...])
 		return FileHeader(nonce: nonce, contentKey: contentKey)
 	}
@@ -172,7 +172,7 @@ public class Cryptor {
 		let ciphertextHeader = try encryptHeader(header)
 		ciphertextStream.write(ciphertextHeader, maxLength: ciphertextHeader.count)
 
-		// encrypt and write content:
+		// encrypt and write ciphertext content:
 		var chunkNumber: UInt64 = 0
 		while cleartextStream.hasBytesAvailable {
 			let cleartextChunk = try cleartextStream.read(maxLength: 32 * 1024)
@@ -205,11 +205,11 @@ public class Cryptor {
 
 	// TODO: progress
 	func decryptContent(from ciphertextStream: InputStream, to cleartextStream: OutputStream) throws {
-		// read and decrypt file header:
+		// read and decrypt header:
 		let ciphertextHeader = try ciphertextStream.read(maxLength: 88)
 		let header = try decryptHeader(ciphertextHeader)
 
-		// decrypt content:
+		// decrypt and write cleartext content:
 		var chunkNumber: UInt64 = 0
 		while ciphertextStream.hasBytesAvailable {
 			let ciphertextChunk = try ciphertextStream.read(maxLength: 16 + 32 * 1024 + 32)
@@ -224,7 +224,7 @@ public class Cryptor {
 		let ciphertext = try AesCtr.compute(key: fileKey, iv: chunkNonce, data: chunk)
 		let toBeAuthenticated = headerNonce + chunkNumber.bigEndian.byteArray() + chunkNonce + ciphertext
 		var mac = [UInt8](repeating: 0x00, count: Int(CC_SHA256_DIGEST_LENGTH))
-		CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), masterKey.macMasterKey, masterKey.macMasterKey.count, toBeAuthenticated, toBeAuthenticated.count, &mac)
+		CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), masterkey.macMasterKey, masterkey.macMasterKey.count, toBeAuthenticated, toBeAuthenticated.count, &mac)
 		return chunkNonce + ciphertext + mac
 	}
 
@@ -240,7 +240,7 @@ public class Cryptor {
 		// check MAC:
 		let toBeAuthenticated = headerNonce + chunkNumber.bigEndian.byteArray() + chunkNonce + ciphertext
 		var mac = [UInt8](repeating: 0x00, count: Int(CC_SHA256_DIGEST_LENGTH))
-		CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), masterKey.macMasterKey, masterKey.macMasterKey.count, toBeAuthenticated, toBeAuthenticated.count, &mac)
+		CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), masterkey.macMasterKey, masterkey.macMasterKey.count, toBeAuthenticated, toBeAuthenticated.count, &mac)
 		guard checkMAC(expected: expectedMAC, actual: mac) else {
 			throw CryptoError.unauthenticCiphertext
 		}
