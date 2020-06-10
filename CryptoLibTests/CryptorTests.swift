@@ -9,6 +9,12 @@
 import XCTest
 @testable import CryptoLib
 
+class CryptoSupportMock: CryptoSupport {
+	override func createRandomBytes(size: Int) throws -> [UInt8] {
+		return [UInt8](repeating: 0xF0, count: size)
+	}
+}
+
 class CryptorTests: XCTestCase {
 	var masterkey: Masterkey!
 
@@ -46,14 +52,14 @@ class CryptorTests: XCTestCase {
 	}
 
 	func testCreateHeader() throws {
-		let cryptor = Cryptor(masterkey: masterkey, csprng: CSPRNGMock())
+		let cryptor = Cryptor(masterkey: masterkey, cryptoSupport: CryptoSupportMock())
 		let header = try cryptor.createHeader()
 		XCTAssertEqual([UInt8](repeating: 0xF0, count: 16), header.nonce)
 		XCTAssertEqual([UInt8](repeating: 0xF0, count: 32), header.contentKey)
 	}
 
 	func testEncryptHeader() throws {
-		let cryptor = Cryptor(masterkey: masterkey, csprng: CSPRNGMock())
+		let cryptor = Cryptor(masterkey: masterkey, cryptoSupport: CryptoSupportMock())
 		let header = try cryptor.createHeader()
 		let encrypted = try cryptor.encryptHeader(header)
 		let expected: [UInt8] = [
@@ -73,7 +79,7 @@ class CryptorTests: XCTestCase {
 	}
 
 	func testDecryptHeader() throws {
-		let cryptor = Cryptor(masterkey: masterkey, csprng: CSPRNGMock())
+		let cryptor = Cryptor(masterkey: masterkey, cryptoSupport: CryptoSupportMock())
 		let ciphertext: [UInt8] = [
 			0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0,
 			0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0,
@@ -106,11 +112,5 @@ class CryptorTests: XCTestCase {
 		let decrypted = try cryptor.decryptSingleChunk(encrypted, chunkNumber: 0, headerNonce: nonce, fileKey: filekey)
 
 		XCTAssertEqual(cleartext.bytes, decrypted)
-	}
-}
-
-class CSPRNGMock: CSPRNG {
-	override func createRandomBytes(size: Int) throws -> [UInt8] {
-		return [UInt8](repeating: 0xF0, count: size)
 	}
 }

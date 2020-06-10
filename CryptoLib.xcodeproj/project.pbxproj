@@ -9,8 +9,8 @@
 /* Begin PBXBuildFile section */
 		4A7C213C2451F2AC00DE81E6 /* CryptoLib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4A7C21322451F2AC00DE81E6 /* CryptoLib.framework */; };
 		4A7C21432451F2AD00DE81E6 /* CryptoLib.h in Headers */ = {isa = PBXBuildFile; fileRef = 4A7C21352451F2AC00DE81E6 /* CryptoLib.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		74F0F752248FC7F200B4C26D /* CSPRNG.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74F0F751248FC7F200B4C26D /* CSPRNG.swift */; };
 		74F0F754248FC89B00B4C26D /* CryptoError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74F0F753248FC89B00B4C26D /* CryptoError.swift */; };
+		74F0F75A2490C1EB00B4C26D /* CryptoSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74F0F7592490C1EB00B4C26D /* CryptoSupport.swift */; };
 		7980E962F1389ACDDCEBB596 /* libPods-CryptoLibTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26296374923D6A536A006295 /* libPods-CryptoLibTests.a */; };
 		9E35C4EB24576A3D0006E50C /* CryptorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E35C4EA24576A3D0006E50C /* CryptorTests.swift */; };
 		9E44EEA624599C6900A37B01 /* AesSiv.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E44EEA524599C6900A37B01 /* AesSiv.swift */; };
@@ -45,8 +45,8 @@
 		4A7C21362451F2AC00DE81E6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4A7C213B2451F2AC00DE81E6 /* CryptoLibTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CryptoLibTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4A7C21422451F2AD00DE81E6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		74F0F751248FC7F200B4C26D /* CSPRNG.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSPRNG.swift; sourceTree = "<group>"; };
 		74F0F753248FC89B00B4C26D /* CryptoError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptoError.swift; sourceTree = "<group>"; };
+		74F0F7592490C1EB00B4C26D /* CryptoSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptoSupport.swift; sourceTree = "<group>"; };
 		9C0CDC395FD6C0670C07B37C /* Pods-CryptoLib.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CryptoLib.debug.xcconfig"; path = "Target Support Files/Pods-CryptoLib/Pods-CryptoLib.debug.xcconfig"; sourceTree = "<group>"; };
 		9E35C4EA24576A3D0006E50C /* CryptorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptorTests.swift; sourceTree = "<group>"; };
 		9E44EEA524599C6900A37B01 /* AesSiv.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AesSiv.swift; sourceTree = "<group>"; };
@@ -119,8 +119,8 @@
 				9EB822C0248AF82200879838 /* AesCtr.swift */,
 				9E44EEA524599C6900A37B01 /* AesSiv.swift */,
 				74F0F753248FC89B00B4C26D /* CryptoError.swift */,
+				74F0F7592490C1EB00B4C26D /* CryptoSupport.swift */,
 				9E9BB811245412E900F9FF51 /* Cryptor.swift */,
-				74F0F751248FC7F200B4C26D /* CSPRNG.swift */,
 				9E9BB8132454708600F9FF51 /* Masterkey.swift */,
 			);
 			path = CryptoLib;
@@ -329,8 +329,8 @@
 			files = (
 				9E9BB812245412E900F9FF51 /* Cryptor.swift in Sources */,
 				9EB822C1248AF82200879838 /* AesCtr.swift in Sources */,
+				74F0F75A2490C1EB00B4C26D /* CryptoSupport.swift in Sources */,
 				9E9BB8142454708600F9FF51 /* Masterkey.swift in Sources */,
-				74F0F752248FC7F200B4C26D /* CSPRNG.swift in Sources */,
 				9E44EEA624599C6900A37B01 /* AesSiv.swift in Sources */,
 				74F0F754248FC89B00B4C26D /* CryptoError.swift in Sources */,
 			);
