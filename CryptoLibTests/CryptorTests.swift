@@ -17,13 +17,20 @@ class CryptoSupportMock: CryptoSupport {
 
 class CryptorTests: XCTestCase {
 	var masterkey: Masterkey!
+	var tmpDirURL: URL!
 
-	override func setUp() {
+	override func setUpWithError() throws {
 		let aesKey: [UInt8] = Array(repeating: 0x55, count: 32)
 		let macKey: [UInt8] = Array(repeating: 0x77, count: 32)
 		masterkey = Masterkey.createFromRaw(aesMasterKey: aesKey, macMasterKey: macKey, version: 7)
+		tmpDirURL = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true).appendingPathComponent(UUID().uuidString, isDirectory: true)
+		try FileManager.default.createDirectory(at: tmpDirURL, withIntermediateDirectories: true)
 
 		XCTAssertNotNil(masterkey)
+	}
+
+	override func tearDownWithError() throws {
+		try FileManager.default.removeItem(at: tmpDirURL)
 	}
 
 	func testEncryptDirId() throws {
@@ -99,7 +106,20 @@ class CryptorTests: XCTestCase {
 	}
 
 	func testEncryptAndDecryptContent() throws {
-		// TODO:
+		continueAfterFailure = false
+
+		let cryptor = Cryptor(masterkey: masterkey, cryptoSupport: CryptoSupportMock())
+		let originalContentData = Data(repeating: 0x0F, count: 65 * 1024)
+		let originalContentURL = tmpDirURL.appendingPathComponent(UUID().uuidString)
+		try originalContentData.write(to: originalContentURL)
+
+		let ciphertextURL = tmpDirURL.appendingPathComponent(UUID().uuidString)
+		let cleartextURL = tmpDirURL.appendingPathComponent(UUID().uuidString)
+		try cryptor.encryptContent(from: originalContentURL, to: ciphertextURL)
+		try cryptor.decryptContent(from: ciphertextURL, to: cleartextURL)
+
+		let cleartextData = try Data(contentsOf: cleartextURL)
+		XCTAssertEqual(originalContentData, cleartextData)
 	}
 
 	func testEncryptAndDecryptSingleChunk() throws {

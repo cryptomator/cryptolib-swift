@@ -27,13 +27,16 @@ extension FixedWidthInteger {
 }
 
 extension InputStream {
-	public func read(maxLength: Int) throws -> [UInt8] {
+	public func read(maxLength: Int) throws -> [UInt8]? {
 		var buffer = [UInt8](repeating: 0x00, count: maxLength)
 		let length = read(&buffer, maxLength: maxLength)
-		guard length >= 0 else {
+		if length == 0 {
+			return nil
+		}
+		guard length > 0 else {
 			throw streamError ?? CryptoError.ioError
 		}
-		assert(length < buffer.count)
+		assert(length <= buffer.count)
 		buffer.removeSubrange(length...)
 		return buffer
 	}
@@ -171,7 +174,9 @@ public class Cryptor {
 		// encrypt and write ciphertext content:
 		var chunkNumber: UInt64 = 0
 		while cleartextStream.hasBytesAvailable {
-			let cleartextChunk = try cleartextStream.read(maxLength: 32 * 1024)
+			guard let cleartextChunk = try cleartextStream.read(maxLength: 32 * 1024) else {
+				continue
+			}
 			let ciphertextChunk = try encryptSingleChunk(cleartextChunk, chunkNumber: chunkNumber, headerNonce: header.nonce, fileKey: header.contentKey)
 			ciphertextStream.write(ciphertextChunk, maxLength: ciphertextChunk.count)
 			chunkNumber += 1
@@ -202,13 +207,17 @@ public class Cryptor {
 	// TODO: progress
 	func decryptContent(from ciphertextStream: InputStream, to cleartextStream: OutputStream) throws {
 		// read and decrypt header:
-		let ciphertextHeader = try ciphertextStream.read(maxLength: 88)
+		guard let ciphertextHeader = try ciphertextStream.read(maxLength: 88) else {
+			throw CryptoError.ioError
+		}
 		let header = try decryptHeader(ciphertextHeader)
 
 		// decrypt and write cleartext content:
 		var chunkNumber: UInt64 = 0
 		while ciphertextStream.hasBytesAvailable {
-			let ciphertextChunk = try ciphertextStream.read(maxLength: 16 + 32 * 1024 + 32)
+			guard let ciphertextChunk = try ciphertextStream.read(maxLength: 16 + 32 * 1024 + 32) else {
+				continue
+			}
 			let cleartextChunk = try decryptSingleChunk(ciphertextChunk, chunkNumber: chunkNumber, headerNonce: header.nonce, fileKey: header.contentKey)
 			cleartextStream.write(cleartextChunk, maxLength: cleartextChunk.count)
 			chunkNumber += 1
