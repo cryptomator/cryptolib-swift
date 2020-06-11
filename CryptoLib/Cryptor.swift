@@ -143,7 +143,7 @@ public class Cryptor {
 
 	// MARK: - File Content Encryption and Decryption
 
-	func encryptContent(from cleartextURL: URL, to ciphertextURL: URL) throws {
+	public func encryptContent(from cleartextURL: URL, to ciphertextURL: URL) throws {
 		// open cleartext input stream:
 		guard let cleartextStream = InputStream(url: cleartextURL) else {
 			throw CryptoError.ioError
@@ -183,7 +183,7 @@ public class Cryptor {
 		}
 	}
 
-	func decryptContent(from ciphertextURL: URL, to cleartextURL: URL) throws {
+	public func decryptContent(from ciphertextURL: URL, to cleartextURL: URL) throws {
 		// open ciphertext input stream:
 		guard let ciphertextStream = InputStream(url: ciphertextURL) else {
 			throw CryptoError.ioError
