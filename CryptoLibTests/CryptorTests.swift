@@ -16,17 +16,12 @@ class CryptoSupportMock: CryptoSupport {
 }
 
 class CryptorTests: XCTestCase {
-	var masterkey: Masterkey!
+	let cryptor = Cryptor(masterkey: Masterkey.createFromRaw(aesMasterKey: [UInt8](repeating: 0x55, count: 32), macMasterKey: [UInt8](repeating: 0x77, count: 32), version: 7), cryptoSupport: CryptoSupportMock())
 	var tmpDirURL: URL!
 
 	override func setUpWithError() throws {
-		let aesKey: [UInt8] = Array(repeating: 0x55, count: 32)
-		let macKey: [UInt8] = Array(repeating: 0x77, count: 32)
-		masterkey = Masterkey.createFromRaw(aesMasterKey: aesKey, macMasterKey: macKey, version: 7)
 		tmpDirURL = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true).appendingPathComponent(UUID().uuidString, isDirectory: true)
 		try FileManager.default.createDirectory(at: tmpDirURL, withIntermediateDirectories: true)
-
-		XCTAssertNotNil(masterkey)
 	}
 
 	override func tearDownWithError() throws {
@@ -34,8 +29,6 @@ class CryptorTests: XCTestCase {
 	}
 
 	func testEncryptDirId() throws {
-		let cryptor = Cryptor(masterkey: masterkey)
-
 		let rootDir = try cryptor.encryptDirId("".data(using: .utf8)!)
 		XCTAssertEqual("VLWEHT553J5DR7OZLRJAYDIWFCXZABOD", rootDir)
 
@@ -44,9 +37,6 @@ class CryptorTests: XCTestCase {
 	}
 
 	func testEncryptAndDecryptName() throws {
-		continueAfterFailure = false
-
-		let cryptor = Cryptor(masterkey: masterkey)
 		let dirId = "foo".data(using: .utf8)!
 		let originalName = "hello.txt"
 
@@ -59,14 +49,12 @@ class CryptorTests: XCTestCase {
 	}
 
 	func testCreateHeader() throws {
-		let cryptor = Cryptor(masterkey: masterkey, cryptoSupport: CryptoSupportMock())
 		let header = try cryptor.createHeader()
 		XCTAssertEqual([UInt8](repeating: 0xF0, count: 16), header.nonce)
 		XCTAssertEqual([UInt8](repeating: 0xF0, count: 32), header.contentKey)
 	}
 
 	func testEncryptHeader() throws {
-		let cryptor = Cryptor(masterkey: masterkey, cryptoSupport: CryptoSupportMock())
 		let header = try cryptor.createHeader()
 		let encrypted = try cryptor.encryptHeader(header)
 		let expected: [UInt8] = [
@@ -86,7 +74,6 @@ class CryptorTests: XCTestCase {
 	}
 
 	func testDecryptHeader() throws {
-		let cryptor = Cryptor(masterkey: masterkey, cryptoSupport: CryptoSupportMock())
 		let ciphertext: [UInt8] = [
 			0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0,
 			0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0,
@@ -106,9 +93,6 @@ class CryptorTests: XCTestCase {
 	}
 
 	func testEncryptAndDecryptContent() throws {
-		continueAfterFailure = false
-
-		let cryptor = Cryptor(masterkey: masterkey, cryptoSupport: CryptoSupportMock())
 		let originalContentData = Data(repeating: 0x0F, count: 65 * 1024)
 		let originalContentURL = tmpDirURL.appendingPathComponent(UUID().uuidString, isDirectory: false)
 		try originalContentData.write(to: originalContentURL)
@@ -123,7 +107,6 @@ class CryptorTests: XCTestCase {
 	}
 
 	func testEncryptAndDecryptSingleChunk() throws {
-		let cryptor = Cryptor(masterkey: masterkey)
 		let nonce = [UInt8](repeating: 0x00, count: 16)
 		let filekey = [UInt8](repeating: 0x00, count: 32)
 		let cleartext = "hello world".data(using: .ascii)!
@@ -132,5 +115,50 @@ class CryptorTests: XCTestCase {
 		let decrypted = try cryptor.decryptSingleChunk(encrypted, chunkNumber: 0, headerNonce: nonce, fileKey: filekey)
 
 		XCTAssertEqual(cleartext.bytes, decrypted)
+	}
+
+	func testCalculateCiphertextSize() {
+		XCTAssertEqual(0, cryptor.calculateCiphertextSize(0))
+
+		XCTAssertEqual(1 + 48, cryptor.calculateCiphertextSize(1))
+		XCTAssertEqual(32 * 1024 - 1 + 48, cryptor.calculateCiphertextSize(32 * 1024 - 1))
+		XCTAssertEqual(32 * 1024 + 48, cryptor.calculateCiphertextSize(32 * 1024))
+
+		XCTAssertEqual(32 * 1024 + 1 + 48 * 2, cryptor.calculateCiphertextSize(32 * 1024 + 1))
+		XCTAssertEqual(32 * 1024 + 2 + 48 * 2, cryptor.calculateCiphertextSize(32 * 1024 + 2))
+		XCTAssertEqual(64 * 1024 - 1 + 48 * 2, cryptor.calculateCiphertextSize(64 * 1024 - 1))
+		XCTAssertEqual(64 * 1024 + 48 * 2, cryptor.calculateCiphertextSize(64 * 1024))
+
+		XCTAssertEqual(64 * 1024 + 1 + 48 * 3, cryptor.calculateCiphertextSize(64 * 1024 + 1))
+	}
+
+	func testCalculateCleartextSize() throws {
+		XCTAssertEqual(0, try cryptor.calculateCleartextSize(0))
+
+		XCTAssertEqual(1, try cryptor.calculateCleartextSize(1 + 48))
+		XCTAssertEqual(32 * 1024 - 1, try cryptor.calculateCleartextSize(32 * 1024 - 1 + 48))
+		XCTAssertEqual(32 * 1024, try cryptor.calculateCleartextSize(32 * 1024 + 48))
+
+		XCTAssertEqual(32 * 1024 + 1, try cryptor.calculateCleartextSize(32 * 1024 + 1 + 48 * 2))
+		XCTAssertEqual(32 * 1024 + 2, try cryptor.calculateCleartextSize(32 * 1024 + 2 + 48 * 2))
+		XCTAssertEqual(64 * 1024 - 1, try cryptor.calculateCleartextSize(64 * 1024 - 1 + 48 * 2))
+		XCTAssertEqual(64 * 1024, try cryptor.calculateCleartextSize(64 * 1024 + 48 * 2))
+
+		XCTAssertEqual(64 * 1024 + 1, try cryptor.calculateCleartextSize(64 * 1024 + 1 + 48 * 3))
+	}
+
+	func testCalculateCleartextSizeWithInvalidCiphertextSize() throws {
+		XCTAssertThrowsError(try cryptor.calculateCleartextSize(1), "invalid ciphertext size") { error in
+			XCTAssertEqual(error as! CryptoError, CryptoError.invalidParameter("Method not defined for input value 1"))
+		}
+		XCTAssertThrowsError(try cryptor.calculateCleartextSize(48), "invalid ciphertext size") { error in
+			XCTAssertEqual(error as! CryptoError, CryptoError.invalidParameter("Method not defined for input value 48"))
+		}
+		XCTAssertThrowsError(try cryptor.calculateCleartextSize(32 * 1024 + 1 + 48), "invalid ciphertext size") { error in
+			XCTAssertEqual(error as! CryptoError, CryptoError.invalidParameter("Method not defined for input value 32817"))
+		}
+		XCTAssertThrowsError(try cryptor.calculateCleartextSize(32 * 1024 + 48 * 2), "invalid ciphertext size") { error in
+			XCTAssertEqual(error as! CryptoError, CryptoError.invalidParameter("Method not defined for input value 32864"))
+		}
 	}
 }

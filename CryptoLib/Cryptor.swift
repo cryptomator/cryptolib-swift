@@ -53,6 +53,11 @@ struct FileHeader {
 }
 
 public class Cryptor {
+	static let fileHeaderLegacyPayloadSize = 8
+	static let fileHeaderSize = kCCBlockSizeAES128 + fileHeaderLegacyPayloadSize + kCCKeySizeAES256 + Int(CC_SHA256_DIGEST_LENGTH)
+	static let cleartextChunkSize = 32 * 1024
+	static let ciphertextChunkSize = kCCBlockSizeAES128 + cleartextChunkSize + Int(CC_SHA256_DIGEST_LENGTH)
+
 	private let masterkey: Masterkey
 	private let cryptoSupport: CryptoSupport
 
@@ -112,7 +117,7 @@ public class Cryptor {
 	}
 
 	func encryptHeader(_ header: FileHeader) throws -> [UInt8] {
-		let cleartext = [UInt8](repeating: 0xFF, count: 8) + header.contentKey
+		let cleartext = [UInt8](repeating: 0xFF, count: Cryptor.fileHeaderLegacyPayloadSize) + header.contentKey
 		let ciphertext = try AesCtr.compute(key: masterkey.aesMasterKey, iv: header.nonce, data: cleartext)
 		let toBeAuthenticated = header.nonce + ciphertext
 		var mac = [UInt8](repeating: 0x00, count: Int(CC_SHA256_DIGEST_LENGTH))
@@ -137,7 +142,7 @@ public class Cryptor {
 
 		// decrypt:
 		let cleartext = try AesCtr.compute(key: masterkey.aesMasterKey, iv: nonce, data: ciphertext)
-		let contentKey = [UInt8](cleartext[8...])
+		let contentKey = [UInt8](cleartext[Cryptor.fileHeaderLegacyPayloadSize...])
 		return FileHeader(nonce: nonce, contentKey: contentKey)
 	}
 
@@ -174,7 +179,7 @@ public class Cryptor {
 		// encrypt and write ciphertext content:
 		var chunkNumber: UInt64 = 0
 		while cleartextStream.hasBytesAvailable {
-			guard let cleartextChunk = try cleartextStream.read(maxLength: 32 * 1024) else {
+			guard let cleartextChunk = try cleartextStream.read(maxLength: Cryptor.cleartextChunkSize) else {
 				continue
 			}
 			let ciphertextChunk = try encryptSingleChunk(cleartextChunk, chunkNumber: chunkNumber, headerNonce: header.nonce, fileKey: header.contentKey)
@@ -207,7 +212,7 @@ public class Cryptor {
 	// TODO: progress
 	func decryptContent(from ciphertextStream: InputStream, to cleartextStream: OutputStream) throws {
 		// read and decrypt header:
-		guard let ciphertextHeader = try ciphertextStream.read(maxLength: 88) else {
+		guard let ciphertextHeader = try ciphertextStream.read(maxLength: Cryptor.fileHeaderSize) else {
 			throw CryptoError.ioError
 		}
 		let header = try decryptHeader(ciphertextHeader)
@@ -215,7 +220,7 @@ public class Cryptor {
 		// decrypt and write cleartext content:
 		var chunkNumber: UInt64 = 0
 		while ciphertextStream.hasBytesAvailable {
-			guard let ciphertextChunk = try ciphertextStream.read(maxLength: 16 + 32 * 1024 + 32) else {
+			guard let ciphertextChunk = try ciphertextStream.read(maxLength: Cryptor.ciphertextChunkSize) else {
 				continue
 			}
 			let cleartextChunk = try decryptSingleChunk(ciphertextChunk, chunkNumber: chunkNumber, headerNonce: header.nonce, fileKey: header.contentKey)
@@ -252,5 +257,30 @@ public class Cryptor {
 
 		// decrypt:
 		return try AesCtr.compute(key: fileKey, iv: chunkNonce, data: ciphertext)
+	}
+
+	// MARK: - File Size Calculation
+
+	public func calculateCiphertextSize(_ cleartextSize: Int) -> Int {
+		assert(cleartextSize >= 0, "expected cleartextSize to be positive, but was \(cleartextSize)")
+		let overheadPerChunk = Cryptor.ciphertextChunkSize - Cryptor.cleartextChunkSize
+		let numFullChunks = cleartextSize / Cryptor.cleartextChunkSize // floor by int-truncation
+		let additionalCleartextBytes = cleartextSize % Cryptor.cleartextChunkSize
+		let additionalCiphertextBytes = (additionalCleartextBytes == 0) ? 0 : additionalCleartextBytes + overheadPerChunk
+		assert(additionalCiphertextBytes >= 0)
+		return Cryptor.ciphertextChunkSize * numFullChunks + additionalCiphertextBytes
+	}
+
+	public func calculateCleartextSize(_ ciphertextSize: Int) throws -> Int {
+		assert(ciphertextSize >= 0, "expected ciphertextSize to be positive, but was \(ciphertextSize)")
+		let overheadPerChunk = Cryptor.ciphertextChunkSize - Cryptor.cleartextChunkSize
+		let numFullChunks = ciphertextSize / Cryptor.ciphertextChunkSize // floor by int-truncation
+		let additionalCiphertextBytes = ciphertextSize % Cryptor.ciphertextChunkSize
+		guard additionalCiphertextBytes == 0 || additionalCiphertextBytes > overheadPerChunk else {
+			throw CryptoError.invalidParameter("Method not defined for input value \(ciphertextSize)")
+		}
+		let additionalCleartextBytes = (additionalCiphertextBytes == 0) ? 0 : additionalCiphertextBytes - overheadPerChunk
+		assert(additionalCleartextBytes >= 0)
+		return Cryptor.cleartextChunkSize * numFullChunks + additionalCleartextBytes
 	}
 }
