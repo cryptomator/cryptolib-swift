@@ -110,11 +110,11 @@ class CryptorTests: XCTestCase {
 
 		let cryptor = Cryptor(masterkey: masterkey, cryptoSupport: CryptoSupportMock())
 		let originalContentData = Data(repeating: 0x0F, count: 65 * 1024)
-		let originalContentURL = tmpDirURL.appendingPathComponent(UUID().uuidString)
+		let originalContentURL = tmpDirURL.appendingPathComponent(UUID().uuidString, isDirectory: false)
 		try originalContentData.write(to: originalContentURL)
 
-		let ciphertextURL = tmpDirURL.appendingPathComponent(UUID().uuidString)
-		let cleartextURL = tmpDirURL.appendingPathComponent(UUID().uuidString)
+		let ciphertextURL = tmpDirURL.appendingPathComponent(UUID().uuidString, isDirectory: false)
+		let cleartextURL = tmpDirURL.appendingPathComponent(UUID().uuidString, isDirectory: false)
 		try cryptor.encryptContent(from: originalContentURL, to: ciphertextURL)
 		try cryptor.decryptContent(from: ciphertextURL, to: cleartextURL)
 
