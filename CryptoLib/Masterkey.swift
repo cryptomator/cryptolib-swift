@@ -49,14 +49,20 @@ public class Masterkey {
 
 	// MARK: - Masterkey Factory Methods
 
+	public static func createNew() throws -> Masterkey {
+		let cryptoSupport = CryptoSupport()
+		let aesMasterKey = try cryptoSupport.createRandomBytes(size: kCCKeySizeAES256)
+		let macMasterKey = try cryptoSupport.createRandomBytes(size: kCCKeySizeAES256)
+		return createFromRaw(aesMasterKey: aesMasterKey, macMasterKey: macMasterKey, version: 7)
+	}
+
 	public static func createFromMasterkeyFile(file: URL, password: String, pepper: [UInt8] = [UInt8]()) throws -> Masterkey {
 		let jsonData = try Data(contentsOf: file)
 		return try createFromMasterkeyFile(jsonData: jsonData, password: password, pepper: pepper)
 	}
 
 	public static func createFromMasterkeyFile(jsonData: Data, password: String, pepper: [UInt8] = [UInt8]()) throws -> Masterkey {
-		let jsonDecoder = JSONDecoder()
-		let decoded = try jsonDecoder.decode(MasterkeyJson.self, from: jsonData)
+		let decoded = try JSONDecoder().decode(MasterkeyJson.self, from: jsonData)
 		return try createFromMasterkeyFile(jsonData: decoded, password: password, pepper: pepper)
 	}
 

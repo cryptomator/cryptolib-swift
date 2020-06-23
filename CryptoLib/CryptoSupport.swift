@@ -8,7 +8,7 @@
 
 import Foundation
 
-class CryptoSupport {
+internal class CryptoSupport {
 	func createRandomBytes(size: Int) throws -> [UInt8] {
 		var randomBytes = [UInt8](repeating: 0x00, count: size)
 		guard SecRandomCopyBytes(kSecRandomDefault, randomBytes.count, &randomBytes) == errSecSuccess else {
