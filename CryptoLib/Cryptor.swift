@@ -61,9 +61,13 @@ public class Cryptor {
 	private let masterkey: Masterkey
 	private let cryptoSupport: CryptoSupport
 
-	init(masterkey: Masterkey, cryptoSupport: CryptoSupport = CryptoSupport()) {
+	init(masterkey: Masterkey, cryptoSupport: CryptoSupport) {
 		self.masterkey = masterkey
 		self.cryptoSupport = cryptoSupport
+	}
+
+	public convenience init(masterkey: Masterkey) {
+		self.init(masterkey: masterkey, cryptoSupport: CryptoSupport())
 	}
 
 	// MARK: - Path Encryption and Decryption
