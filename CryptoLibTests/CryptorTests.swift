@@ -28,18 +28,6 @@ class CryptorTests: XCTestCase {
 		try FileManager.default.removeItem(at: tmpDirURL)
 	}
 
-	func testEncodeMasterkeyJson() throws {
-		let jsonData = try cryptor.encodeMasterkeyJson(password: "asd")
-		let decoded = try JSONDecoder().decode(MasterkeyJson.self, from: jsonData)
-		XCTAssertEqual("8PDw8PDw8PA=", decoded.scryptSalt)
-		XCTAssertEqual(32768, decoded.scryptCostParam)
-		XCTAssertEqual(8, decoded.scryptBlockSize)
-		XCTAssertEqual("nDcSwW65LXWVnry/lAC88aVtZrkB6dUWC9QuLsrRq/ZFCAJaldMtoQ==", decoded.primaryMasterKey)
-		XCTAssertEqual("HCuwIhdRnXeA3U4Ohm9/m96IML9kH/OuhyR1ygEJ+zJWRnhzOrtz9A==", decoded.hmacMasterKey)
-		XCTAssertEqual("sAWFgFNhmtMPeNWr4zh+9Ps7GOtT0pknX11PRQ7eC9Q=", decoded.versionMac)
-		XCTAssertEqual(7, decoded.version)
-	}
-
 	func testEncryptDirId() throws {
 		let rootDir = try cryptor.encryptDirId("".data(using: .utf8)!)
 		XCTAssertEqual("VLWEHT553J5DR7OZLRJAYDIWFCXZABOD", rootDir)

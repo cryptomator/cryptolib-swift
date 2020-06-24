@@ -54,10 +54,6 @@ struct FileHeader {
 }
 
 public class Cryptor {
-	static let defaultScryptSaltSize = 8
-	static let defaultScryptCostParam = 1 << 15 // 2^15
-	static let defaultScryptBlockSize = 8
-
 	static let fileHeaderLegacyPayloadSize = 8
 	static let fileHeaderSize = kCCBlockSizeAES128 + fileHeaderLegacyPayloadSize + kCCKeySizeAES256 + Int(CC_SHA256_DIGEST_LENGTH)
 	static let cleartextChunkSize = 32 * 1024
@@ -73,33 +69,6 @@ public class Cryptor {
 
 	public convenience init(masterkey: Masterkey) {
 		self.init(masterkey: masterkey, cryptoSupport: CryptoSupport())
-	}
-
-	// MARK: - Masterkey Encoding
-
-	public func encodeMasterkeyJson(password: String, pepper: [UInt8] = [UInt8]()) throws -> Data {
-		let pw = [UInt8](password.precomposedStringWithCanonicalMapping.utf8)
-		let salt = try cryptoSupport.createRandomBytes(size: Cryptor.defaultScryptSaltSize)
-		let saltAndPepper = salt + pepper
-		let kek = try Scrypt(password: pw, salt: saltAndPepper, dkLen: kCCKeySizeAES256, N: Cryptor.defaultScryptCostParam, r: Cryptor.defaultScryptBlockSize, p: 1).calculate()
-
-		let wrappedMasterKey = try Masterkey.wrapMasterKey(rawKey: masterkey.aesMasterKey, kek: kek)
-		let wrappedHmacKey = try Masterkey.wrapMasterKey(rawKey: masterkey.macMasterKey, kek: kek)
-
-		var versionMac = [UInt8](repeating: 0x00, count: Int(CC_SHA256_DIGEST_LENGTH))
-		let versionBytes = withUnsafeBytes(of: UInt32(masterkey.version).bigEndian, Array.init)
-		CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), masterkey.macMasterKey, masterkey.macMasterKey.count, versionBytes, versionBytes.count, &versionMac)
-
-		let masterkeyJson = MasterkeyJson(
-			scryptSalt: Data(salt).base64EncodedString(),
-			scryptCostParam: Cryptor.defaultScryptCostParam,
-			scryptBlockSize: Cryptor.defaultScryptBlockSize,
-			primaryMasterKey: Data(wrappedMasterKey).base64EncodedString(),
-			hmacMasterKey: Data(wrappedHmacKey).base64EncodedString(),
-			versionMac: Data(versionMac).base64EncodedString(),
-			version: masterkey.version
-		)
-		return try JSONEncoder().encode(masterkeyJson)
 	}
 
 	// MARK: - Path Encryption and Decryption

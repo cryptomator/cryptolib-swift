@@ -28,6 +28,10 @@ enum MasterkeyError: Error, Equatable {
 }
 
 public class Masterkey {
+	static let defaultScryptSaltSize = 8
+	static let defaultScryptCostParam = 1 << 15 // 2^15
+	static let defaultScryptBlockSize = 8
+
 	private(set) var aesMasterKey: [UInt8]
 	private(set) var macMasterKey: [UInt8]
 	public let version: Int
@@ -47,7 +51,7 @@ public class Masterkey {
 		}
 	}
 
-	// MARK: - Masterkey Factory Methods
+	// MARK: - Factory
 
 	public static func createNew() throws -> Masterkey {
 		let cryptoSupport = CryptoSupport()
@@ -133,5 +137,36 @@ public class Masterkey {
 		} else {
 			throw MasterkeyError.unwrapFailed(status)
 		}
+	}
+
+	// MARK: - Export
+
+	public func exportEncrypted(password: String, pepper: [UInt8] = [UInt8]()) throws -> Data {
+		let masterkeyJson: MasterkeyJson = try exportEncrypted(password: password, pepper: pepper)
+		return try JSONEncoder().encode(masterkeyJson)
+	}
+
+	func exportEncrypted(password: String, pepper: [UInt8], scryptCostParam: Int = Masterkey.defaultScryptCostParam, cryptoSupport: CryptoSupport = CryptoSupport()) throws -> MasterkeyJson {
+		let pw = [UInt8](password.precomposedStringWithCanonicalMapping.utf8)
+		let salt = try cryptoSupport.createRandomBytes(size: Masterkey.defaultScryptSaltSize)
+		let saltAndPepper = salt + pepper
+		let kek = try Scrypt(password: pw, salt: saltAndPepper, dkLen: kCCKeySizeAES256, N: scryptCostParam, r: Masterkey.defaultScryptBlockSize, p: 1).calculate()
+
+		let wrappedMasterKey = try Masterkey.wrapMasterKey(rawKey: aesMasterKey, kek: kek)
+		let wrappedHmacKey = try Masterkey.wrapMasterKey(rawKey: macMasterKey, kek: kek)
+
+		var versionMac = [UInt8](repeating: 0x00, count: Int(CC_SHA256_DIGEST_LENGTH))
+		let versionBytes = withUnsafeBytes(of: UInt32(version).bigEndian, Array.init)
+		CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), macMasterKey, macMasterKey.count, versionBytes, versionBytes.count, &versionMac)
+
+		return MasterkeyJson(
+			scryptSalt: Data(salt).base64EncodedString(),
+			scryptCostParam: scryptCostParam,
+			scryptBlockSize: Masterkey.defaultScryptBlockSize,
+			primaryMasterKey: Data(wrappedMasterKey).base64EncodedString(),
+			hmacMasterKey: Data(wrappedHmacKey).base64EncodedString(),
+			versionMac: Data(versionMac).base64EncodedString(),
+			version: version
+		)
 	}
 }

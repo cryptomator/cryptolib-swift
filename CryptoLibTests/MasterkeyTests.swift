@@ -18,16 +18,6 @@ class MasterkeyTests: XCTestCase {
 		// Put teardown code here. This method is called after the invocation of each test method in the class.
 	}
 
-	func testWrapAndUnwrapKey() throws {
-		let rawKey = [UInt8](repeating: 0x77, count: 32)
-		let kek = [UInt8](repeating: 0x55, count: 32)
-		let wrapped = try Masterkey.wrapMasterKey(rawKey: rawKey, kek: kek)
-		XCTAssertNotNil(wrapped)
-		let unwrapped = try Masterkey.unwrapMasterKey(wrappedKey: wrapped, kek: kek)
-		XCTAssertNotNil(unwrapped)
-		XCTAssertEqual(rawKey, unwrapped)
-	}
-
 	func testCreateFromMasterkeyFile() throws {
 		let expectedKeys = [UInt8](repeating: 0x00, count: 32)
 		let jsonData = """
@@ -138,5 +128,27 @@ class MasterkeyTests: XCTestCase {
 		XCTAssertThrowsError(try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "asd"), "invalid password") { error in
 			XCTAssertEqual(error as! MasterkeyError, MasterkeyError.malformedMasterkeyFile("invalid base64 data in versionMac"))
 		}
+	}
+
+	func testWrapAndUnwrapKey() throws {
+		let rawKey = [UInt8](repeating: 0x77, count: 32)
+		let kek = [UInt8](repeating: 0x55, count: 32)
+		let wrapped = try Masterkey.wrapMasterKey(rawKey: rawKey, kek: kek)
+		XCTAssertNotNil(wrapped)
+		let unwrapped = try Masterkey.unwrapMasterKey(wrappedKey: wrapped, kek: kek)
+		XCTAssertNotNil(unwrapped)
+		XCTAssertEqual(rawKey, unwrapped)
+	}
+
+	func testExportEncrypted() throws {
+		let masterkey = Masterkey.createFromRaw(aesMasterKey: [UInt8](repeating: 0x55, count: 32), macMasterKey: [UInt8](repeating: 0x77, count: 32), version: 7)
+		let json = try masterkey.exportEncrypted(password: "asd", pepper: [UInt8](), scryptCostParam: 2, cryptoSupport: CryptoSupportMock())
+		XCTAssertEqual("8PDw8PDw8PA=", json.scryptSalt)
+		XCTAssertEqual(2, json.scryptCostParam)
+		XCTAssertEqual(8, json.scryptBlockSize)
+		XCTAssertEqual("jvdghkTc01VISrFly37pgaT/UKtXrDCvZcU3tT9Y98zyzn/pJ91bxw==", json.primaryMasterKey)
+		XCTAssertEqual("99I+J4bT3rVpZE8yZwKRV9gHVRmQ8XQEujAL9IuwLTc2D3mg5JEjKA==", json.hmacMasterKey)
+		XCTAssertEqual("sAWFgFNhmtMPeNWr4zh+9Ps7GOtT0pknX11PRQ7eC9Q=", json.versionMac)
+		XCTAssertEqual(7, json.version)
 	}
 }
