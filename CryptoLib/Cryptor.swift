@@ -153,6 +153,9 @@ public class Cryptor {
 
 	// MARK: - File Content Encryption and Decryption
 
+	/**
+	 This method supports implicit progress composition.
+	 */
 	public func encryptContent(from cleartextURL: URL, to ciphertextURL: URL) throws {
 		// open cleartext input stream:
 		guard let cleartextStream = InputStream(url: cleartextURL) else {
@@ -170,12 +173,24 @@ public class Cryptor {
 		ciphertextStream.open()
 		defer { ciphertextStream.close() }
 
+		// determine cleartext size:
+		let attributes = try? FileManager.default.attributesOfItem(atPath: cleartextURL.path)
+		let cleartextSize = attributes?[FileAttributeKey.size] as? Int
+
 		// encrypt:
-		try encryptContent(from: cleartextStream, to: ciphertextStream)
+		try encryptContent(from: cleartextStream, to: ciphertextStream, cleartextSize: cleartextSize)
 	}
 
-	// TODO: progress
-	func encryptContent(from cleartextStream: InputStream, to ciphertextStream: OutputStream) throws {
+	func encryptContent(from cleartextStream: InputStream, to ciphertextStream: OutputStream, cleartextSize: Int?) throws {
+		// create progress:
+		let progress: Progress
+		if let cleartextSize = cleartextSize {
+			let ciphertextSize = calculateCiphertextSize(cleartextSize)
+			progress = Progress(totalUnitCount: Int64(ciphertextSize))
+		} else {
+			progress = Progress(totalUnitCount: -1)
+		}
+
 		// encrypt and write header:
 		let header = try createHeader()
 		let ciphertextHeader = try encryptHeader(header)
@@ -190,9 +205,13 @@ public class Cryptor {
 			let ciphertextChunk = try encryptSingleChunk(cleartextChunk, chunkNumber: chunkNumber, headerNonce: header.nonce, fileKey: header.contentKey)
 			ciphertextStream.write(ciphertextChunk, maxLength: ciphertextChunk.count)
 			chunkNumber += 1
+			progress.completedUnitCount += Int64(ciphertextChunk.count)
 		}
 	}
 
+	/**
+	 This method supports implicit progress composition.
+	 */
 	public func decryptContent(from ciphertextURL: URL, to cleartextURL: URL) throws {
 		// open ciphertext input stream:
 		guard let ciphertextStream = InputStream(url: ciphertextURL) else {
@@ -210,12 +229,23 @@ public class Cryptor {
 		cleartextStream.open()
 		defer { cleartextStream.close() }
 
+		// determine ciphertext size:
+		let attributes = try? FileManager.default.attributesOfItem(atPath: ciphertextURL.path)
+		let ciphertextSize = attributes?[FileAttributeKey.size] as? Int
+
 		// decrypt:
-		try decryptContent(from: ciphertextStream, to: cleartextStream)
+		try decryptContent(from: ciphertextStream, to: cleartextStream, ciphertextSize: ciphertextSize)
 	}
 
-	// TODO: progress
-	func decryptContent(from ciphertextStream: InputStream, to cleartextStream: OutputStream) throws {
+	func decryptContent(from ciphertextStream: InputStream, to cleartextStream: OutputStream, ciphertextSize: Int?) throws {
+		// create progress:
+		let progress: Progress
+		if let ciphertextSize = ciphertextSize, let cleartextSize = try? calculateCleartextSize(ciphertextSize) {
+			progress = Progress(totalUnitCount: Int64(cleartextSize))
+		} else {
+			progress = Progress(totalUnitCount: -1)
+		}
+
 		// read and decrypt header:
 		guard let ciphertextHeader = try ciphertextStream.read(maxLength: Cryptor.fileHeaderSize) else {
 			throw CryptoError.ioError
@@ -231,6 +261,7 @@ public class Cryptor {
 			let cleartextChunk = try decryptSingleChunk(ciphertextChunk, chunkNumber: chunkNumber, headerNonce: header.nonce, fileKey: header.contentKey)
 			cleartextStream.write(cleartextChunk, maxLength: cleartextChunk.count)
 			chunkNumber += 1
+			progress.completedUnitCount += Int64(cleartextChunk.count)
 		}
 	}
 
