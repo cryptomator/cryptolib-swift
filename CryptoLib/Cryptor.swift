@@ -137,13 +137,13 @@ public class Cryptor {
 
 	// MARK: - File Header Encryption and Decryption
 
-	func createHeader() throws -> FileHeader {
+	internal func createHeader() throws -> FileHeader {
 		let nonce = try cryptoSupport.createRandomBytes(size: kCCBlockSizeAES128)
 		let contentKey = try cryptoSupport.createRandomBytes(size: kCCKeySizeAES256)
 		return FileHeader(nonce: nonce, contentKey: contentKey)
 	}
 
-	func encryptHeader(_ header: FileHeader) throws -> [UInt8] {
+	internal func encryptHeader(_ header: FileHeader) throws -> [UInt8] {
 		let cleartext = [UInt8](repeating: 0xFF, count: Cryptor.fileHeaderLegacyPayloadSize) + header.contentKey
 		let ciphertext = try AesCtr.compute(key: masterkey.aesMasterKey, iv: header.nonce, data: cleartext)
 		let toBeAuthenticated = header.nonce + ciphertext
@@ -152,7 +152,7 @@ public class Cryptor {
 		return header.nonce + ciphertext + mac
 	}
 
-	func decryptHeader(_ header: [UInt8]) throws -> FileHeader {
+	internal func decryptHeader(_ header: [UInt8]) throws -> FileHeader {
 		// decompose header:
 		let beginOfMAC = header.count - Int(CC_SHA256_DIGEST_LENGTH)
 		let nonce = [UInt8](header[0 ..< kCCBlockSizeAES128])
@@ -208,7 +208,7 @@ public class Cryptor {
 		try encryptContent(from: cleartextStream, to: ciphertextStream, cleartextSize: cleartextSize)
 	}
 
-	func encryptContent(from cleartextStream: InputStream, to ciphertextStream: OutputStream, cleartextSize: Int?) throws {
+	internal func encryptContent(from cleartextStream: InputStream, to ciphertextStream: OutputStream, cleartextSize: Int?) throws {
 		// create progress:
 		let progress: Progress
 		if let cleartextSize = cleartextSize {
@@ -269,7 +269,7 @@ public class Cryptor {
 		try decryptContent(from: ciphertextStream, to: cleartextStream, ciphertextSize: ciphertextSize)
 	}
 
-	func decryptContent(from ciphertextStream: InputStream, to cleartextStream: OutputStream, ciphertextSize: Int?) throws {
+	internal func decryptContent(from ciphertextStream: InputStream, to cleartextStream: OutputStream, ciphertextSize: Int?) throws {
 		// create progress:
 		let progress: Progress
 		if let ciphertextSize = ciphertextSize, let cleartextSize = try? calculateCleartextSize(ciphertextSize) {
@@ -297,7 +297,7 @@ public class Cryptor {
 		}
 	}
 
-	func encryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {
+	internal func encryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {
 		let chunkNonce = try cryptoSupport.createRandomBytes(size: kCCBlockSizeAES128)
 		let ciphertext = try AesCtr.compute(key: fileKey, iv: chunkNonce, data: chunk)
 		let toBeAuthenticated = headerNonce + chunkNumber.bigEndian.byteArray() + chunkNonce + ciphertext
@@ -306,7 +306,7 @@ public class Cryptor {
 		return chunkNonce + ciphertext + mac
 	}
 
-	func decryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {
+	internal func decryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {
 		assert(chunk.count >= kCCBlockSizeAES128 + Int(CC_SHA256_DIGEST_LENGTH), "ciphertext chunk must at least contain nonce + mac")
 
 		// decompose chunk:
