@@ -73,6 +73,12 @@ public class Cryptor {
 
 	// MARK: - Path Encryption and Decryption
 
+	/**
+	 Encrypts directory ID.
+
+	 - Parameter dirId: An arbitrary directory ID to be passed to one-way hash function.
+	 - Returns: Constant length string that is unlikely to collide with any other name.
+	 */
 	public func encryptDirId(_ dirId: Data) throws -> String {
 		let encrypted = try AesSiv.encrypt(aesKey: masterkey.aesMasterKey, macKey: masterkey.macMasterKey, plaintext: dirId.bytes)
 		var digest = [UInt8](repeating: 0x00, count: Int(CC_SHA1_DIGEST_LENGTH))
@@ -80,6 +86,14 @@ public class Cryptor {
 		return Data(digest).base32EncodedString
 	}
 
+	/**
+	 Encrypts filename.
+
+	 - Parameter cleartextName: Original filename including cleartext file extension.
+	 - Parameter dirId: Directory ID that will be used as associated data. It will not get encrypted but needs to be provided during decryption.
+	 - Parameter encoding: Encoding to use to encode the returned ciphertext. Defaults to base64url.
+	 - Returns: Encrypted filename without any file extension.
+	 */
 	public func encryptFileName(_ cleartextName: String, dirId: Data, encoding: FileNameEncoding = .base64url) throws -> String {
 		// encrypt:
 		let cleartext = [UInt8](cleartextName.precomposedStringWithCanonicalMapping.utf8)
@@ -92,6 +106,14 @@ public class Cryptor {
 		}
 	}
 
+	/**
+	 Decrypts filename.
+
+	 - Parameter ciphertextName: Ciphertext only. Any additional strings like file extensions need to be stripped first.
+	 - Parameter dirId: The same directed ID used during encryption as associated data.
+	 - Parameter encoding: Encoding to use to decode `ciphertextName`. Defaults to base64url.
+	 - Returns: Decrypted filename, probably including its cleartext file extension.
+	 */
 	public func decryptFileName(_ ciphertextName: String, dirId: Data, encoding: FileNameEncoding = .base64url) throws -> String {
 		// decode:
 		let maybeCiphertextData: Data? = {
@@ -154,7 +176,12 @@ public class Cryptor {
 	// MARK: - File Content Encryption and Decryption
 
 	/**
+	 Encrypts file content.
+
 	 This method supports implicit progress composition.
+
+	 - Parameter cleartextURL: The input URL of a cleartext file.
+	 - Parameter ciphertextURL: The output URL of the ciphertext file.
 	 */
 	public func encryptContent(from cleartextURL: URL, to ciphertextURL: URL) throws {
 		// open cleartext input stream:
@@ -210,7 +237,12 @@ public class Cryptor {
 	}
 
 	/**
+	 Decrypts file content.
+
 	 This method supports implicit progress composition.
+
+	 - Parameter ciphertextURL: The input URL of a ciphertext file.
+	 - Parameter cleartextURL: The output URL of the cleartext file.
 	 */
 	public func decryptContent(from ciphertextURL: URL, to cleartextURL: URL) throws {
 		// open ciphertext input stream:
@@ -297,8 +329,15 @@ public class Cryptor {
 
 	// MARK: - File Size Calculation
 
+	/**
+	 Calculates ciphertext size from cleartext size.
+
+	 - Parameter cleartextSize: Size of the unencrypted payload.
+	 - Precondition: `cleartextSize` must be positive.
+	 - Returns: Ciphertext size of a `cleartextSize`-sized cleartext encrypted with this `Cryptor`. Not including the file header.
+	 */
 	public func calculateCiphertextSize(_ cleartextSize: Int) -> Int {
-		assert(cleartextSize >= 0, "expected cleartextSize to be positive, but was \(cleartextSize)")
+		precondition(cleartextSize >= 0, "expected cleartextSize to be positive, but was \(cleartextSize)")
 		let overheadPerChunk = Cryptor.ciphertextChunkSize - Cryptor.cleartextChunkSize
 		let numFullChunks = cleartextSize / Cryptor.cleartextChunkSize // floor by int-truncation
 		let additionalCleartextBytes = cleartextSize % Cryptor.cleartextChunkSize
@@ -307,8 +346,15 @@ public class Cryptor {
 		return Cryptor.ciphertextChunkSize * numFullChunks + additionalCiphertextBytes
 	}
 
+	/**
+	 Calculates cleartext size from ciphertext size.
+
+	 - Parameter ciphertextSize: Size of the encrypted payload. Not including the file header.
+	 - Precondition: `ciphertextSize` must be positive.
+	 - Returns: Cleartext size of a `ciphertextSize`-sized ciphertext decrypted with this `Cryptor`.
+	 */
 	public func calculateCleartextSize(_ ciphertextSize: Int) throws -> Int {
-		assert(ciphertextSize >= 0, "expected ciphertextSize to be positive, but was \(ciphertextSize)")
+		precondition(ciphertextSize >= 0, "expected ciphertextSize to be positive, but was \(ciphertextSize)")
 		let overheadPerChunk = Cryptor.ciphertextChunkSize - Cryptor.cleartextChunkSize
 		let numFullChunks = ciphertextSize / Cryptor.ciphertextChunkSize // floor by int-truncation
 		let additionalCiphertextBytes = ciphertextSize % Cryptor.ciphertextChunkSize

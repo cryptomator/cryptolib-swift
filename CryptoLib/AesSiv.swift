@@ -1,5 +1,5 @@
 //
-//  Siv.swift
+//  AesSiv.swift
 //  CryptoLib
 //
 //  Created by Sebastian Stenzel on 29.04.20.
@@ -9,11 +9,20 @@
 import CommonCrypto
 import Foundation
 
-public class AesSiv {
+internal class AesSiv {
 	static let cryptoSupport = CryptoSupport()
 	static let zero = [UInt8](repeating: 0x00, count: 16)
 	static let dblConst: UInt8 = 0x87
 
+	/**
+	 Encrypts plaintext using SIV mode.
+
+	 - Parameter aesKey: SIV mode requires two separate keys. You can use one long key, which is splitted in half. See [RFC 5297 Section 2.2](https://tools.ietf.org/html/rfc5297#section-2.2).
+	 - Parameter macKey: SIV mode requires two separate keys. You can use one long key, which is splitted in half. See [RFC 5297 Section 2.2](https://tools.ietf.org/html/rfc5297#section-2.2).
+	 - Parameter plaintext: Your plaintext, which shall be encrypted.
+	 - Parameter ad: Associated data, which gets authenticated but not encrypted.
+	 - Returns: IV + Ciphertext as a concatenated byte array.
+	 */
 	public static func encrypt(aesKey: [UInt8], macKey: [UInt8], plaintext: [UInt8], ad: [UInt8]...) throws -> [UInt8] {
 		if plaintext.count > UInt32.max - 16 {
 			throw CryptoError.invalidParameter("plaintext must not be longer than 2^32 - 16 bytes")
@@ -23,7 +32,16 @@ public class AesSiv {
 		return iv + ciphertext
 	}
 
-	static func decrypt(aesKey: [UInt8], macKey: [UInt8], ciphertext: [UInt8], ad: [UInt8]...) throws -> [UInt8] {
+	/**
+	 Decrypts ciphertext using SIV mode.
+
+	 - Parameter aesKey: SIV mode requires two separate keys. You can use one long key, which is splitted in half. See [RFC 5297 Section 2.2](https://tools.ietf.org/html/rfc5297#section-2.2).
+	 - Parameter macKey: SIV mode requires two separate keys. You can use one long key, which is splitted in half. See [RFC 5297 Section 2.2](https://tools.ietf.org/html/rfc5297#section-2.2).
+	 - Parameter ciphertext: Your ciphertext, which shall be decrypted.
+	 - Parameter ad: Associated data, which needs to be authenticated during decryption.
+	 - Returns: Plaintext byte array.
+	 */
+	public static func decrypt(aesKey: [UInt8], macKey: [UInt8], ciphertext: [UInt8], ad: [UInt8]...) throws -> [UInt8] {
 		if ciphertext.count < 16 {
 			throw CryptoError.invalidParameter("ciphertext must be at least 16 bytes")
 		}

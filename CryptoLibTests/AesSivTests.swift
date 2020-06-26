@@ -1,5 +1,5 @@
 //
-//  SivTests.swift
+//  AesSivTests.swift
 //  CryptoLibTests
 //
 //  Created by Sebastian Stenzel on 29.04.20.

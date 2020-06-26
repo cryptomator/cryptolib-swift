@@ -9,7 +9,7 @@
 import CommonCrypto
 import Foundation
 
-enum CryptoError: Error, Equatable {
+public enum CryptoError: Error, Equatable {
 	case invalidParameter(_ reason: String)
 	case ccCryptorError(_ status: CCCryptorStatus)
 	case unauthenticCiphertext

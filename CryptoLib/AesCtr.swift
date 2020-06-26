@@ -5,12 +5,14 @@
 //  Created by Sebastian Stenzel on 06.06.20.
 //  Copyright © 2020 Skymatic GmbH. All rights reserved.
 //
+
 import CommonCrypto
 import Foundation
 
 internal class AesCtr {
 	/**
-	 High level AES-CTR wrapper around CommonCrypto primitives. Can be used for encryption and decryption (it is the same in CTR mode)
+	 High-level AES-CTR wrapper around CommonCrypto primitives. Can be used for encryption and decryption (it is the same in CTR mode).
+
 	 - Parameter key: 128 or 256 bit encryption key
 	 - Parameter iv: 128 bit initialization vector (must not be reused!)
 	 - Parameter data: data to be encrypted/decrypted

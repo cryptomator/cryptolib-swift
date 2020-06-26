@@ -93,17 +93,17 @@ class CryptorTests: XCTestCase {
 	}
 
 	func testEncryptAndDecryptContent() throws {
-		let originalContentData = Data(repeating: 0x0F, count: 65 * 1024)
-		let originalContentURL = tmpDirURL.appendingPathComponent(UUID().uuidString, isDirectory: false)
-		try originalContentData.write(to: originalContentURL)
+		let originalData = Data(repeating: 0x0F, count: 65 * 1024)
+		let originalURL = tmpDirURL.appendingPathComponent(UUID().uuidString, isDirectory: false)
+		try originalData.write(to: originalURL)
 
 		let ciphertextURL = tmpDirURL.appendingPathComponent(UUID().uuidString, isDirectory: false)
 		let cleartextURL = tmpDirURL.appendingPathComponent(UUID().uuidString, isDirectory: false)
-		try cryptor.encryptContent(from: originalContentURL, to: ciphertextURL)
+		try cryptor.encryptContent(from: originalURL, to: ciphertextURL)
 		try cryptor.decryptContent(from: ciphertextURL, to: cleartextURL)
 
 		let cleartextData = try Data(contentsOf: cleartextURL)
-		XCTAssertEqual(originalContentData, cleartextData)
+		XCTAssertEqual(originalData, cleartextData)
 	}
 
 	func testEncryptAndDecryptSingleChunk() throws {
