@@ -2,6 +2,8 @@
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/dba85991a19942bab0d3d587522397ef)](https://www.codacy.com/gh/cryptomator/cryptolib-swift)
 [![Codacy Badge](https://app.codacy.com/project/badge/Coverage/dba85991a19942bab0d3d587522397ef)](https://www.codacy.com/gh/cryptomator/cryptolib-swift)
 
+# CryptoLib Swift
+
 This library contains all cryptographic functions that are used by Cryptomator for iOS. The purpose of this project is to provide a separate light-weight library with its own release cycle that can be used in other projects, too.
 
 For more information on the Cryptomator encryption scheme, visit the security architecure page on [docs.cryptomator.org](https://docs.cryptomator.org/en/1.5/security/architecture/).
@@ -31,7 +33,9 @@ This will create a new masterkey with secure random bytes. Version will be set t
 let masterkey = try Masterkey.createNew()
 ```
 
-Another way is to create a masterkey from an existing masterkey file. This is equivalent to an unlock attempt. Either by URL:
+Another way is to create a masterkey from an existing masterkey file. This is equivalent to an unlock attempt.
+
+Either by URL:
 
 ```swift
 let fileURL = ...
