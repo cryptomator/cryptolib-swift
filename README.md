@@ -99,7 +99,7 @@ let cleartextName = try cryptor.decryptFileName(ciphertextName, dirId: dirId)
 
 #### File Content Encryption and Decryption
 
-Encrypt and decrypt file content via URLs.
+Encrypt and decrypt file content via URLs. These methods support [implicit progress composition](https://developer.apple.com/documentation/foundation/progress#1661068).
 
 ```swift
 let cryptor = ...
