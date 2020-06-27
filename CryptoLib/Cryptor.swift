@@ -231,8 +231,8 @@ public class Cryptor {
 			}
 			let ciphertextChunk = try encryptSingleChunk(cleartextChunk, chunkNumber: chunkNumber, headerNonce: header.nonce, fileKey: header.contentKey)
 			ciphertextStream.write(ciphertextChunk, maxLength: ciphertextChunk.count)
-			chunkNumber += 1
 			progress.completedUnitCount += Int64(ciphertextChunk.count)
+			chunkNumber += 1
 		}
 	}
 
@@ -272,7 +272,7 @@ public class Cryptor {
 	internal func decryptContent(from ciphertextStream: InputStream, to cleartextStream: OutputStream, ciphertextSize: Int?) throws {
 		// create progress:
 		let progress: Progress
-		if let ciphertextSize = ciphertextSize, let cleartextSize = try? calculateCleartextSize(ciphertextSize) {
+		if let ciphertextSize = ciphertextSize, let cleartextSize = try? calculateCleartextSize(ciphertextSize - Cryptor.fileHeaderSize) {
 			progress = Progress(totalUnitCount: Int64(cleartextSize))
 		} else {
 			progress = Progress(totalUnitCount: -1)
@@ -292,8 +292,8 @@ public class Cryptor {
 			}
 			let cleartextChunk = try decryptSingleChunk(ciphertextChunk, chunkNumber: chunkNumber, headerNonce: header.nonce, fileKey: header.contentKey)
 			cleartextStream.write(cleartextChunk, maxLength: cleartextChunk.count)
-			chunkNumber += 1
 			progress.completedUnitCount += Int64(cleartextChunk.count)
+			chunkNumber += 1
 		}
 	}
 

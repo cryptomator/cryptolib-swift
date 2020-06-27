@@ -99,8 +99,18 @@ class CryptorTests: XCTestCase {
 
 		let ciphertextURL = tmpDirURL.appendingPathComponent(UUID().uuidString, isDirectory: false)
 		let cleartextURL = tmpDirURL.appendingPathComponent(UUID().uuidString, isDirectory: false)
+		let overallProgress = Progress(totalUnitCount: 2)
+		let progressObserver = overallProgress.observe(\.fractionCompleted) { progress, _ in
+			print("\(progress.localizedDescription ?? "") (\(progress.localizedAdditionalDescription ?? ""))")
+		}
+		overallProgress.becomeCurrent(withPendingUnitCount: 1)
 		try cryptor.encryptContent(from: originalURL, to: ciphertextURL)
+		overallProgress.resignCurrent()
+		overallProgress.becomeCurrent(withPendingUnitCount: 1)
 		try cryptor.decryptContent(from: ciphertextURL, to: cleartextURL)
+		overallProgress.resignCurrent()
+		progressObserver.invalidate()
+		XCTAssertTrue(overallProgress.completedUnitCount >= overallProgress.totalUnitCount)
 
 		let cleartextData = try Data(contentsOf: cleartextURL)
 		XCTAssertEqual(originalData, cleartextData)
