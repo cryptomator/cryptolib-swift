@@ -164,7 +164,7 @@ public class Masterkey {
 	// MARK: - Export
 
 	/**
-	 Export encrypted/wrapped masterkey and other metadata as JSON data.
+	 Exports encrypted/wrapped masterkey and other metadata as JSON data.
 
 	 - Parameter password: The password used to encrypt the key material.
 	 - Parameter pepper: An application-specific pepper added to the salt during key derivation. Defaults to empty byte array.
