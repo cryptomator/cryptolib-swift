@@ -54,7 +54,7 @@ class MasterkeyTests: XCTestCase {
 		""".data(using: .utf8)!
 
 		XCTAssertThrowsError(try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "qwe"), "invalid password") { error in
-			XCTAssertEqual(error as! MasterkeyError, MasterkeyError.invalidPassword)
+			XCTAssertEqual(MasterkeyError.invalidPassword, error as! MasterkeyError)
 		}
 	}
 
@@ -72,7 +72,7 @@ class MasterkeyTests: XCTestCase {
 		""".data(using: .utf8)!
 
 		XCTAssertThrowsError(try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "asd"), "invalid password") { error in
-			XCTAssertEqual(error as! MasterkeyError, MasterkeyError.malformedMasterkeyFile("incorrect version or versionMac"))
+			XCTAssertEqual(MasterkeyError.malformedMasterkeyFile("incorrect version or versionMac"), error as! MasterkeyError)
 		}
 	}
 
@@ -90,7 +90,7 @@ class MasterkeyTests: XCTestCase {
 		""".data(using: .utf8)!
 
 		XCTAssertThrowsError(try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "asd"), "invalid password") { error in
-			XCTAssertEqual(error as! MasterkeyError, MasterkeyError.malformedMasterkeyFile("invalid base64 data in primaryMasterKey"))
+			XCTAssertEqual(MasterkeyError.malformedMasterkeyFile("invalid base64 data in primaryMasterKey"), error as! MasterkeyError)
 		}
 	}
 
@@ -108,7 +108,7 @@ class MasterkeyTests: XCTestCase {
 		""".data(using: .utf8)!
 
 		XCTAssertThrowsError(try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "asd"), "invalid password") { error in
-			XCTAssertEqual(error as! MasterkeyError, MasterkeyError.malformedMasterkeyFile("invalid base64 data in hmacMasterKey"))
+			XCTAssertEqual(MasterkeyError.malformedMasterkeyFile("invalid base64 data in hmacMasterKey"), error as! MasterkeyError)
 		}
 	}
 
@@ -126,7 +126,7 @@ class MasterkeyTests: XCTestCase {
 		""".data(using: .utf8)!
 
 		XCTAssertThrowsError(try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: "asd"), "invalid password") { error in
-			XCTAssertEqual(error as! MasterkeyError, MasterkeyError.malformedMasterkeyFile("invalid base64 data in versionMac"))
+			XCTAssertEqual(MasterkeyError.malformedMasterkeyFile("invalid base64 data in versionMac"), error as! MasterkeyError)
 		}
 	}
 
