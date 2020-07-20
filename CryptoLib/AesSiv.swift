@@ -9,7 +9,7 @@
 import CommonCrypto
 import Foundation
 
-internal class AesSiv {
+class AesSiv {
 	static let cryptoSupport = CryptoSupport()
 	static let zero = [UInt8](repeating: 0x00, count: 16)
 	static let dblConst: UInt8 = 0x87
@@ -23,7 +23,7 @@ internal class AesSiv {
 	 - Parameter ad: Associated data, which gets authenticated but not encrypted.
 	 - Returns: IV + Ciphertext as a concatenated byte array.
 	 */
-	public static func encrypt(aesKey: [UInt8], macKey: [UInt8], plaintext: [UInt8], ad: [UInt8]...) throws -> [UInt8] {
+	static func encrypt(aesKey: [UInt8], macKey: [UInt8], plaintext: [UInt8], ad: [UInt8]...) throws -> [UInt8] {
 		if plaintext.count > UInt32.max - 16 {
 			throw CryptoError.invalidParameter("plaintext must not be longer than 2^32 - 16 bytes")
 		}
@@ -41,7 +41,7 @@ internal class AesSiv {
 	 - Parameter ad: Associated data, which needs to be authenticated during decryption.
 	 - Returns: Plaintext byte array.
 	 */
-	public static func decrypt(aesKey: [UInt8], macKey: [UInt8], ciphertext: [UInt8], ad: [UInt8]...) throws -> [UInt8] {
+	static func decrypt(aesKey: [UInt8], macKey: [UInt8], ciphertext: [UInt8], ad: [UInt8]...) throws -> [UInt8] {
 		if ciphertext.count < 16 {
 			throw CryptoError.invalidParameter("ciphertext must be at least 16 bytes")
 		}
@@ -55,7 +55,9 @@ internal class AesSiv {
 		return plaintext
 	}
 
-	internal static func ctr(aesKey key: [UInt8], iv: [UInt8], plaintext: [UInt8]) throws -> [UInt8] {
+	// MARK: - Internal
+
+	static func ctr(aesKey key: [UInt8], iv: [UInt8], plaintext: [UInt8]) throws -> [UInt8] {
 		// clear out the 31st and 63rd bit (see https://tools.ietf.org/html/rfc5297#section-2.5)
 		var ctr = iv
 		ctr[8] &= 0x7F
@@ -63,7 +65,7 @@ internal class AesSiv {
 		return try AesCtr.compute(key: key, iv: ctr, data: plaintext)
 	}
 
-	internal static func s2v(macKey: [UInt8], plaintext: [UInt8], ad: [[UInt8]]) throws -> [UInt8] {
+	static func s2v(macKey: [UInt8], plaintext: [UInt8], ad: [[UInt8]]) throws -> [UInt8] {
 		// Maximum permitted AD length is the block size in bits - 2
 		if ad.count > 126 {
 			throw CryptoError.invalidParameter("too many ad")
@@ -89,7 +91,7 @@ internal class AesSiv {
 		return try cmac(macKey: macKey, data: t)
 	}
 
-	internal static func cmac(macKey key: [UInt8], data: [UInt8]) throws -> [UInt8] {
+	static func cmac(macKey key: [UInt8], data: [UInt8]) throws -> [UInt8] {
 		// subkey generation:
 		let l = try aes(key: key, plaintext: zero)
 		let k1 = l[0] & 0x80 == 0x00 ? shiftLeft(l) : dbl(l)

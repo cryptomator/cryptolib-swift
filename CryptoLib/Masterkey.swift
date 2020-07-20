@@ -20,7 +20,7 @@ struct MasterkeyJson: Codable {
 	let version: Int
 }
 
-enum MasterkeyError: Error, Equatable {
+public enum MasterkeyError: Error, Equatable {
 	case malformedMasterkeyFile(_ reason: String)
 	case invalidPassword
 	case unwrapFailed(_ status: CCCryptorStatus)
@@ -92,7 +92,7 @@ public class Masterkey {
 		return try createFromMasterkeyFile(jsonData: decoded, password: password, pepper: pepper)
 	}
 
-	internal static func createFromMasterkeyFile(jsonData: MasterkeyJson, password: String, pepper: [UInt8]) throws -> Masterkey {
+	private static func createFromMasterkeyFile(jsonData: MasterkeyJson, password: String, pepper: [UInt8]) throws -> Masterkey {
 		let pw = [UInt8](password.precomposedStringWithCanonicalMapping.utf8)
 		let salt = [UInt8](Data(base64Encoded: jsonData.scryptSalt)!)
 		let saltAndPepper = salt + pepper
@@ -126,7 +126,7 @@ public class Masterkey {
 		return createFromRaw(aesMasterKey: aesKey, macMasterKey: macKey, version: jsonData.version)
 	}
 
-	internal static func createFromRaw(aesMasterKey: [UInt8], macMasterKey: [UInt8], version: Int) -> Masterkey {
+	static func createFromRaw(aesMasterKey: [UInt8], macMasterKey: [UInt8], version: Int) -> Masterkey {
 		assert(aesMasterKey.count == kCCKeySizeAES256)
 		assert(macMasterKey.count == kCCKeySizeAES256)
 		return Masterkey(aesMasterKey: aesMasterKey, macMasterKey: macMasterKey, version: version)
@@ -134,7 +134,7 @@ public class Masterkey {
 
 	// MARK: - RFC 3394 Key Wrapping
 
-	internal static func wrapMasterKey(rawKey: [UInt8], kek: [UInt8]) throws -> [UInt8] {
+	static func wrapMasterKey(rawKey: [UInt8], kek: [UInt8]) throws -> [UInt8] {
 		assert(kek.count == kCCKeySizeAES256)
 		var wrappedKeyLen = CCSymmetricWrappedSize(CCWrappingAlgorithm(kCCWRAPAES), rawKey.count)
 		var wrappedKey = [UInt8](repeating: 0x00, count: wrappedKeyLen)
@@ -146,7 +146,7 @@ public class Masterkey {
 		}
 	}
 
-	internal static func unwrapMasterKey(wrappedKey: [UInt8], kek: [UInt8]) throws -> [UInt8] {
+	static func unwrapMasterKey(wrappedKey: [UInt8], kek: [UInt8]) throws -> [UInt8] {
 		assert(kek.count == kCCKeySizeAES256)
 		var unwrappedKeyLen = CCSymmetricUnwrappedSize(CCWrappingAlgorithm(kCCWRAPAES), wrappedKey.count)
 		var unwrappedKey = [UInt8](repeating: 0x00, count: unwrappedKeyLen)
@@ -175,7 +175,7 @@ public class Masterkey {
 		return try JSONEncoder().encode(masterkeyJson)
 	}
 
-	internal func exportEncrypted(password: String, pepper: [UInt8], scryptCostParam: Int = Masterkey.defaultScryptCostParam, cryptoSupport: CryptoSupport = CryptoSupport()) throws -> MasterkeyJson {
+	func exportEncrypted(password: String, pepper: [UInt8], scryptCostParam: Int = Masterkey.defaultScryptCostParam, cryptoSupport: CryptoSupport = CryptoSupport()) throws -> MasterkeyJson {
 		let pw = [UInt8](password.precomposedStringWithCanonicalMapping.utf8)
 		let salt = try cryptoSupport.createRandomBytes(size: Masterkey.defaultScryptSaltSize)
 		let saltAndPepper = salt + pepper

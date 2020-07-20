@@ -9,7 +9,7 @@
 import CommonCrypto
 import Foundation
 
-internal class AesCtr {
+class AesCtr {
 	/**
 	 High-level AES-CTR wrapper around CommonCrypto primitives. Can be used for encryption and decryption (it is the same in CTR mode).
 
@@ -18,7 +18,7 @@ internal class AesCtr {
 	 - Parameter data: data to be encrypted/decrypted
 	 - Returns: encrypted/decrypted data
 	 */
-	public static func compute(key: [UInt8], iv: [UInt8], data: [UInt8]) throws -> [UInt8] {
+	static func compute(key: [UInt8], iv: [UInt8], data: [UInt8]) throws -> [UInt8] {
 		assert(key.count == kCCKeySizeAES256 || key.count == kCCKeySizeAES128, "key expected to be 128 or 256 bit")
 		assert(iv.count == kCCBlockSizeAES128, "iv expected to be 128 bit")
 

@@ -8,7 +8,7 @@
 
 import Foundation
 
-internal class CryptoSupport {
+class CryptoSupport {
 	/**
 	 Creates an array of cryptographically secure random bytes.
 
