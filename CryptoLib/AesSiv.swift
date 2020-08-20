@@ -24,9 +24,7 @@ class AesSiv {
 	 - Returns: IV + Ciphertext as a concatenated byte array.
 	 */
 	static func encrypt(aesKey: [UInt8], macKey: [UInt8], plaintext: [UInt8], ad: [UInt8]...) throws -> [UInt8] {
-		if plaintext.count > UInt32.max - 16 {
-			throw CryptoError.invalidParameter("plaintext must not be longer than 2^32 - 16 bytes")
-		}
+		assert(plaintext.count <= UInt32.max - 16, "plaintext must not be longer than 2^32 - 16 bytes")
 		let iv = try s2v(macKey: macKey, plaintext: plaintext, ad: ad)
 		let ciphertext = try ctr(aesKey: aesKey, iv: iv, plaintext: plaintext)
 		return iv + ciphertext
@@ -42,9 +40,7 @@ class AesSiv {
 	 - Returns: Plaintext byte array.
 	 */
 	static func decrypt(aesKey: [UInt8], macKey: [UInt8], ciphertext: [UInt8], ad: [UInt8]...) throws -> [UInt8] {
-		if ciphertext.count < 16 {
-			throw CryptoError.invalidParameter("ciphertext must be at least 16 bytes")
-		}
+		assert(ciphertext.count >= 16, "ciphertext must be at least 16 bytes")
 		let iv = Array(ciphertext[..<16])
 		let actualCiphertext = Array(ciphertext[16...])
 		let plaintext = try ctr(aesKey: aesKey, iv: iv, plaintext: actualCiphertext)
@@ -67,9 +63,7 @@ class AesSiv {
 
 	static func s2v(macKey: [UInt8], plaintext: [UInt8], ad: [[UInt8]]) throws -> [UInt8] {
 		// Maximum permitted AD length is the block size in bits - 2
-		if ad.count > 126 {
-			throw CryptoError.invalidParameter("too many ad")
-		}
+		assert(ad.count <= 126, "too many ad")
 
 		// RFC 5297 defines a n == 0 case here. Where n is the length of the input vector:
 		// S1 = associatedData1, S2 = associatedData2, ... Sn = plaintext
