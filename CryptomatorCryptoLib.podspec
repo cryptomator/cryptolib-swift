@@ -13,7 +13,7 @@ Pod::Spec.new do |s|
 
   s.public_header_files = 'CryptoLib/CryptoLib.h'
   s.source_files = 'CryptoLib/**/*.{swift,h,m}'
-  s.ios.deployment_target = '8.0'
+  s.ios.deployment_target = '9.0'
   s.swift_version = '5.0'
 
   s.dependency 'CryptoSwift', '~> 1.3.0'
