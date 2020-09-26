@@ -14,7 +14,7 @@ let package = Package(
 	name: "CryptomatorCryptoLib",
 	platforms: [
 		.iOS(.v9),
-		.macOS(.v10_13)
+		.macOS(.v10_12)
 	],
 	products: [
 		.library(name: "CryptomatorCryptoLib", targets: ["CryptomatorCryptoLib"])
