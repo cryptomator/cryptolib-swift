@@ -1,13 +1,13 @@
 //
 //  AesCtrTests.swift
-//  CryptoLibTests
+//  CryptomatorCryptoLibTests
 //
 //  Created by Sebastian Stenzel on 06.06.20.
 //  Copyright © 2020 Skymatic GmbH. All rights reserved.
 //
 
 import XCTest
-@testable import CryptoLib
+@testable import CryptomatorCryptoLib
 
 // test vectors F5.5 and F5.6 from https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38a.pdf
 class AesCtrTests: XCTestCase {

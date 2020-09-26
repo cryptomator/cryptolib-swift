@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "4A7C21312451F2AC00DE81E6"
-               BuildableName = "CryptoLib.framework"
-               BlueprintName = "CryptoLib"
-               ReferencedContainer = "container:CryptoLib.xcodeproj">
+               BuildableName = "CryptomatorCryptoLib.framework"
+               BlueprintName = "CryptomatorCryptoLib"
+               ReferencedContainer = "container:CryptomatorCryptoLib.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "4A7C213A2451F2AC00DE81E6"
-               BuildableName = "CryptoLibTests.xctest"
-               BlueprintName = "CryptoLibTests"
-               ReferencedContainer = "container:CryptoLib.xcodeproj">
+               BuildableName = "CryptomatorCryptoLibTests.xctest"
+               BlueprintName = "CryptomatorCryptoLibTests"
+               ReferencedContainer = "container:CryptomatorCryptoLib.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -61,9 +61,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "4A7C21312451F2AC00DE81E6"
-            BuildableName = "CryptoLib.framework"
-            BlueprintName = "CryptoLib"
-            ReferencedContainer = "container:CryptoLib.xcodeproj">
+            BuildableName = "CryptomatorCryptoLib.framework"
+            BlueprintName = "CryptomatorCryptoLib"
+            ReferencedContainer = "container:CryptomatorCryptoLib.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
    </ProfileAction>

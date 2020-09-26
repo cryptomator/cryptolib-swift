@@ -18,11 +18,11 @@ jobs:
       - name: Install dependencies
         run: pod install
       - name: Build and test
-        run: set -o pipefail && env NSUnbufferedIO=YES xcodebuild -workspace 'CryptoLib.xcworkspace' -scheme 'CryptoLib' -destination 'name=iPhone 11 Pro' -enableCodeCoverage YES clean test | xcpretty
+        run: set -o pipefail && env NSUnbufferedIO=YES xcodebuild -workspace 'CryptomatorCryptoLib.xcworkspace' -scheme 'CryptomatorCryptoLib' -destination 'name=iPhone 11 Pro' -enableCodeCoverage YES clean test | xcpretty
       - name: Upload code coverage report
         run: |
           gem install slather
-          slather coverage -x --scheme CryptoLib --workspace CryptoLib.xcworkspace CryptoLib.xcodeproj
+          slather coverage -x --scheme CryptomatorCryptoLib --workspace CryptomatorCryptoLib.xcworkspace CryptomatorCryptoLib.xcodeproj
           bash <(curl -Ls https://coverage.codacy.com/get.sh)
         env:
           CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}

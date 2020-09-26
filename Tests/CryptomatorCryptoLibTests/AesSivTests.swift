@@ -1,13 +1,13 @@
 //
 //  AesSivTests.swift
-//  CryptoLibTests
+//  CryptomatorCryptoLibTests
 //
 //  Created by Sebastian Stenzel on 29.04.20.
 //  Copyright © 2020 Skymatic GmbH. All rights reserved.
 //
 
 import XCTest
-@testable import CryptoLib
+@testable import CryptomatorCryptoLib
 
 class AesSivTests: XCTestCase {
 	let aesKey: [UInt8] = [

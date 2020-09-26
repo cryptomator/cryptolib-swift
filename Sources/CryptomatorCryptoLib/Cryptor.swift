@@ -1,6 +1,6 @@
 //
 //  Cryptor.swift
-//  CryptoLib
+//  CryptomatorCryptoLib
 //
 //  Created by Sebastian Stenzel on 25.04.20.
 //  Copyright © 2020 Skymatic GmbH. All rights reserved.

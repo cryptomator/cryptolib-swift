@@ -1,13 +1,13 @@
 //
 //  MasterkeyTests.swift
-//  CryptoLibTests
+//  CryptomatorCryptoLibTests
 //
 //  Created by Sebastian Stenzel on 26.04.20.
 //  Copyright © 2020 Skymatic GmbH. All rights reserved.
 //
 
 import XCTest
-@testable import CryptoLib
+@testable import CryptomatorCryptoLib
 
 class MasterkeyTests: XCTestCase {
 	override func setUp() {

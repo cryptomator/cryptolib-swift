@@ -1,13 +1,13 @@
 //
 //  CryptorTests.swift
-//  CryptoLibTests
+//  CryptomatorCryptoLibTests
 //
 //  Created by Sebastian Stenzel on 27.04.20.
 //  Copyright © 2020 Skymatic GmbH. All rights reserved.
 //
 
 import XCTest
-@testable import CryptoLib
+@testable import CryptomatorCryptoLib
 
 class CryptoSupportMock: CryptoSupport {
 	override func createRandomBytes(size: Int) throws -> [UInt8] {

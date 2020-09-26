@@ -1,6 +1,6 @@
 //
 //  AesCtr.swift
-//  CryptoLib
+//  CryptomatorCryptoLib
 //
 //  Created by Sebastian Stenzel on 06.06.20.
 //  Copyright © 2020 Skymatic GmbH. All rights reserved.

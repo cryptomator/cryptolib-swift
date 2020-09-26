@@ -1,6 +1,6 @@
 //
 //  CryptoSupport.swift
-//  CryptoLib
+//  CryptomatorCryptoLib
 //
 //  Created by Tobias Hagemann on 10.06.20.
 //  Copyright © 2020 Skymatic GmbH. All rights reserved.
