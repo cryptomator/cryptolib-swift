@@ -36,7 +36,7 @@ class CryptoSupport {
 	 */
 	func compareBytes(expected: [UInt8], actual: [UInt8]) -> Bool {
 		assert(expected.count == actual.count, "parameters should be of same length")
-		if #available(iOS 10.1, macOS 10.12.1, *) {
+		if #available(iOS 10.1, macCatalyst 13.0, macOS 10.12.1, *) {
 			return timingsafe_bcmp(expected, actual, expected.count) == 0
 		} else {
 			var diff: UInt8 = 0
