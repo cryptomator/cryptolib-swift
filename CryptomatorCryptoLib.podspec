@@ -12,7 +12,7 @@ Pod::Spec.new do |s|
   s.social_media_url = 'https://twitter.com/Cryptomator'
 
   s.public_header_files = 'Sources/CryptomatorCryptoLib/CryptomatorCryptoLib.h'
-  s.source_files = 'Sources/CryptomatorCryptoLib/**/*.swift'
+  s.source_files = 'Sources/CryptomatorCryptoLib/**/*.{swift,h}'
   s.ios.deployment_target = '9.0'
   s.osx.deployment_target = '10.13'
   s.swift_version = '5.0'
