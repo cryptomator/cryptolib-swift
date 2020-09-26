@@ -1,7 +1,8 @@
 import XCTest
 
-import TestTests
+import CryptomatorCryptoLibTests
 
 var tests = [XCTestCaseEntry]()
-tests += TestTests.allTests()
+tests += CryptomatorCryptoLibTests.__allTests()
+
 XCTMain(tests)

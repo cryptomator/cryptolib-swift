@@ -14,6 +14,7 @@ Pod::Spec.new do |s|
   s.public_header_files = 'Sources/CryptomatorCryptoLib/CryptomatorCryptoLib.h'
   s.source_files = 'Sources/CryptomatorCryptoLib/**/*.swift'
   s.ios.deployment_target = '9.0'
+  s.osx.deployment_target = '10.13'
   s.swift_version = '5.0'
 
   s.dependency 'CryptoSwift', '~> 1.3.0'
