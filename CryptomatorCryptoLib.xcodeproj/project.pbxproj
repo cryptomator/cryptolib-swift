@@ -3,25 +3,24 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 52;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0C8F90937EFDC9B9D55AF19E /* libPods-CryptomatorCryptoLibTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B55D54DD75319956B4A5F46A /* libPods-CryptomatorCryptoLibTests.a */; };
 		4A7C213C2451F2AC00DE81E6 /* CryptomatorCryptoLib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4A7C21322451F2AC00DE81E6 /* CryptomatorCryptoLib.framework */; };
 		4A7C21432451F2AD00DE81E6 /* CryptomatorCryptoLib.h in Headers */ = {isa = PBXBuildFile; fileRef = 4A7C21352451F2AC00DE81E6 /* CryptomatorCryptoLib.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		74F0F754248FC89B00B4C26D /* CryptoError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74F0F753248FC89B00B4C26D /* CryptoError.swift */; };
 		74F0F75A2490C1EB00B4C26D /* CryptoSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74F0F7592490C1EB00B4C26D /* CryptoSupport.swift */; };
+		74F9352A251F44E0001F4ADA /* CryptoSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 74F93529251F44E0001F4ADA /* CryptoSwift */; };
+		74F9352F251F44FE001F4ADA /* SwiftBase32 in Frameworks */ = {isa = PBXBuildFile; productRef = 74F9352E251F44FE001F4ADA /* SwiftBase32 */; };
 		9E35C4EB24576A3D0006E50C /* CryptorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E35C4EA24576A3D0006E50C /* CryptorTests.swift */; };
 		9E44EEA624599C6900A37B01 /* AesSiv.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E44EEA524599C6900A37B01 /* AesSiv.swift */; };
 		9E44EEA92459AB1500A37B01 /* AesSivTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E44EEA724599C7800A37B01 /* AesSivTests.swift */; };
 		9E9BB812245412E900F9FF51 /* Cryptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9BB811245412E900F9FF51 /* Cryptor.swift */; };
 		9E9BB8142454708600F9FF51 /* Masterkey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9BB8132454708600F9FF51 /* Masterkey.swift */; };
 		9E9BB81624558DFF00F9FF51 /* MasterkeyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9BB81524558DFF00F9FF51 /* MasterkeyTests.swift */; };
-		9E9BB818245590C100F9FF51 /* libCryptoSwift.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9E9BB817245590C100F9FF51 /* libCryptoSwift.a */; };
 		9EB822C1248AF82200879838 /* AesCtr.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EB822C0248AF82200879838 /* AesCtr.swift */; };
 		9EB822C3248AF9C500879838 /* AesCtrTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EB822C2248AF9C500879838 /* AesCtrTests.swift */; };
-		F4D8BE98D2ACCFC2ACEB4B4D /* libPods-CryptomatorCryptoLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9EFD5232B8A20191311193CF /* libPods-CryptomatorCryptoLib.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -35,10 +34,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		080BF9098EF20B4D273353B2 /* Pods-CryptoLibTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CryptoLibTests.debug.xcconfig"; path = "Target Support Files/Pods-CryptoLibTests/Pods-CryptoLibTests.debug.xcconfig"; sourceTree = "<group>"; };
-		187D073CD93DB036796D77DC /* Pods-CryptoLibTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CryptoLibTests.release.xcconfig"; path = "Target Support Files/Pods-CryptoLibTests/Pods-CryptoLibTests.release.xcconfig"; sourceTree = "<group>"; };
-		2C6DE4F29372585DE89EE034 /* Pods-CryptomatorCryptoLibTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CryptomatorCryptoLibTests.debug.xcconfig"; path = "Target Support Files/Pods-CryptomatorCryptoLibTests/Pods-CryptomatorCryptoLibTests.debug.xcconfig"; sourceTree = "<group>"; };
-		46CE315EF43B1FF833C7A4FB /* Pods-CryptoLib.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CryptoLib.release.xcconfig"; path = "Target Support Files/Pods-CryptoLib/Pods-CryptoLib.release.xcconfig"; sourceTree = "<group>"; };
 		4A7C21322451F2AC00DE81E6 /* CryptomatorCryptoLib.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CryptomatorCryptoLib.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4A7C21352451F2AC00DE81E6 /* CryptomatorCryptoLib.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CryptomatorCryptoLib.h; sourceTree = "<group>"; };
 		4A7C21362451F2AC00DE81E6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -46,21 +41,14 @@
 		4A7C21422451F2AD00DE81E6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		74F0F753248FC89B00B4C26D /* CryptoError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptoError.swift; sourceTree = "<group>"; };
 		74F0F7592490C1EB00B4C26D /* CryptoSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptoSupport.swift; sourceTree = "<group>"; };
-		94D3052EF784FC4C00FF4C29 /* Pods-CryptomatorCryptoLib.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CryptomatorCryptoLib.debug.xcconfig"; path = "Target Support Files/Pods-CryptomatorCryptoLib/Pods-CryptomatorCryptoLib.debug.xcconfig"; sourceTree = "<group>"; };
-		9C0CDC395FD6C0670C07B37C /* Pods-CryptoLib.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CryptoLib.debug.xcconfig"; path = "Target Support Files/Pods-CryptoLib/Pods-CryptoLib.debug.xcconfig"; sourceTree = "<group>"; };
 		9E35C4EA24576A3D0006E50C /* CryptorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptorTests.swift; sourceTree = "<group>"; };
 		9E44EEA524599C6900A37B01 /* AesSiv.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AesSiv.swift; sourceTree = "<group>"; };
 		9E44EEA724599C7800A37B01 /* AesSivTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AesSivTests.swift; sourceTree = "<group>"; };
 		9E9BB811245412E900F9FF51 /* Cryptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cryptor.swift; sourceTree = "<group>"; };
 		9E9BB8132454708600F9FF51 /* Masterkey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Masterkey.swift; sourceTree = "<group>"; };
 		9E9BB81524558DFF00F9FF51 /* MasterkeyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterkeyTests.swift; sourceTree = "<group>"; };
-		9E9BB817245590C100F9FF51 /* libCryptoSwift.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libCryptoSwift.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		9EB822C0248AF82200879838 /* AesCtr.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AesCtr.swift; sourceTree = "<group>"; };
 		9EB822C2248AF9C500879838 /* AesCtrTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AesCtrTests.swift; sourceTree = "<group>"; };
-		9EFD5232B8A20191311193CF /* libPods-CryptomatorCryptoLib.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CryptomatorCryptoLib.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		B55D54DD75319956B4A5F46A /* libPods-CryptomatorCryptoLibTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CryptomatorCryptoLibTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		E7931D45710E24EA79F24F37 /* Pods-CryptomatorCryptoLibTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CryptomatorCryptoLibTests.release.xcconfig"; path = "Target Support Files/Pods-CryptomatorCryptoLibTests/Pods-CryptomatorCryptoLibTests.release.xcconfig"; sourceTree = "<group>"; };
-		EAA11A0503C99BA047061991 /* Pods-CryptomatorCryptoLib.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CryptomatorCryptoLib.release.xcconfig"; path = "Target Support Files/Pods-CryptomatorCryptoLib/Pods-CryptomatorCryptoLib.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -68,8 +56,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9E9BB818245590C100F9FF51 /* libCryptoSwift.a in Frameworks */,
-				F4D8BE98D2ACCFC2ACEB4B4D /* libPods-CryptomatorCryptoLib.a in Frameworks */,
+				74F9352F251F44FE001F4ADA /* SwiftBase32 in Frameworks */,
+				74F9352A251F44E0001F4ADA /* CryptoSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,31 +66,18 @@
 			buildActionMask = 2147483647;
 			files = (
 				4A7C213C2451F2AC00DE81E6 /* CryptomatorCryptoLib.framework in Frameworks */,
-				0C8F90937EFDC9B9D55AF19E /* libPods-CryptomatorCryptoLibTests.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		33F96BB57BB41A059EFBA16D /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				9E9BB817245590C100F9FF51 /* libCryptoSwift.a */,
-				9EFD5232B8A20191311193CF /* libPods-CryptomatorCryptoLib.a */,
-				B55D54DD75319956B4A5F46A /* libPods-CryptomatorCryptoLibTests.a */,
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
 		4A7C21282451F2AC00DE81E6 = {
 			isa = PBXGroup;
 			children = (
 				74FFC966251F3EBB004C4927 /* Sources */,
 				74FFC967251F3ED0004C4927 /* Tests */,
 				4A7C21332451F2AC00DE81E6 /* Products */,
-				D7D76AD3F7F6155DB2723364 /* Pods */,
-				33F96BB57BB41A059EFBA16D /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -158,21 +133,6 @@
 			path = Tests;
 			sourceTree = "<group>";
 		};
-		D7D76AD3F7F6155DB2723364 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				46CE315EF43B1FF833C7A4FB /* Pods-CryptoLib.release.xcconfig */,
-				9C0CDC395FD6C0670C07B37C /* Pods-CryptoLib.debug.xcconfig */,
-				080BF9098EF20B4D273353B2 /* Pods-CryptoLibTests.debug.xcconfig */,
-				187D073CD93DB036796D77DC /* Pods-CryptoLibTests.release.xcconfig */,
-				94D3052EF784FC4C00FF4C29 /* Pods-CryptomatorCryptoLib.debug.xcconfig */,
-				EAA11A0503C99BA047061991 /* Pods-CryptomatorCryptoLib.release.xcconfig */,
-				2C6DE4F29372585DE89EE034 /* Pods-CryptomatorCryptoLibTests.debug.xcconfig */,
-				E7931D45710E24EA79F24F37 /* Pods-CryptomatorCryptoLibTests.release.xcconfig */,
-			);
-			path = Pods;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -191,7 +151,6 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 4A7C21462451F2AD00DE81E6 /* Build configuration list for PBXNativeTarget "CryptomatorCryptoLib" */;
 			buildPhases = (
-				6DFD694B51EDFB57A524EA41 /* [CP] Check Pods Manifest.lock */,
 				4A7C212D2451F2AC00DE81E6 /* Headers */,
 				4A7C212E2451F2AC00DE81E6 /* Sources */,
 				4A7C212F2451F2AC00DE81E6 /* Frameworks */,
@@ -203,6 +162,10 @@
 			dependencies = (
 			);
 			name = CryptomatorCryptoLib;
+			packageProductDependencies = (
+				74F93529251F44E0001F4ADA /* CryptoSwift */,
+				74F9352E251F44FE001F4ADA /* SwiftBase32 */,
+			);
 			productName = CryptoLib;
 			productReference = 4A7C21322451F2AC00DE81E6 /* CryptomatorCryptoLib.framework */;
 			productType = "com.apple.product-type.framework";
@@ -211,7 +174,6 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 4A7C21492451F2AD00DE81E6 /* Build configuration list for PBXNativeTarget "CryptomatorCryptoLibTests" */;
 			buildPhases = (
-				B0398845BD49B4481C76093F /* [CP] Check Pods Manifest.lock */,
 				4A7C21372451F2AC00DE81E6 /* Sources */,
 				4A7C21382451F2AC00DE81E6 /* Frameworks */,
 				4A7C21392451F2AC00DE81E6 /* Resources */,
@@ -254,6 +216,10 @@
 				Base,
 			);
 			mainGroup = 4A7C21282451F2AC00DE81E6;
+			packageReferences = (
+				74F93528251F44E0001F4ADA /* XCRemoteSwiftPackageReference "CryptoSwift" */,
+				74F9352D251F44FE001F4ADA /* XCRemoteSwiftPackageReference "Base32" */,
+			);
 			productRefGroup = 4A7C21332451F2AC00DE81E6 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -282,28 +248,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		6DFD694B51EDFB57A524EA41 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-CryptomatorCryptoLib-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
 		74862A712469A6B2003D81CB /* Lint With SwiftFormat */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -321,28 +265,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "if which swiftformat >/dev/null; then\n  swiftformat --lint --lenient .\nelse\n  echo \"warning: SwiftFormat not installed, download from https://github.com/nicklockwood/SwiftFormat\"\nfi\n";
-		};
-		B0398845BD49B4481C76093F /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-CryptomatorCryptoLibTests-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -506,7 +428,6 @@
 		};
 		4A7C21472451F2AD00DE81E6 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 94D3052EF784FC4C00FF4C29 /* Pods-CryptomatorCryptoLib.debug.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
@@ -533,7 +454,6 @@
 		};
 		4A7C21482451F2AD00DE81E6 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = EAA11A0503C99BA047061991 /* Pods-CryptomatorCryptoLib.release.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
@@ -559,7 +479,6 @@
 		};
 		4A7C214A2451F2AD00DE81E6 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 2C6DE4F29372585DE89EE034 /* Pods-CryptomatorCryptoLibTests.debug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_FILE = Tests/CryptomatorCryptoLibTests/Info.plist;
@@ -577,7 +496,6 @@
 		};
 		4A7C214B2451F2AD00DE81E6 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = E7931D45710E24EA79F24F37 /* Pods-CryptomatorCryptoLibTests.release.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_FILE = Tests/CryptomatorCryptoLibTests/Info.plist;
@@ -624,6 +542,38 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		74F93528251F44E0001F4ADA /* XCRemoteSwiftPackageReference "CryptoSwift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/krzyzanowskim/CryptoSwift.git";
+			requirement = {
+				kind = upToNextMinorVersion;
+				minimumVersion = 1.3.0;
+			};
+		};
+		74F9352D251F44FE001F4ADA /* XCRemoteSwiftPackageReference "Base32" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/cryptomator/Base32.git";
+			requirement = {
+				kind = upToNextMinorVersion;
+				minimumVersion = 0.8.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		74F93529251F44E0001F4ADA /* CryptoSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 74F93528251F44E0001F4ADA /* XCRemoteSwiftPackageReference "CryptoSwift" */;
+			productName = CryptoSwift;
+		};
+		74F9352E251F44FE001F4ADA /* SwiftBase32 */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 74F9352D251F44FE001F4ADA /* XCRemoteSwiftPackageReference "Base32" */;
+			productName = SwiftBase32;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 4A7C21292451F2AC00DE81E6 /* Project object */;
 }

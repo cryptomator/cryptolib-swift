@@ -10,14 +10,25 @@ For more information on the Cryptomator encryption scheme, visit the security ar
 
 ## Requirements
 
-- iOS 8.0 or higher
+- iOS 9.0 or higher
 
 ## Installation
 
-The easiest way to use CryptoLib Swift in your app is via [CocoaPods](https://cocoapods.org/ "CocoaPods").
+### Swift Package Manager
 
-1. Add the following line in the project's Podfile file: `pod 'CryptomatorCryptoLib', '~> 1.0.0'`
-2. Run the command `pod install` from the Podfile folder directory.
+You can use [Swift Package Manager](https://swift.org/package-manager/ "Swift Package Manager").
+
+```swift
+.package(url: "https://github.com/cryptomator/cryptolib-swift.git", .upToNextMinor(from: "1.0.0"))
+```
+
+### CocoaPods
+
+You can use [CocoaPods](https://cocoapods.org/ "CocoaPods").
+
+```ruby
+`pod 'CryptomatorCryptoLib', '~> 1.0.0'`
+```
 
 ## Usage
 
