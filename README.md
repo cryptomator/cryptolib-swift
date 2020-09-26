@@ -28,7 +28,7 @@ You can use [Swift Package Manager](https://swift.org/package-manager/ "Swift Pa
 You can use [CocoaPods](https://cocoapods.org/ "CocoaPods").
 
 ```ruby
-`pod 'CryptomatorCryptoLib', '~> 1.0.0'`
+pod 'CryptomatorCryptoLib', '~> 1.0.0'
 ```
 
 ## Usage
