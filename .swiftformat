@@ -1,6 +1,6 @@
 # file options
 
---exclude Pods
+--exclude Tests/LinuxMain.swift,Tests/**/XCTestManifests.swift
 
 # format options
 
