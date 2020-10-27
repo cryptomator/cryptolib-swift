@@ -28,10 +28,10 @@ public enum MasterkeyError: Error, Equatable {
 }
 
 public class Masterkey {
-	static let latestVersion = 7
+	public static let defaultScryptCostParam = 1 << 15 // 2^15
 	static let defaultScryptSaltSize = 8
-	static let defaultScryptCostParam = 1 << 15 // 2^15
 	static let defaultScryptBlockSize = 8
+	static let latestVersion = 7
 
 	private(set) var aesMasterKey: [UInt8]
 	private(set) var macMasterKey: [UInt8]
@@ -168,14 +168,15 @@ public class Masterkey {
 
 	 - Parameter password: The password used to encrypt the key material.
 	 - Parameter pepper: An application-specific pepper added to the salt during key derivation. Defaults to empty byte array.
+	 - Parameter scryptCostParam: The work factor for the key derivation function (scrypt). Defaults to 32768.
 	 - Returns: JSON data with encrypted/wrapped masterkey and other metadata that can be stored in insecure locations.
 	 */
-	public func exportEncrypted(password: String, pepper: [UInt8] = [UInt8]()) throws -> Data {
-		let masterkeyJson: MasterkeyJson = try exportEncrypted(password: password, pepper: pepper)
+	public func exportEncrypted(password: String, pepper: [UInt8] = [UInt8](), scryptCostParam: Int = Masterkey.defaultScryptCostParam) throws -> Data {
+		let masterkeyJson: MasterkeyJson = try exportEncrypted(password: password, pepper: pepper, scryptCostParam: scryptCostParam)
 		return try JSONEncoder().encode(masterkeyJson)
 	}
 
-	func exportEncrypted(password: String, pepper: [UInt8], scryptCostParam: Int = Masterkey.defaultScryptCostParam, cryptoSupport: CryptoSupport = CryptoSupport()) throws -> MasterkeyJson {
+	func exportEncrypted(password: String, pepper: [UInt8], scryptCostParam: Int, cryptoSupport: CryptoSupport = CryptoSupport()) throws -> MasterkeyJson {
 		let pw = [UInt8](password.precomposedStringWithCanonicalMapping.utf8)
 		let salt = try cryptoSupport.createRandomBytes(size: Masterkey.defaultScryptSaltSize)
 		let saltAndPepper = salt + pepper
