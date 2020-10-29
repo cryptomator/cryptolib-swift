@@ -159,16 +159,16 @@ class CryptorTests: XCTestCase {
 
 	func testCalculateCleartextSizeWithInvalidCiphertextSize() throws {
 		XCTAssertThrowsError(try cryptor.calculateCleartextSize(1), "invalid ciphertext size") { error in
-			XCTAssertEqual(CryptoError.invalidParameter("Method not defined for input value 1"), error as? CryptoError)
+			XCTAssertEqual(.invalidParameter("Method not defined for input value 1"), error as? CryptoError)
 		}
 		XCTAssertThrowsError(try cryptor.calculateCleartextSize(48), "invalid ciphertext size") { error in
-			XCTAssertEqual(CryptoError.invalidParameter("Method not defined for input value 48"), error as? CryptoError)
+			XCTAssertEqual(.invalidParameter("Method not defined for input value 48"), error as? CryptoError)
 		}
 		XCTAssertThrowsError(try cryptor.calculateCleartextSize(32 * 1024 + 1 + 48), "invalid ciphertext size") { error in
-			XCTAssertEqual(CryptoError.invalidParameter("Method not defined for input value 32817"), error as? CryptoError)
+			XCTAssertEqual(.invalidParameter("Method not defined for input value 32817"), error as? CryptoError)
 		}
 		XCTAssertThrowsError(try cryptor.calculateCleartextSize(32 * 1024 + 48 * 2), "invalid ciphertext size") { error in
-			XCTAssertEqual(CryptoError.invalidParameter("Method not defined for input value 32864"), error as? CryptoError)
+			XCTAssertEqual(.invalidParameter("Method not defined for input value 32864"), error as? CryptoError)
 		}
 	}
 }
