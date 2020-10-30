@@ -9,7 +9,11 @@
 import CommonCrypto
 import CryptoSwift
 import Foundation
+#if SWIFT_PACKAGE
+import Base32
+#else
 import SwiftBase32
+#endif
 
 public extension Data {
 	init?(base64UrlEncoded base64String: String, options: Data.Base64DecodingOptions = []) {

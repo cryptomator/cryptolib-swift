@@ -21,10 +21,10 @@ let package = Package(
 	],
 	dependencies: [
 		.package(url: "https://github.com/krzyzanowskim/CryptoSwift.git", .upToNextMinor(from: "1.3.0")),
-		.package(url: "https://github.com/cryptomator/Base32.git", .upToNextMinor(from: "0.8.0"))
+		.package(url: "https://github.com/norio-nomura/Base32.git", .upToNextMinor(from: "0.8.0"))
 	],
 	targets: [
-		.target(name: "CryptomatorCryptoLib", dependencies: ["CryptoSwift", "SwiftBase32"]),
+		.target(name: "CryptomatorCryptoLib", dependencies: ["CryptoSwift", "Base32"]),
 		.testTarget(name: "CryptomatorCryptoLibTests", dependencies: ["CryptomatorCryptoLib"])
 	],
 	swiftLanguageVersions: [.v5]
