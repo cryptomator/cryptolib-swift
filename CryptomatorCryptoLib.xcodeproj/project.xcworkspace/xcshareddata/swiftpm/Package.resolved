@@ -2,12 +2,12 @@
   "object": {
     "pins": [
       {
-        "package": "SwiftBase32",
+        "package": "Base32",
         "repositoryURL": "https://github.com/cryptomator/Base32.git",
         "state": {
           "branch": null,
-          "revision": "aa919f98c6e884945385d76121a4a29ca48afc6f",
-          "version": "0.8.1"
+          "revision": "69fc95dd2e4229a2fd82e14d9358c23b0fd8cf74",
+          "version": "0.8.0"
         }
       },
       {
