@@ -216,8 +216,8 @@ public class Cryptor {
 		defer { ciphertextStream.close() }
 
 		// determine cleartext size:
-		let attributes = try? FileManager.default.attributesOfItem(atPath: cleartextURL.path)
-		let cleartextSize = attributes?[FileAttributeKey.size] as? Int
+		let attributes = try FileManager.default.attributesOfItem(atPath: cleartextURL.path)
+		let cleartextSize = attributes[FileAttributeKey.size] as? Int
 
 		// encrypt:
 		try encryptContent(from: cleartextStream, to: ciphertextStream, cleartextSize: cleartextSize)
@@ -277,8 +277,8 @@ public class Cryptor {
 		defer { cleartextStream.close() }
 
 		// determine ciphertext size:
-		let attributes = try? FileManager.default.attributesOfItem(atPath: ciphertextURL.path)
-		let ciphertextSize = attributes?[FileAttributeKey.size] as? Int
+		let attributes = try FileManager.default.attributesOfItem(atPath: ciphertextURL.path)
+		let ciphertextSize = attributes[FileAttributeKey.size] as? Int
 
 		// decrypt:
 		try decryptContent(from: ciphertextStream, to: cleartextStream, ciphertextSize: ciphertextSize)
