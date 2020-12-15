@@ -10,9 +10,9 @@ import CommonCrypto
 import CryptoSwift
 import Foundation
 #if SWIFT_PACKAGE
-	import Base32
+import Base32
 #else
-	import SwiftBase32
+import SwiftBase32
 #endif
 
 public extension Data {
