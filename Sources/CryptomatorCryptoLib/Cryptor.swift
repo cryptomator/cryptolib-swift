@@ -66,7 +66,7 @@ struct FileHeader {
 
 public class Cryptor {
 	static let fileHeaderLegacyPayloadSize = 8
-	static let fileHeaderSize = kCCBlockSizeAES128 + fileHeaderLegacyPayloadSize + kCCKeySizeAES256 + Int(CC_SHA256_DIGEST_LENGTH)
+	public static let fileHeaderSize = kCCBlockSizeAES128 + fileHeaderLegacyPayloadSize + kCCKeySizeAES256 + Int(CC_SHA256_DIGEST_LENGTH)
 	static let cleartextChunkSize = 32 * 1024
 	static let ciphertextChunkSize = kCCBlockSizeAES128 + cleartextChunkSize + Int(CC_SHA256_DIGEST_LENGTH)
 
