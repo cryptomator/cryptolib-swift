@@ -70,10 +70,6 @@ public class Cryptor {
 	static let cleartextChunkSize = 32 * 1024
 	static let ciphertextChunkSize = kCCBlockSizeAES128 + cleartextChunkSize + Int(CC_SHA256_DIGEST_LENGTH)
 
-	public var masterkeyVersion: Int {
-		return masterkey.version
-	}
-
 	private let masterkey: Masterkey
 	private let cryptoSupport: CryptoSupport
 
