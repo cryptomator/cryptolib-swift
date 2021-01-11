@@ -9,14 +9,8 @@
 import XCTest
 @testable import CryptomatorCryptoLib
 
-class CryptoSupportMock: CryptoSupport {
-	override func createRandomBytes(size: Int) throws -> [UInt8] {
-		return [UInt8](repeating: 0xF0, count: size)
-	}
-}
-
 class CryptorTests: XCTestCase {
-	let cryptor = Cryptor(masterkey: Masterkey.createFromRaw(aesMasterKey: [UInt8](repeating: 0x55, count: 32), macMasterKey: [UInt8](repeating: 0x77, count: 32), version: 7), cryptoSupport: CryptoSupportMock())
+	let cryptor = Cryptor(masterkey: Masterkey.createFromRaw(aesMasterKey: [UInt8](repeating: 0x55, count: 32), macMasterKey: [UInt8](repeating: 0x77, count: 32)), cryptoSupport: CryptoSupportMock())
 	var tmpDirURL: URL!
 
 	override func setUpWithError() throws {
