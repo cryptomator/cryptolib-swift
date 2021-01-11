@@ -37,45 +37,80 @@ pod 'CryptomatorCryptoLib', '~> 1.0.0'
 
 ### Masterkey
 
-`Masterkey` is a factory for masterkey objects that contain the masterkey bytes for AES encryption/decryption and MAC authentication. The version states the vault format version.
+`Masterkey` is a class that only contains the key material for AES encryption/decryption and MAC authentication. 
 
 #### Factory
 
-This will create a new masterkey with secure random bytes. Version will be set to the latest version (currently 7).
+This will create a new masterkey with secure random bytes.
 
 ```swift
 let masterkey = try Masterkey.createNew()
 ```
 
-Another way is to create a masterkey from an existing masterkey file. This is equivalent to an unlock attempt.
-
-Either by URL:
+Another way is to create a masterkey from raw bytes.
 
 ```swift
-let fileURL = ...
-let password = ...
-let pepper = ... // optional
-let masterkey = try Masterkey.createFromMasterkeyFile(fileURL: fileURL, password: password, pepper: pepper)
+let aesMasterKey = ...
+let macMasterKey = ...
+let masterkey = Masterkey.createFromRaw(aesMasterKey: aesMasterKey, macMasterKey: macMasterKey)
 ```
 
-Or by JSON data:
+### MasterkeyFile
+
+`MasterkeyFile` is a representation of the masterkey file. With that, you can unlock a masterkey file (and get a `Masterkey`), lock a masterkey file (and serialize it as JSON), or change the passphrase.
+
+#### Factory
+
+Create a masterkey file with content provided either from URL:
 
 ```swift
-let jsonData = ...
-let password = ...
-let pepper = ... // optional
-let masterkey = try Masterkey.createFromMasterkeyFile(jsonData: jsonData, password: password, pepper: pepper)
+let url = ...
+let masterkey = try MasterkeyFile.withContentFromURL(url: url)
 ```
 
-#### Export
+Or from JSON data:
+
+```swift
+let data = ...
+let masterkey = try MasterkeyFile.withContentFromData(data: data)
+```
+
+#### Unlock
+
+When you have a masterkey file, you can attempt an unlock. When successful, it unwraps the stored encryption and MAC keys into the masterkey, which can be used for the cryptor.
+
+```swift
+let masterkeyFile = ...
+let passphrase = ...
+let pepper = ... // optional
+let expectedVaultVersion = ... // optional
+let masterkey = try masterkeyFile.unlock(passphrase: passphrase, pepper: pepper, expectedVaultVersion: expectedVaultVersion)
+```
+
+#### Lock
 
 For persisting the masterkey, use this method to export its encrypted/wrapped masterkey and other metadata as JSON data.
 
 ```swift
 let masterkey = ...
-let password = ...
+let vaultVersion = ...
+let passphrase = ...
 let pepper = ... // optional
-let jsonData = try masterkey.exportEncrypted(password: password, pepper: pepper)
+let scryptCostParam = ... // optional
+let data = try MasterkeyFile.lock(masterkey: masterkey, vaultVersion: vaultVersion, passphrase: passphrase, pepper: pepper, scryptCostParam: scryptCostParam)
+```
+
+#### Change Passphrase
+
+The masterkey can be re-encrypted with a new passphrase.
+
+```swift
+let masterkeyFileData = ...
+let oldPassphrase = ...
+let newPassphrase = ...
+let pepper = ... // optional
+let scryptCostParam = ... // optional
+try MasterkeyFile.changePassphrase(masterkeyFileData: masterkeyFileData, oldPassphrase: oldPassphrase, newPassphrase: newPassphrase, pepper: pepper, scryptCostParam: scryptCostParam)
 ```
 
 ### Cryptor
