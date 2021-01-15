@@ -7,8 +7,8 @@
 //
 
 import CommonCrypto
-import CryptoSwift
 import Foundation
+import scrypt
 
 struct Content: Codable, Equatable {
 	let version: Int
@@ -23,6 +23,7 @@ struct Content: Codable, Equatable {
 public enum MasterkeyFileError: Error, Equatable {
 	case malformedMasterkeyFile(_ reason: String)
 	case invalidPassword
+	case keyDerivationFailed
 	case keyWrappingFailed(_ status: CCCryptorStatus)
 }
 
@@ -78,15 +79,19 @@ public class MasterkeyFile {
 		// derive keys:
 		let pw = [UInt8](passphrase.precomposedStringWithCanonicalMapping.utf8)
 		let salt = [UInt8](Data(base64Encoded: content.scryptSalt)!)
-		let kek = try Scrypt(password: pw, salt: salt + pepper, dkLen: kCCKeySizeAES256, N: content.scryptCostParam, r: content.scryptBlockSize, p: 1).calculate()
+		var kek = [UInt8](repeating: 0x00, count: kCCKeySizeAES256)
+		let scryptResult = crypto_scrypt(pw, pw.count, salt + pepper, salt.count + pepper.count, UInt64(content.scryptCostParam), UInt32(content.scryptBlockSize), 1, &kek, kCCKeySizeAES256)
+		guard scryptResult == 0 else {
+			throw MasterkeyFileError.keyDerivationFailed
+		}
 		guard let wrappedMasterKey = Data(base64Encoded: content.primaryMasterKey) else {
 			throw MasterkeyFileError.malformedMasterkeyFile("invalid base64 data in primaryMasterKey")
 		}
-		let aesKey = try MasterkeyFile.unwrapKey(wrappedMasterKey.bytes, kek: kek)
+		let aesKey = try MasterkeyFile.unwrapKey([UInt8](wrappedMasterKey), kek: kek)
 		guard let wrappedHmacKey = Data(base64Encoded: content.hmacMasterKey) else {
 			throw MasterkeyFileError.malformedMasterkeyFile("invalid base64 data in hmacMasterKey")
 		}
-		let macKey = try MasterkeyFile.unwrapKey(wrappedHmacKey.bytes, kek: kek)
+		let macKey = try MasterkeyFile.unwrapKey([UInt8](wrappedHmacKey), kek: kek)
 
 		// check MAC:
 		if let expectedVaultVersion = expectedVaultVersion {
@@ -132,7 +137,11 @@ public class MasterkeyFile {
 	static func lock(masterkey: Masterkey, vaultVersion: Int, passphrase: String, pepper: [UInt8], scryptCostParam: Int, cryptoSupport: CryptoSupport = CryptoSupport()) throws -> Content {
 		let pw = [UInt8](passphrase.precomposedStringWithCanonicalMapping.utf8)
 		let salt = try cryptoSupport.createRandomBytes(size: defaultScryptSaltSize)
-		let kek = try Scrypt(password: pw, salt: salt + pepper, dkLen: kCCKeySizeAES256, N: scryptCostParam, r: defaultScryptBlockSize, p: 1).calculate()
+		var kek = [UInt8](repeating: 0x00, count: kCCKeySizeAES256)
+		let scryptResult = crypto_scrypt(pw, pw.count, salt + pepper, salt.count + pepper.count, UInt64(scryptCostParam), UInt32(defaultScryptBlockSize), 1, &kek, kCCKeySizeAES256)
+		guard scryptResult == 0 else {
+			throw MasterkeyFileError.keyDerivationFailed
+		}
 
 		let wrappedMasterKey = try wrapKey(masterkey.aesMasterKey, kek: kek)
 		let wrappedHmacKey = try wrapKey(masterkey.macMasterKey, kek: kek)

@@ -7,7 +7,6 @@
 //
 
 import CommonCrypto
-import CryptoSwift
 import Foundation
 #if SWIFT_PACKAGE
 import Base32
@@ -91,7 +90,7 @@ public class Cryptor {
 	 - Returns: Constant length string that is unlikely to collide with any other name.
 	 */
 	public func encryptDirId(_ dirId: Data) throws -> String {
-		let encrypted = try AesSiv.encrypt(aesKey: masterkey.aesMasterKey, macKey: masterkey.macMasterKey, plaintext: dirId.bytes)
+		let encrypted = try AesSiv.encrypt(aesKey: masterkey.aesMasterKey, macKey: masterkey.macMasterKey, plaintext: [UInt8](dirId))
 		var digest = [UInt8](repeating: 0x00, count: Int(CC_SHA1_DIGEST_LENGTH))
 		CC_SHA1(encrypted, UInt32(encrypted.count) as CC_LONG, &digest)
 		return Data(digest).base32EncodedString
@@ -108,7 +107,7 @@ public class Cryptor {
 	public func encryptFileName(_ cleartextName: String, dirId: Data, encoding: FileNameEncoding = .base64url) throws -> String {
 		// encrypt:
 		let cleartext = [UInt8](cleartextName.precomposedStringWithCanonicalMapping.utf8)
-		let ciphertext = try AesSiv.encrypt(aesKey: masterkey.aesMasterKey, macKey: masterkey.macMasterKey, plaintext: cleartext, ad: dirId.bytes)
+		let ciphertext = try AesSiv.encrypt(aesKey: masterkey.aesMasterKey, macKey: masterkey.macMasterKey, plaintext: cleartext, ad: [UInt8](dirId))
 
 		// encode:
 		switch encoding {
@@ -138,7 +137,7 @@ public class Cryptor {
 		}
 
 		// decrypt:
-		let cleartext = try AesSiv.decrypt(aesKey: masterkey.aesMasterKey, macKey: masterkey.macMasterKey, ciphertext: ciphertextData.bytes, ad: dirId.bytes)
+		let cleartext = try AesSiv.decrypt(aesKey: masterkey.aesMasterKey, macKey: masterkey.macMasterKey, ciphertext: [UInt8](ciphertextData), ad: [UInt8](dirId))
 		if let str = String(data: Data(cleartext), encoding: .utf8) {
 			return str
 		} else {

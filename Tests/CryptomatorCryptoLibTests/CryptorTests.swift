@@ -113,12 +113,12 @@ class CryptorTests: XCTestCase {
 	func testEncryptAndDecryptSingleChunk() throws {
 		let nonce = [UInt8](repeating: 0x00, count: 16)
 		let filekey = [UInt8](repeating: 0x00, count: 32)
-		let cleartext = "hello world".data(using: .ascii)!
+		let cleartext = [UInt8]("hello world".data(using: .ascii)!)
 
-		let encrypted = try cryptor.encryptSingleChunk(cleartext.bytes, chunkNumber: 0, headerNonce: nonce, fileKey: filekey)
+		let encrypted = try cryptor.encryptSingleChunk(cleartext, chunkNumber: 0, headerNonce: nonce, fileKey: filekey)
 		let decrypted = try cryptor.decryptSingleChunk(encrypted, chunkNumber: 0, headerNonce: nonce, fileKey: filekey)
 
-		XCTAssertEqual(cleartext.bytes, decrypted)
+		XCTAssertEqual(cleartext, decrypted)
 	}
 
 	func testCalculateCiphertextSize() {
