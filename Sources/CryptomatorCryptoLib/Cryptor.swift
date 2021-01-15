@@ -8,10 +8,10 @@
 
 import CommonCrypto
 import Foundation
-#if SWIFT_PACKAGE
-import Base32
-#else
+#if COCOAPODS
 import SwiftBase32
+#else
+import Base32
 #endif
 
 public extension Data {
