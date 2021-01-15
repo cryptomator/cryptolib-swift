@@ -8,7 +8,11 @@
 
 import CommonCrypto
 import Foundation
+#if COCOAPODS
+import CryptomatorCryptoLib.scrypt
+#else
 import scrypt
+#endif
 
 struct Content: Codable, Equatable {
 	let version: Int

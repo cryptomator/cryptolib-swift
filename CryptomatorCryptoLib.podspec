@@ -19,6 +19,7 @@ Pod::Spec.new do |s|
   s.dependency 'SwiftBase32', '~> 0.8.0'
 
   s.subspec 'scrypt' do |ss|
+    ss.public_header_files = 'Sources/scrypt/scrypt.h', 'Sources/scrypt/include/crypto_scrypt.h'
     ss.source_files = 'Sources/scrypt/**/*.{h,c}'
   end
 end

@@ -38,8 +38,8 @@ jobs:
         run: |
           set -eo pipefail
           export LIB_VERSION=${GITHUB_REF##*/} # use shell parameter expansion to strip of 'refs/tags'
-          pod lib lint
-          pod trunk push
+          pod lib lint --allow-warnings
+          pod trunk push --allow-warnings
         env:
           COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
       - name: Draft release
