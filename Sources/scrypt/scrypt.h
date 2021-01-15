@@ -16,7 +16,7 @@ FOUNDATION_EXPORT const unsigned char scryptVersionString[];
 
 // In this header, you should import all the public headers of your framework using statements like #import <scrypt/PublicHeader.h>
 #if COCOAPODS
-#import <crypto_scrypt.h>
+#import "crypto_scrypt.h"
 #else
 #import <scrypt/crypto_scrypt.h>
 #endif
