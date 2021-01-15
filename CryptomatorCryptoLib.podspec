@@ -16,6 +16,9 @@ Pod::Spec.new do |s|
   s.osx.deployment_target = '10.12'
   s.swift_version = '5.1'
 
-  s.dependency 'CryptoSwift', '~> 1.3.0'
   s.dependency 'SwiftBase32', '~> 0.8.0'
+
+  s.subspec 'scrypt' do |ss|
+    ss.source_files = 'Sources/scrypt/**/*.{h,c}'
+  end
 end
