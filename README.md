@@ -178,7 +178,6 @@ In general, the following preference is used to choose the implementation of cry
 
 1. Apple Swift Crypto (HMAC)
 2. Apple CommonCrypto (AES-CTR, RFC 3394 Key Derivation)
-3. CryptoSwift (scrypt)
 
 ## Code of Conduct
 
