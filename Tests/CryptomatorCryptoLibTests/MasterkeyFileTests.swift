@@ -66,7 +66,7 @@ class MasterkeyFileTests: XCTestCase {
 		""".data(using: .utf8)!
 		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
 		XCTAssertThrowsError(try masterkeyFile.unlock(passphrase: "qwe", pepper: [UInt8](), expectedVaultVersion: 7), "wrong passphrase") { error in
-			XCTAssertEqual(.invalidPassword, error as? MasterkeyFileError)
+			XCTAssertEqual(.invalidPassphrase, error as? MasterkeyFileError)
 		}
 	}
 
@@ -180,7 +180,7 @@ class MasterkeyFileTests: XCTestCase {
 		XCTAssertEqual(expectedKey, masterkey.aesMasterKey)
 		XCTAssertEqual(expectedKey, masterkey.macMasterKey)
 		XCTAssertThrowsError(try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8](), expectedVaultVersion: 7), "wrong passphrase") { error in
-			XCTAssertEqual(.invalidPassword, error as? MasterkeyFileError)
+			XCTAssertEqual(.invalidPassphrase, error as? MasterkeyFileError)
 		}
 	}
 
@@ -196,7 +196,7 @@ class MasterkeyFileTests: XCTestCase {
 		let key = [UInt8](repeating: 0x77, count: 17)
 		let kek = [UInt8](repeating: 0x55, count: 32)
 		XCTAssertThrowsError(try MasterkeyFile.wrapKey(key, kek: kek), "invalid key") { error in
-			XCTAssertEqual(.keyWrappingFailed(CCCryptorStatus(kCCParamError)), error as? MasterkeyFileError)
+			XCTAssertEqual(.keyWrapFailed(CCCryptorStatus(kCCParamError)), error as? MasterkeyFileError)
 		}
 	}
 }

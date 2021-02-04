@@ -26,9 +26,9 @@ struct Content: Codable, Equatable {
 
 public enum MasterkeyFileError: Error, Equatable {
 	case malformedMasterkeyFile(_ reason: String)
-	case invalidPassword
+	case invalidPassphrase
 	case keyDerivationFailed
-	case keyWrappingFailed(_ status: CCCryptorStatus)
+	case keyWrapFailed(_ status: CCCryptorStatus)
 }
 
 public class MasterkeyFile {
@@ -195,7 +195,7 @@ public class MasterkeyFile {
 		if status == kCCSuccess {
 			return wrappedKey
 		} else {
-			throw MasterkeyFileError.keyWrappingFailed(status)
+			throw MasterkeyFileError.keyWrapFailed(status)
 		}
 	}
 
@@ -207,9 +207,9 @@ public class MasterkeyFile {
 			assert(unwrappedKeyLen == kCCKeySizeAES256)
 			return unwrappedKey
 		} else if status == kCCDecodeError {
-			throw MasterkeyFileError.invalidPassword
+			throw MasterkeyFileError.invalidPassphrase
 		} else {
-			throw MasterkeyFileError.keyWrappingFailed(status)
+			throw MasterkeyFileError.keyWrapFailed(status)
 		}
 	}
 }
