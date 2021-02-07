@@ -76,10 +76,9 @@ public class MasterkeyFile {
 
 	 - Parameter passphrase: The passphrase used during key derivation.
 	 - Parameter pepper: An optional application-specific pepper added to the scrypt's salt. Defaults to empty byte array.
-	 - Parameter expectedVaultVersion: An optional expected vault version.
 	 - Returns: A masterkey with the unwrapped keys.
 	 */
-	public func unlock(passphrase: String, pepper: [UInt8] = [UInt8](), expectedVaultVersion: Int? = nil) throws -> Masterkey {
+	public func unlock(passphrase: String, pepper: [UInt8] = [UInt8]()) throws -> Masterkey {
 		// derive keys:
 		let pw = [UInt8](passphrase.precomposedStringWithCanonicalMapping.utf8)
 		let salt = [UInt8](Data(base64Encoded: content.scryptSalt)!)
@@ -98,15 +97,13 @@ public class MasterkeyFile {
 		let macKey = try MasterkeyFile.unwrapKey([UInt8](wrappedHmacKey), kek: kek)
 
 		// check MAC:
-		if let expectedVaultVersion = expectedVaultVersion {
-			try checkVaultVersion(expectedVaultVersion: expectedVaultVersion, macKey: macKey)
-		}
+		try checkVaultVersion(macKey: macKey)
 
 		// construct key:
 		return Masterkey.createFromRaw(aesMasterKey: aesKey, macMasterKey: macKey)
 	}
 
-	private func checkVaultVersion(expectedVaultVersion: Int, macKey: [UInt8]) throws {
+	private func checkVaultVersion(macKey: [UInt8]) throws {
 		guard let storedVersionMac = Data(base64Encoded: content.versionMac), storedVersionMac.count == CC_SHA256_DIGEST_LENGTH else {
 			throw MasterkeyFileError.malformedMasterkeyFile("invalid base64 data in versionMac")
 		}

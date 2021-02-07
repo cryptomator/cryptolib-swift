@@ -47,7 +47,7 @@ class MasterkeyFileTests: XCTestCase {
 		}
 		""".data(using: .utf8)!
 		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
-		let masterkey = try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8](), expectedVaultVersion: 7)
+		let masterkey = try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]())
 		XCTAssertEqual(expectedKey, masterkey.aesMasterKey)
 		XCTAssertEqual(expectedKey, masterkey.macMasterKey)
 	}
@@ -65,7 +65,7 @@ class MasterkeyFileTests: XCTestCase {
 		}
 		""".data(using: .utf8)!
 		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
-		XCTAssertThrowsError(try masterkeyFile.unlock(passphrase: "qwe", pepper: [UInt8](), expectedVaultVersion: 7), "wrong passphrase") { error in
+		XCTAssertThrowsError(try masterkeyFile.unlock(passphrase: "qwe", pepper: [UInt8]()), "wrong passphrase") { error in
 			XCTAssertEqual(.invalidPassphrase, error as? MasterkeyFileError)
 		}
 	}
@@ -83,7 +83,7 @@ class MasterkeyFileTests: XCTestCase {
 		}
 		""".data(using: .utf8)!
 		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
-		XCTAssertThrowsError(try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8](), expectedVaultVersion: 7), "invalid version mac") { error in
+		XCTAssertThrowsError(try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]()), "invalid version mac") { error in
 			XCTAssertEqual(.malformedMasterkeyFile("incorrect version or versionMac"), error as? MasterkeyFileError)
 		}
 	}
@@ -101,7 +101,7 @@ class MasterkeyFileTests: XCTestCase {
 		}
 		""".data(using: .utf8)!
 		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
-		XCTAssertThrowsError(try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8](), expectedVaultVersion: 7), "malformed json") { error in
+		XCTAssertThrowsError(try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]()), "malformed json") { error in
 			XCTAssertEqual(.malformedMasterkeyFile("invalid base64 data in primaryMasterKey"), error as? MasterkeyFileError)
 		}
 	}
@@ -119,7 +119,7 @@ class MasterkeyFileTests: XCTestCase {
 		}
 		""".data(using: .utf8)!
 		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
-		XCTAssertThrowsError(try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8](), expectedVaultVersion: 7), "malformed json") { error in
+		XCTAssertThrowsError(try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]()), "malformed json") { error in
 			XCTAssertEqual(.malformedMasterkeyFile("invalid base64 data in hmacMasterKey"), error as? MasterkeyFileError)
 		}
 	}
@@ -137,7 +137,7 @@ class MasterkeyFileTests: XCTestCase {
 		}
 		""".data(using: .utf8)!
 		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
-		XCTAssertThrowsError(try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8](), expectedVaultVersion: 7), "malformed json") { error in
+		XCTAssertThrowsError(try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]()), "malformed json") { error in
 			XCTAssertEqual(.malformedMasterkeyFile("invalid base64 data in versionMac"), error as? MasterkeyFileError)
 		}
 	}
@@ -176,10 +176,10 @@ class MasterkeyFileTests: XCTestCase {
 		""".data(using: .utf8)!
 		let content = try MasterkeyFile.changePassphrase(masterkeyFileData: data, oldPassphrase: "asd", newPassphrase: "qwe", pepper: [UInt8](), scryptCostParam: 2, cryptoSupport: CryptoSupportMock())
 		let masterkeyFile = MasterkeyFile(content: content)
-		let masterkey = try masterkeyFile.unlock(passphrase: "qwe", pepper: [UInt8](), expectedVaultVersion: 7)
+		let masterkey = try masterkeyFile.unlock(passphrase: "qwe", pepper: [UInt8]())
 		XCTAssertEqual(expectedKey, masterkey.aesMasterKey)
 		XCTAssertEqual(expectedKey, masterkey.macMasterKey)
-		XCTAssertThrowsError(try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8](), expectedVaultVersion: 7), "wrong passphrase") { error in
+		XCTAssertThrowsError(try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]()), "wrong passphrase") { error in
 			XCTAssertEqual(.invalidPassphrase, error as? MasterkeyFileError)
 		}
 	}
