@@ -65,14 +65,14 @@ Create a masterkey file with content provided either from URL:
 
 ```swift
 let url = ...
-let masterkey = try MasterkeyFile.withContentFromURL(url: url)
+let masterkeyFile = try MasterkeyFile.withContentFromURL(url: url)
 ```
 
 Or from JSON data:
 
 ```swift
 let data = ...
-let masterkey = try MasterkeyFile.withContentFromData(data: data)
+let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
 ```
 
 #### Unlock
