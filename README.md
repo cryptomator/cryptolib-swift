@@ -83,8 +83,7 @@ When you have a masterkey file, you can attempt an unlock. When successful, it u
 let masterkeyFile = ...
 let passphrase = ...
 let pepper = ... // optional
-let expectedVaultVersion = ... // optional
-let masterkey = try masterkeyFile.unlock(passphrase: passphrase, pepper: pepper, expectedVaultVersion: expectedVaultVersion)
+let masterkey = try masterkeyFile.unlock(passphrase: passphrase, pepper: pepper)
 ```
 
 #### Lock
