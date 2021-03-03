@@ -12,7 +12,7 @@ import Foundation
 public class Masterkey {
 	private(set) var aesMasterKey: [UInt8]
 	private(set) var macMasterKey: [UInt8]
-	public var encoded: [UInt8] {
+	public var rawKey: [UInt8] {
 		return aesMasterKey + macMasterKey
 	}
 
