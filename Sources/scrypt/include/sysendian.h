@@ -1,6 +1,6 @@
 /*-
- * Copyright 2005-2016 Colin Percival.  All rights reserved.
- * Copyright 2005-2016 Tarsnap Backup Inc.  All rights reserved.
+ * Copyright 2005-2020 Colin Percival.  All rights reserved.
+ * Copyright 2011-2020 Tarsnap Backup Inc.  All rights reserved.
  * Copyright 2014 Sean Kelly.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,7 +24,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
 #ifndef _SYSENDIAN_H_
 #define _SYSENDIAN_H_
 
@@ -49,7 +48,7 @@ be16dec(const void * pp)
 {
 	const uint8_t * p = (uint8_t const *)pp;
 
-	return ((uint16_t)(p[1]) + ((uint16_t)(p[0]) << 8));
+	return (uint16_t)((uint16_t)(p[1]) + ((uint16_t)(p[0]) << 8));
 }
 
 static inline void
@@ -112,7 +111,7 @@ le16dec(const void * pp)
 {
 	const uint8_t * p = (uint8_t const *)pp;
 
-	return ((uint16_t)(p[0]) + ((uint16_t)(p[1]) << 8));
+	return (uint16_t)((uint16_t)(p[0]) + ((uint16_t)(p[1]) << 8));
 }
 
 static inline void

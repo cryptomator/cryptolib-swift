@@ -1,6 +1,6 @@
 /*-
- * Copyright 2005-2016 Colin Percival.  All rights reserved.
- * Copyright 2005-2016 Tarsnap Backup Inc.  All rights reserved.
+ * Copyright 2005-2020 Colin Percival.  All rights reserved.
+ * Copyright 2011-2020 Tarsnap Backup Inc.  All rights reserved.
  * Copyright 2014 Sean Kelly.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,7 +24,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>
@@ -88,6 +87,12 @@ static const uint32_t Krnd[64] = {
 	0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 };
 
+/* Magic initialization constants. */
+static const uint32_t initial_state[8] = {
+	0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
+	0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19
+};
+
 /* Elementary functions used by SHA256 */
 #define Ch(x, y, z)	((x & (y ^ z)) ^ z)
 #define Maj(x, y, z)	((x & (y | z)) | (y & z))
@@ -102,7 +107,7 @@ static const uint32_t Krnd[64] = {
 #define RND(a, b, c, d, e, f, g, h, k)			\
 	h += S1(e) + Ch(e, f, g) + k;			\
 	d += h;						\
-	h += S0(a) + Maj(a, b, c);
+	h += S0(a) + Maj(a, b, c)
 
 /* Adjusted round function for rotating state */
 #define RNDr(S, W, i, ii)			\
@@ -212,12 +217,6 @@ SHA256_Pad(SHA256_CTX * ctx, uint32_t tmp32[static restrict 72])
 	/* Mix in the final block. */
 	SHA256_Transform(ctx->state, ctx->buf, &tmp32[0], &tmp32[64]);
 }
-
-/* Magic initialization constants. */
-static const uint32_t initial_state[8] = {
-	0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
-	0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19
-};
 
 /**
  * SHA256_Init(ctx):
@@ -452,6 +451,9 @@ HMAC_SHA256_Final(uint8_t digest[32], HMAC_SHA256_CTX * ctx)
 
 	/* Call the real function. */
 	_HMAC_SHA256_Final(digest, ctx, tmp32, ihash);
+
+	/* Clear the context state. */
+	insecure_memzero(ctx, sizeof(HMAC_SHA256_CTX));
 
 	/* Clean the stack. */
 	insecure_memzero(tmp32, 288);

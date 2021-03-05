@@ -1,6 +1,6 @@
 /*-
- * Copyright 2005-2016 Colin Percival.  All rights reserved.
- * Copyright 2005-2016 Tarsnap Backup Inc.  All rights reserved.
+ * Copyright 2005-2020 Colin Percival.  All rights reserved.
+ * Copyright 2011-2020 Tarsnap Backup Inc.  All rights reserved.
  * Copyright 2014 Sean Kelly.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,7 +24,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
 #ifndef _INSECURE_MEMZERO_H_
 #define _INSECURE_MEMZERO_H_
 
