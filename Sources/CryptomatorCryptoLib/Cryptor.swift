@@ -71,14 +71,18 @@ public class Cryptor {
 
 	private let masterkey: Masterkey
 	private let cryptoSupport: CryptoSupport
+    private let contentCryptor: ContentCryptor
 
-	init(masterkey: Masterkey, cryptoSupport: CryptoSupport) {
+    init(masterkey: Masterkey, cryptoSupport: CryptoSupport, contentCryptor: ContentCryptor) {
 		self.masterkey = masterkey
 		self.cryptoSupport = cryptoSupport
+        self.contentCryptor = contentCryptor
 	}
 
 	public convenience init(masterkey: Masterkey) {
-		self.init(masterkey: masterkey, cryptoSupport: CryptoSupport())
+        let cryptoSupport = CryptoSupport();
+        let contentCryptor = CtrThenHmacContentCryptor(macKey: masterkey.macMasterKey, cryptoSupport: cryptoSupport)
+        self.init(masterkey: masterkey, cryptoSupport: cryptoSupport, contentCryptor: contentCryptor)
 	}
 
 	// MARK: - Path Encryption and Decryption
@@ -155,11 +159,7 @@ public class Cryptor {
 
 	func encryptHeader(_ header: FileHeader) throws -> [UInt8] {
 		let cleartext = [UInt8](repeating: 0xFF, count: Cryptor.fileHeaderLegacyPayloadSize) + header.contentKey
-		let ciphertext = try AesCtr.compute(key: masterkey.aesMasterKey, iv: header.nonce, data: cleartext)
-		let toBeAuthenticated = header.nonce + ciphertext
-		var mac = [UInt8](repeating: 0x00, count: Int(CC_SHA256_DIGEST_LENGTH))
-		CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), masterkey.macMasterKey, masterkey.macMasterKey.count, toBeAuthenticated, toBeAuthenticated.count, &mac)
-		return header.nonce + ciphertext + mac
+        return try contentCryptor.encrypt(cleartext, key: masterkey.aesMasterKey, nonce: header.nonce)
 	}
 
 	func decryptHeader(_ header: [UInt8]) throws -> FileHeader {
@@ -309,11 +309,7 @@ public class Cryptor {
 
 	func encryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {
 		let chunkNonce = try cryptoSupport.createRandomBytes(size: kCCBlockSizeAES128)
-		let ciphertext = try AesCtr.compute(key: fileKey, iv: chunkNonce, data: chunk)
-		let toBeAuthenticated = headerNonce + chunkNumber.bigEndian.byteArray() + chunkNonce + ciphertext
-		var mac = [UInt8](repeating: 0x00, count: Int(CC_SHA256_DIGEST_LENGTH))
-		CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), masterkey.macMasterKey, masterkey.macMasterKey.count, toBeAuthenticated, toBeAuthenticated.count, &mac)
-		return chunkNonce + ciphertext + mac
+        return try contentCryptor.encrypt(chunk, key: fileKey, nonce: chunkNonce, ad: headerNonce, chunkNumber.bigEndian.byteArray())
 	}
 
 	func decryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {

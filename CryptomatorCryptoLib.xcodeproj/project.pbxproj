@@ -28,6 +28,7 @@
 		9E35C4EB24576A3D0006E50C /* CryptorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E35C4EA24576A3D0006E50C /* CryptorTests.swift */; };
 		9E44EEA624599C6900A37B01 /* AesSiv.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E44EEA524599C6900A37B01 /* AesSiv.swift */; };
 		9E44EEA92459AB1500A37B01 /* AesSivTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E44EEA724599C7800A37B01 /* AesSivTests.swift */; };
+		9E97DC8D25F77BA40046C83E /* ContentCryptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E97DC8C25F77BA40046C83E /* ContentCryptor.swift */; };
 		9E9BB812245412E900F9FF51 /* Cryptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9BB811245412E900F9FF51 /* Cryptor.swift */; };
 		9E9BB8142454708600F9FF51 /* Masterkey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9BB8132454708600F9FF51 /* Masterkey.swift */; };
 		9E9BB81624558DFF00F9FF51 /* MasterkeyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9BB81524558DFF00F9FF51 /* MasterkeyTests.swift */; };
@@ -90,6 +91,7 @@
 		9E35C4EA24576A3D0006E50C /* CryptorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptorTests.swift; sourceTree = "<group>"; };
 		9E44EEA524599C6900A37B01 /* AesSiv.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AesSiv.swift; sourceTree = "<group>"; };
 		9E44EEA724599C7800A37B01 /* AesSivTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AesSivTests.swift; sourceTree = "<group>"; };
+		9E97DC8C25F77BA40046C83E /* ContentCryptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentCryptor.swift; sourceTree = "<group>"; };
 		9E9BB811245412E900F9FF51 /* Cryptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cryptor.swift; sourceTree = "<group>"; };
 		9E9BB8132454708600F9FF51 /* Masterkey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Masterkey.swift; sourceTree = "<group>"; };
 		9E9BB81524558DFF00F9FF51 /* MasterkeyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterkeyTests.swift; sourceTree = "<group>"; };
@@ -157,6 +159,7 @@
 				74F0F7592490C1EB00B4C26D /* CryptoSupport.swift */,
 				9E9BB8132454708600F9FF51 /* Masterkey.swift */,
 				74B4D38C2588CD60006C0567 /* MasterkeyFile.swift */,
+				9E97DC8C25F77BA40046C83E /* ContentCryptor.swift */,
 			);
 			path = CryptomatorCryptoLib;
 			sourceTree = "<group>";
@@ -409,6 +412,7 @@
 				74F0F75A2490C1EB00B4C26D /* CryptoSupport.swift in Sources */,
 				9E9BB8142454708600F9FF51 /* Masterkey.swift in Sources */,
 				9E44EEA624599C6900A37B01 /* AesSiv.swift in Sources */,
+				9E97DC8D25F77BA40046C83E /* ContentCryptor.swift in Sources */,
 				74F0F754248FC89B00B4C26D /* CryptoError.swift in Sources */,
 				74B4D38D2588CD60006C0567 /* MasterkeyFile.swift in Sources */,
 			);
