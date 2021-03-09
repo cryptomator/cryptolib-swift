@@ -163,23 +163,9 @@ public class Cryptor {
 	}
 
 	func decryptHeader(_ header: [UInt8]) throws -> FileHeader {
-		// decompose header:
-		let beginOfMAC = header.count - Int(CC_SHA256_DIGEST_LENGTH)
-		let nonce = [UInt8](header[0 ..< kCCBlockSizeAES128])
-		let ciphertext = [UInt8](header[kCCBlockSizeAES128 ..< beginOfMAC])
-		let expectedMAC = [UInt8](header[beginOfMAC...])
-
-		// check MAC:
-		let toBeAuthenticated = nonce + ciphertext
-		var mac = [UInt8](repeating: 0x00, count: Int(CC_SHA256_DIGEST_LENGTH))
-		CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), masterkey.macMasterKey, masterkey.macMasterKey.count, toBeAuthenticated, toBeAuthenticated.count, &mac)
-		guard cryptoSupport.compareBytes(expected: expectedMAC, actual: mac) else {
-			throw CryptoError.unauthenticCiphertext
-		}
-
-		// decrypt:
-		let cleartext = try AesCtr.compute(key: masterkey.aesMasterKey, iv: nonce, data: ciphertext)
-		let contentKey = [UInt8](cleartext[Cryptor.fileHeaderLegacyPayloadSize...])
+        let nonce = [UInt8](header[0 ..< contentCryptor.nonceLen])
+        let cleartext = try contentCryptor.decrypt(header, key: masterkey.aesMasterKey)
+        let contentKey = [UInt8](cleartext[Cryptor.fileHeaderLegacyPayloadSize...])
 		return FileHeader(nonce: nonce, contentKey: contentKey)
 	}
 
@@ -313,24 +299,7 @@ public class Cryptor {
 	}
 
 	func decryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {
-		assert(chunk.count >= kCCBlockSizeAES128 + Int(CC_SHA256_DIGEST_LENGTH), "ciphertext chunk must at least contain nonce + mac")
-
-		// decompose chunk:
-		let beginOfMAC = chunk.count - Int(CC_SHA256_DIGEST_LENGTH)
-		let chunkNonce = [UInt8](chunk[0 ..< kCCBlockSizeAES128])
-		let ciphertext = [UInt8](chunk[kCCBlockSizeAES128 ..< beginOfMAC])
-		let expectedMAC = [UInt8](chunk[beginOfMAC...])
-
-		// check MAC:
-		let toBeAuthenticated = headerNonce + chunkNumber.bigEndian.byteArray() + chunkNonce + ciphertext
-		var mac = [UInt8](repeating: 0x00, count: Int(CC_SHA256_DIGEST_LENGTH))
-		CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), masterkey.macMasterKey, masterkey.macMasterKey.count, toBeAuthenticated, toBeAuthenticated.count, &mac)
-		guard cryptoSupport.compareBytes(expected: expectedMAC, actual: mac) else {
-			throw CryptoError.unauthenticCiphertext
-		}
-
-		// decrypt:
-		return try AesCtr.compute(key: fileKey, iv: chunkNonce, data: ciphertext)
+        return try contentCryptor.decrypt(chunk, key: fileKey, ad: headerNonce, chunkNumber.bigEndian.byteArray())
 	}
 
 	// MARK: - File Size Calculation
