@@ -17,6 +17,7 @@ protocol ContentCryptor {
 	 Encrypts one single chunk of cleartext data.
 
 	 - Parameter chunk: The cleartext to be encrypted.
+	 - Parameter key: The encryption key.
 	 - Parameter nonce: The nonce/IV to use.
 	 - Parameter ad: Associated data, which needs to be authenticated during decryption.
 	 - Returns: Nonce/IV + ciphertext + MAC/tag, as a concatenated byte array
@@ -27,6 +28,7 @@ protocol ContentCryptor {
 	 Decrypts one single chunk of encrypted data.
 
 	 - Parameter chunk: The nonce/IV + ciphertext + MAC/tag, as a concatenated byte array.
+	 - Parameter key: The encryption key.
 	 - Parameter ad: Associated data, which needs to be authenticated during decryption.
 	 - Returns: The original cleartext
 	 */
