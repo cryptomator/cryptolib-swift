@@ -64,34 +64,31 @@ struct FileHeader {
 }
 
 public class Cryptor {
-    private let fileHeaderLegacyPayloadSize = 8
-    private let cleartextChunkSize = 32 * 1024
-    private var ciphertextChunkSize: Int {
-        get {
-            return contentCryptor.nonceLen + cleartextChunkSize + contentCryptor.tagLen
-        }
-    }
-    public var fileHeaderSize: Int {
-        get {
-            let fileHeaderPayloadSize = fileHeaderLegacyPayloadSize + kCCKeySizeAES256
-            return contentCryptor.nonceLen + fileHeaderPayloadSize + contentCryptor.tagLen
-        }
-    }
+	private let fileHeaderLegacyPayloadSize = 8
+	private let cleartextChunkSize = 32 * 1024
+	private var ciphertextChunkSize: Int {
+		return contentCryptor.nonceLen + cleartextChunkSize + contentCryptor.tagLen
+	}
+
+	public var fileHeaderSize: Int {
+		let fileHeaderPayloadSize = fileHeaderLegacyPayloadSize + kCCKeySizeAES256
+		return contentCryptor.nonceLen + fileHeaderPayloadSize + contentCryptor.tagLen
+	}
 
 	private let masterkey: Masterkey
 	private let cryptoSupport: CryptoSupport
-    private let contentCryptor: ContentCryptor
+	private let contentCryptor: ContentCryptor
 
-    init(masterkey: Masterkey, cryptoSupport: CryptoSupport, contentCryptor: ContentCryptor) {
+	init(masterkey: Masterkey, cryptoSupport: CryptoSupport, contentCryptor: ContentCryptor) {
 		self.masterkey = masterkey
 		self.cryptoSupport = cryptoSupport
-        self.contentCryptor = contentCryptor
+		self.contentCryptor = contentCryptor
 	}
 
 	public convenience init(masterkey: Masterkey) {
-        let cryptoSupport = CryptoSupport();
-        let contentCryptor = CtrThenHmacContentCryptor(macKey: masterkey.macMasterKey, cryptoSupport: cryptoSupport)
-        self.init(masterkey: masterkey, cryptoSupport: cryptoSupport, contentCryptor: contentCryptor)
+		let cryptoSupport = CryptoSupport()
+		let contentCryptor = CtrThenHmacContentCryptor(macKey: masterkey.macMasterKey, cryptoSupport: cryptoSupport)
+		self.init(masterkey: masterkey, cryptoSupport: cryptoSupport, contentCryptor: contentCryptor)
 	}
 
 	// MARK: - Path Encryption and Decryption
@@ -168,13 +165,13 @@ public class Cryptor {
 
 	func encryptHeader(_ header: FileHeader) throws -> [UInt8] {
 		let cleartext = [UInt8](repeating: 0xFF, count: fileHeaderLegacyPayloadSize) + header.contentKey
-        return try contentCryptor.encrypt(cleartext, key: masterkey.aesMasterKey, nonce: header.nonce)
+		return try contentCryptor.encrypt(cleartext, key: masterkey.aesMasterKey, nonce: header.nonce)
 	}
 
 	func decryptHeader(_ header: [UInt8]) throws -> FileHeader {
-        let nonce = [UInt8](header[0 ..< contentCryptor.nonceLen])
-        let cleartext = try contentCryptor.decrypt(header, key: masterkey.aesMasterKey)
-        let contentKey = [UInt8](cleartext[fileHeaderLegacyPayloadSize...])
+		let nonce = [UInt8](header[0 ..< contentCryptor.nonceLen])
+		let cleartext = try contentCryptor.decrypt(header, key: masterkey.aesMasterKey)
+		let contentKey = [UInt8](cleartext[fileHeaderLegacyPayloadSize...])
 		return FileHeader(nonce: nonce, contentKey: contentKey)
 	}
 
@@ -290,7 +287,7 @@ public class Cryptor {
 		let header = try decryptHeader(ciphertextHeader)
 
 		// decrypt and write cleartext content:
-        let ciphertextChunkSize = contentCryptor.nonceLen + cleartextChunkSize + contentCryptor.tagLen
+		let ciphertextChunkSize = contentCryptor.nonceLen + cleartextChunkSize + contentCryptor.tagLen
 		var chunkNumber: UInt64 = 0
 		while ciphertextStream.hasBytesAvailable {
 			guard let ciphertextChunk = try ciphertextStream.read(maxLength: ciphertextChunkSize) else {
@@ -305,11 +302,11 @@ public class Cryptor {
 
 	func encryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {
 		let chunkNonce = try cryptoSupport.createRandomBytes(size: kCCBlockSizeAES128)
-        return try contentCryptor.encrypt(chunk, key: fileKey, nonce: chunkNonce, ad: headerNonce, chunkNumber.bigEndian.byteArray())
+		return try contentCryptor.encrypt(chunk, key: fileKey, nonce: chunkNonce, ad: headerNonce, chunkNumber.bigEndian.byteArray())
 	}
 
 	func decryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {
-        return try contentCryptor.decrypt(chunk, key: fileKey, ad: headerNonce, chunkNumber.bigEndian.byteArray())
+		return try contentCryptor.decrypt(chunk, key: fileKey, ad: headerNonce, chunkNumber.bigEndian.byteArray())
 	}
 
 	// MARK: - File Size Calculation
@@ -323,7 +320,7 @@ public class Cryptor {
 	 */
 	public func calculateCiphertextSize(_ cleartextSize: Int) -> Int {
 		precondition(cleartextSize >= 0, "expected cleartextSize to be positive, but was \(cleartextSize)")
-        let overheadPerChunk = ciphertextChunkSize - cleartextChunkSize
+		let overheadPerChunk = ciphertextChunkSize - cleartextChunkSize
 		let numFullChunks = cleartextSize / cleartextChunkSize // floor by int-truncation
 		let additionalCleartextBytes = cleartextSize % cleartextChunkSize
 		let additionalCiphertextBytes = (additionalCleartextBytes == 0) ? 0 : additionalCleartextBytes + overheadPerChunk
@@ -340,7 +337,7 @@ public class Cryptor {
 	 */
 	public func calculateCleartextSize(_ ciphertextSize: Int) throws -> Int {
 		precondition(ciphertextSize >= 0, "expected ciphertextSize to be positive, but was \(ciphertextSize)")
-        let overheadPerChunk = ciphertextChunkSize - cleartextChunkSize
+		let overheadPerChunk = ciphertextChunkSize - cleartextChunkSize
 		let numFullChunks = ciphertextSize / ciphertextChunkSize // floor by int-truncation
 		let additionalCiphertextBytes = ciphertextSize % ciphertextChunkSize
 		guard additionalCiphertextBytes == 0 || additionalCiphertextBytes > overheadPerChunk else {
@@ -348,6 +345,6 @@ public class Cryptor {
 		}
 		let additionalCleartextBytes = (additionalCiphertextBytes == 0) ? 0 : additionalCiphertextBytes - overheadPerChunk
 		assert(additionalCleartextBytes >= 0)
-        return cleartextChunkSize * numFullChunks + additionalCleartextBytes
+		return cleartextChunkSize * numFullChunks + additionalCleartextBytes
 	}
 }
