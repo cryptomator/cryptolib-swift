@@ -10,10 +10,17 @@ import XCTest
 @testable import CryptomatorCryptoLib
 
 class CryptorTests: XCTestCase {
-	let cryptor = Cryptor(masterkey: Masterkey.createFromRaw(aesMasterKey: [UInt8](repeating: 0x55, count: 32), macMasterKey: [UInt8](repeating: 0x77, count: 32)), cryptoSupport: CryptoSupportMock())
+	var cryptor: Cryptor!
 	var tmpDirURL: URL!
 
 	override func setUpWithError() throws {
+		let aesKey = [UInt8](repeating: 0x55, count: 32)
+		let macKey = [UInt8](repeating: 0x77, count: 32)
+		let masterkey = Masterkey.createFromRaw(aesMasterKey: aesKey, macMasterKey: macKey)
+		let cryptoSupport = CryptoSupportMock()
+		let contentCryptor = CtrThenHmacContentCryptor(macKey: macKey, cryptoSupport: cryptoSupport)
+		cryptor = Cryptor(masterkey: masterkey, cryptoSupport: cryptoSupport, contentCryptor: contentCryptor)
+
 		tmpDirURL = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true).appendingPathComponent(UUID().uuidString, isDirectory: true)
 		try FileManager.default.createDirectory(at: tmpDirURL, withIntermediateDirectories: true)
 	}
