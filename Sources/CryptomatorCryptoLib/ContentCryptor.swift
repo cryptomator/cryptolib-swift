@@ -39,13 +39,8 @@ class CtrThenHmacContentCryptor: ContentCryptor {
 	private let macKey: [UInt8]
 	private let cryptoSupport: CryptoSupport
 
-	var nonceLen: Int {
-		return kCCBlockSizeAES128
-	}
-
-	var tagLen: Int {
-		return Int(CC_SHA256_DIGEST_LENGTH)
-	}
+	let nonceLen = kCCBlockSizeAES128
+	let tagLen = Int(CC_SHA256_DIGEST_LENGTH)
 
 	init(macKey: [UInt8], cryptoSupport: CryptoSupport) {
 		self.macKey = macKey
