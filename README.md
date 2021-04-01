@@ -160,7 +160,7 @@ let ciphertextSize = cryptor.calculateCiphertextSize(size)
 let cleartextSize = try cryptor.calculateCleartextSize(ciphertextSize)
 ```
 
-## Contributing to CryptoLib Swift
+## Contributing
 
 Please read our [contribution guide](.github/CONTRIBUTING.md), if you would like to report a bug, ask a question or help us with coding.
 
@@ -168,6 +168,23 @@ In general, the following preference is used to choose the implementation of cry
 
 1. Apple Swift Crypto (HMAC)
 2. Apple CommonCrypto (AES-CTR, RFC 3394 Key Derivation)
+
+The project uses [SwiftFormat](https://github.com/nicklockwood/SwiftFormat) and [SwiftLint](https://github.com/realm/SwiftLint) to enforce code style and conventions. Install these tools if you haven't already.
+
+Please make sure that your code is correctly formatted. The easiest way to do that is to set up a pre-commit hook. Create a file at `.git/hooks/pre-commit` with this content:
+
+```sh
+./Scripts/process.sh --fail-on-errors
+failed=$?
+exit $failed
+```
+
+You may have to make the scripts executable:
+
+```sh
+chmod +x Scripts/process.sh
+chmod +x .git/hooks/pre-commit
+```
 
 ## Code of Conduct
 
