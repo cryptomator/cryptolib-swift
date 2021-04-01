@@ -1,0 +1,13 @@
+disabled_rules:
+  - line_length
+
+included:
+  - Sources/CryptomatorCryptoLib
+  - Tests/CryptomatorCryptoLibTests
+excluded:
+  - Tests/CryptomatorCryptoLibTests/XCTestManifests.swift
+
+identifier_name:
+  min_length: 1
+inclusive_language:
+  override_allowed_terms: ["masterkey"]
