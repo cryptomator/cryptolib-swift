@@ -24,14 +24,12 @@ function process_output() {
     fi
   fi
   local end=$(date +%s)
-  printf 'Execution time was %s seconds.\n' "$(($end - $start))"
+  printf 'Execution time was %s seconds.\n' "$((end - start))"
 }
 
 process_output "SwiftFormat" "python ./Scripts/git-format-staged.py -f 'swiftformat stdin --stdinpath \"{}\" --quiet' '*.swift'"
 process_output "SwiftLint" "python ./Scripts/git-format-staged.py --no-write -f 'swiftlint --use-stdin --quiet >&2' '*.swift'"
 
-if [[ "$final_status" -gt 0 ]]; then
-  echo "\nChanges werde made or are required. Please review the output above for further details."
-fi
+printf '\nChanges werde made or are required. Please review the output above for further details.\n'
 
 exit $final_status
