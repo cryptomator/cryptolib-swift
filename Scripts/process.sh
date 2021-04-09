@@ -4,11 +4,11 @@
 
 cd "$(dirname "$0")/.."
 
-if [[ -n "$CI" ]] || [[ "$1" == "--fail-on-errors" ]]; then
-  fail_on_errors=true
-  echo "Running in --fail-on-errors mode"
+if [[ "$1" == "--staged" ]]; then
+  staged_mode=true
+  echo "Running in --staged mode"
 else
-  echo "Running in local mode"
+  echo "Running in full mode"
 fi
 
 final_status=0
@@ -19,17 +19,24 @@ function process_output() {
   local output=$(eval "$2" 2>&1)
   if [[ ! -z "$output" ]]; then
     printf -- '---\n%s\n---\n' "$output"
-    if [ "$fail_on_errors" = true ]; then
-      final_status=1
-    fi
+    final_status=1
   fi
   local end=$(date +%s)
   printf 'Execution time was %s seconds.\n' "$((end - start))"
 }
 
-process_output "SwiftFormat" "python ./Scripts/git-format-staged.py -f 'swiftformat stdin --stdinpath \"{}\" --quiet' '*.swift'"
-process_output "SwiftLint" "python ./Scripts/git-format-staged.py --no-write -f 'swiftlint --use-stdin --quiet >&2' '*.swift'"
-
-printf '\nChanges werde made or are required. Please review the output above for further details.\n'
+if [ "$staged_mode" = true ]; then
+  process_output "SwiftFormat" "python ./Scripts/git-format-staged.py -f 'swiftformat stdin --stdinpath \"{}\" --quiet' '*.swift'"
+  process_output "SwiftLint" "python ./Scripts/git-format-staged.py --no-write -f 'swiftlint --use-stdin --quiet >&2' '*.swift'"
+  if [[ "$final_status" -gt 0 ]]; then
+    printf '\nChanges werde made or are required. Please review the output above for further details.\n'
+  fi
+else
+  process_output "SwiftFormat" "swiftformat --lint --quiet ."
+  process_output "SwiftLint" "swiftlint --quiet ."
+  if [[ "$final_status" -gt 0 ]]; then
+    printf '\nChanges are required. Please review the output above for further details.\n'
+  fi
+fi
 
 exit $final_status

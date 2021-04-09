@@ -261,7 +261,7 @@
 				4A7C212F2451F2AC00DE81E6 /* Frameworks */,
 				4A7C21302451F2AC00DE81E6 /* Resources */,
 				74862A712469A6B2003D81CB /* Lint With SwiftFormat */,
-				749441272616051400435B0B /* Lint with SwiftLint */,
+				749441272616051400435B0B /* Lint With SwiftLint */,
 				749260F725B17B10004B3426 /* Embed Frameworks */,
 			);
 			buildRules = (
@@ -401,7 +401,7 @@
 			shellPath = /bin/sh;
 			shellScript = "if which swiftformat >/dev/null; then\n  swiftformat --lint --lenient .\nelse\n  echo \"warning: SwiftFormat not installed, download from https://github.com/nicklockwood/SwiftFormat\"\nfi\n";
 		};
-		749441272616051400435B0B /* Lint with SwiftLint */ = {
+		749441272616051400435B0B /* Lint With SwiftLint */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -410,7 +410,7 @@
 			);
 			inputPaths = (
 			);
-			name = "Lint with SwiftLint";
+			name = "Lint With SwiftLint";
 			outputFileListPaths = (
 			);
 			outputPaths = (

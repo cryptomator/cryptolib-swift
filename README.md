@@ -169,14 +169,13 @@ In general, the following preference is used to choose the implementation of cry
 1. Apple Swift Crypto (HMAC)
 2. Apple CommonCrypto (AES-CTR, RFC 3394 Key Derivation)
 
-The project uses [SwiftFormat](https://github.com/nicklockwood/SwiftFormat) and [SwiftLint](https://github.com/realm/SwiftLint) to enforce code style and conventions. Install these tools if you haven't already.
+This project uses [SwiftFormat](https://github.com/nicklockwood/SwiftFormat) and [SwiftLint](https://github.com/realm/SwiftLint) to enforce code style and conventions. Install these tools if you haven't already.
 
-Please make sure that your code is correctly formatted. The easiest way to do that is to set up a pre-commit hook. Create a file at `.git/hooks/pre-commit` with this content:
+Please make sure that your code is correctly formatted and passes linter validations. The easiest way to do that is to set up a pre-commit hook. Create a file at `.git/hooks/pre-commit` with this content:
 
 ```sh
-./Scripts/process.sh --fail-on-errors
-failed=$?
-exit $failed
+./Scripts/process.sh --staged
+exit $?
 ```
 
 You may have to make the scripts executable:
