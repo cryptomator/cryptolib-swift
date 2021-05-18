@@ -154,12 +154,12 @@
 				4A7C21362451F2AC00DE81E6 /* Info.plist */,
 				9EB822C0248AF82200879838 /* AesCtr.swift */,
 				9E44EEA524599C6900A37B01 /* AesSiv.swift */,
+				9E97DC8C25F77BA40046C83E /* ContentCryptor.swift */,
 				74F0F753248FC89B00B4C26D /* CryptoError.swift */,
 				9E9BB811245412E900F9FF51 /* Cryptor.swift */,
 				74F0F7592490C1EB00B4C26D /* CryptoSupport.swift */,
 				9E9BB8132454708600F9FF51 /* Masterkey.swift */,
 				74B4D38C2588CD60006C0567 /* MasterkeyFile.swift */,
-				9E97DC8C25F77BA40046C83E /* ContentCryptor.swift */,
 			);
 			path = CryptomatorCryptoLib;
 			sourceTree = "<group>";
@@ -320,7 +320,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 1140;
-				LastUpgradeCheck = 1240;
+				LastUpgradeCheck = 1250;
 				ORGANIZATIONNAME = "Skymatic GmbH";
 				TargetAttributes = {
 					4A7C21312451F2AC00DE81E6 = {
@@ -788,7 +788,7 @@
 			repositoryURL = "https://github.com/norio-nomura/Base32.git";
 			requirement = {
 				kind = upToNextMinorVersion;
-				minimumVersion = 0.8.0;
+				minimumVersion = 0.9.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

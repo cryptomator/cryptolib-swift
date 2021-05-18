@@ -20,7 +20,7 @@ let package = Package(
 		.library(name: "CryptomatorCryptoLib", targets: ["CryptomatorCryptoLib"])
 	],
 	dependencies: [
-		.package(url: "https://github.com/norio-nomura/Base32.git", .upToNextMinor(from: "0.8.0"))
+		.package(url: "https://github.com/norio-nomura/Base32.git", .upToNextMinor(from: "0.9.0"))
 	],
 	targets: [
 		.target(name: "CryptomatorCryptoLib", dependencies: ["Base32", "scrypt"]),

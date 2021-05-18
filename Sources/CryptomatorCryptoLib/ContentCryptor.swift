@@ -20,7 +20,7 @@ protocol ContentCryptor {
 	 - Parameter key: The encryption key.
 	 - Parameter nonce: The nonce/IV to use.
 	 - Parameter ad: Associated data, which needs to be authenticated during decryption.
-	 - Returns: Nonce/IV + ciphertext + MAC/tag, as a concatenated byte array
+	 - Returns: Nonce/IV + ciphertext + MAC/tag, as a concatenated byte array.
 	 */
 	func encrypt(_ chunk: [UInt8], key: [UInt8], nonce: [UInt8], ad: [UInt8]...) throws -> [UInt8]
 
@@ -30,17 +30,17 @@ protocol ContentCryptor {
 	 - Parameter chunk: The nonce/IV + ciphertext + MAC/tag, as a concatenated byte array.
 	 - Parameter key: The encryption key.
 	 - Parameter ad: Associated data, which needs to be authenticated during decryption.
-	 - Returns: The original cleartext
+	 - Returns: The original cleartext.
 	 */
 	func decrypt(_ chunk: [UInt8], key: [UInt8], ad: [UInt8]...) throws -> [UInt8]
 }
 
 class CtrThenHmacContentCryptor: ContentCryptor {
-	private let macKey: [UInt8]
-	private let cryptoSupport: CryptoSupport
-
 	let nonceLen = kCCBlockSizeAES128
 	let tagLen = Int(CC_SHA256_DIGEST_LENGTH)
+
+	private let macKey: [UInt8]
+	private let cryptoSupport: CryptoSupport
 
 	init(macKey: [UInt8], cryptoSupport: CryptoSupport) {
 		self.macKey = macKey

@@ -6,13 +6,9 @@
 //  Copyright © 2020 Skymatic GmbH. All rights reserved.
 //
 
+import Base32
 import CommonCrypto
 import Foundation
-#if COCOAPODS
-import SwiftBase32
-#else
-import Base32
-#endif
 
 public extension Data {
 	init?(base64UrlEncoded base64String: String, options: Data.Base64DecodingOptions = []) {
@@ -65,14 +61,14 @@ struct FileHeader {
 
 public class Cryptor {
 	private let fileHeaderLegacyPayloadSize = 8
-	private let cleartextChunkSize = 32 * 1024
-	private var ciphertextChunkSize: Int {
-		return contentCryptor.nonceLen + cleartextChunkSize + contentCryptor.tagLen
-	}
-
 	public var fileHeaderSize: Int {
 		let fileHeaderPayloadSize = fileHeaderLegacyPayloadSize + kCCKeySizeAES256
 		return contentCryptor.nonceLen + fileHeaderPayloadSize + contentCryptor.tagLen
+	}
+
+	private let cleartextChunkSize = 32 * 1024
+	private var ciphertextChunkSize: Int {
+		return contentCryptor.nonceLen + cleartextChunkSize + contentCryptor.tagLen
 	}
 
 	private let masterkey: Masterkey

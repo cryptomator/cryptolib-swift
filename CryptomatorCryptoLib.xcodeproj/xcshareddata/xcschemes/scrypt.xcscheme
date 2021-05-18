@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "4A7C21312451F2AC00DE81E6"
-               BuildableName = "CryptomatorCryptoLib.framework"
-               BlueprintName = "CryptomatorCryptoLib"
+               BlueprintIdentifier = "749260CD25B17A9A004B3426"
+               BuildableName = "scrypt.framework"
+               BlueprintName = "scrypt"
                ReferencedContainer = "container:CryptomatorCryptoLib.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -28,16 +28,6 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES">
       <Testables>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "4A7C213A2451F2AC00DE81E6"
-               BuildableName = "CryptomatorCryptoLibTests.xctest"
-               BlueprintName = "CryptomatorCryptoLibTests"
-               ReferencedContainer = "container:CryptomatorCryptoLib.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction
@@ -60,9 +50,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "4A7C21312451F2AC00DE81E6"
-            BuildableName = "CryptomatorCryptoLib.framework"
-            BlueprintName = "CryptomatorCryptoLib"
+            BlueprintIdentifier = "749260CD25B17A9A004B3426"
+            BuildableName = "scrypt.framework"
+            BlueprintName = "scrypt"
             ReferencedContainer = "container:CryptomatorCryptoLib.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
