@@ -75,7 +75,18 @@ public class MasterkeyFile {
 	 - Returns: A masterkey with the unwrapped keys.
 	 */
 	public func unlock(passphrase: String, pepper: [UInt8] = [UInt8]()) throws -> Masterkey {
-		// derive keys:
+		let kek = try deriveKey(passphrase: passphrase, pepper: pepper)
+		return try unlock(kek: kek)
+	}
+
+	/**
+	 Derives a KEK from the given passphrase and the params from this masterkey file using scrypt.
+
+	 - Parameter passphrase: The passphrase used during key derivation.
+	 - Parameter pepper: An optional application-specific pepper added to the scrypt's salt. Defaults to empty byte array.
+	 - Returns: A 256-bit key derived from passphrase using scrypt.
+	 */
+	public func deriveKey(passphrase: String, pepper: [UInt8] = [UInt8]()) throws -> [UInt8] {
 		let pw = [UInt8](passphrase.precomposedStringWithCanonicalMapping.utf8)
 		let salt = [UInt8](Data(base64Encoded: content.scryptSalt)!)
 		var kek = [UInt8](repeating: 0x00, count: kCCKeySizeAES256)
@@ -83,6 +94,16 @@ public class MasterkeyFile {
 		guard scryptResult == 0 else {
 			throw MasterkeyFileError.keyDerivationFailed
 		}
+		return kek
+	}
+
+	/**
+	  Unwraps the stored encryption and MAC keys with the given KEK.
+
+	  - Parameter kek: The KEK for unwrapping the keys from this masterkey file.
+	  - Returns: A masterkey with the unwrapped keys.
+	 */
+	public func unlock(kek: [UInt8]) throws -> Masterkey {
 		guard let wrappedMasterKey = Data(base64Encoded: content.primaryMasterKey) else {
 			throw MasterkeyFileError.malformedMasterkeyFile("invalid base64 data in primaryMasterKey")
 		}

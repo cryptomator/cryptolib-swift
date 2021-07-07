@@ -77,6 +77,18 @@ let pepper = ... // optional
 let masterkey = try masterkeyFile.unlock(passphrase: passphrase, pepper: pepper)
 ```
 
+The unlock process can also be performed in two steps:
+
+```swift
+let masterkeyFile = ...
+let passphrase = ...
+let pepper = ... // optional
+let kek = try masterkeyFile.deriveKey(passphrase: passphrase, pepper: pepper)
+let masterkey = try masterkeyFile.unlock(kek: kek)
+```
+
+This is useful if you'd like to derive the key in an extra step since the function is memory-intensive (using scrypt). The result can then be used elsewhere, e.g. in a memory-restricted process.
+
 #### Lock
 
 For persisting the masterkey, use this method to export its encrypted/wrapped masterkey and other metadata as JSON data.

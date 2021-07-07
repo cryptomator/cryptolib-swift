@@ -33,7 +33,7 @@ class MasterkeyFileTests: XCTestCase {
 		XCTAssertEqual("cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g=", masterkeyFile.content.versionMac)
 	}
 
-	func testUnlock() throws {
+	func testUnlockWithPassphrase() throws {
 		let expectedKey = [UInt8](repeating: 0x00, count: 32)
 		let data = """
 		{
@@ -140,6 +140,54 @@ class MasterkeyFileTests: XCTestCase {
 		XCTAssertThrowsError(try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]()), "malformed json") { error in
 			XCTAssertEqual(.malformedMasterkeyFile("invalid base64 data in versionMac"), error as? MasterkeyFileError)
 		}
+	}
+
+	func testDeriveKey() throws {
+		let expectedKey: [UInt8] = [
+			0x8C, 0xF4, 0xA0, 0x4E, 0xC8, 0x45, 0xF4, 0x28,
+			0xB2, 0xF9, 0xF9, 0xE1, 0xD9, 0xDF, 0x08, 0xD2,
+			0x62, 0x11, 0xD9, 0xAF, 0xE2, 0xF5, 0x5F, 0xDE,
+			0xDF, 0xCB, 0xB5, 0xE7, 0x5A, 0xEF, 0x34, 0xF9
+		]
+		let data = """
+		{
+			"version": 7,
+			"scryptSalt": "AAAAAAAAAAA=",
+			"scryptCostParam": 2,
+			"scryptBlockSize": 8,
+			"primaryMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
+			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
+			"versionMac": "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g="
+		}
+		""".data(using: .utf8)!
+		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
+		let kek = try masterkeyFile.deriveKey(passphrase: "asd", pepper: [UInt8]())
+		XCTAssertEqual(expectedKey, kek)
+	}
+
+	func testUnlockWithKEK() throws {
+		let expectedKey = [UInt8](repeating: 0x00, count: 32)
+		let data = """
+		{
+			"version": 7,
+			"scryptSalt": "AAAAAAAAAAA=",
+			"scryptCostParam": 2,
+			"scryptBlockSize": 8,
+			"primaryMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
+			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
+			"versionMac": "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g="
+		}
+		""".data(using: .utf8)!
+		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
+		let kek: [UInt8] = [
+			0x8C, 0xF4, 0xA0, 0x4E, 0xC8, 0x45, 0xF4, 0x28,
+			0xB2, 0xF9, 0xF9, 0xE1, 0xD9, 0xDF, 0x08, 0xD2,
+			0x62, 0x11, 0xD9, 0xAF, 0xE2, 0xF5, 0x5F, 0xDE,
+			0xDF, 0xCB, 0xB5, 0xE7, 0x5A, 0xEF, 0x34, 0xF9
+		]
+		let masterkey = try masterkeyFile.unlock(kek: kek)
+		XCTAssertEqual(expectedKey, masterkey.aesMasterKey)
+		XCTAssertEqual(expectedKey, masterkey.macMasterKey)
 	}
 
 	func testLock() throws {
