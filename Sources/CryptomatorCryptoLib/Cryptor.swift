@@ -224,13 +224,15 @@ public class Cryptor {
 		// encrypt and write ciphertext content:
 		var chunkNumber: UInt64 = 0
 		while cleartextStream.hasBytesAvailable {
-			guard let cleartextChunk = try cleartextStream.read(maxLength: cleartextChunkSize) else {
-				continue
+			try autoreleasepool {
+				guard let cleartextChunk = try cleartextStream.read(maxLength: cleartextChunkSize) else {
+					return
+				}
+				let ciphertextChunk = try encryptSingleChunk(cleartextChunk, chunkNumber: chunkNumber, headerNonce: header.nonce, fileKey: header.contentKey)
+				ciphertextStream.write(ciphertextChunk, maxLength: ciphertextChunk.count)
+				progress.completedUnitCount += Int64(ciphertextChunk.count)
+				chunkNumber += 1
 			}
-			let ciphertextChunk = try encryptSingleChunk(cleartextChunk, chunkNumber: chunkNumber, headerNonce: header.nonce, fileKey: header.contentKey)
-			ciphertextStream.write(ciphertextChunk, maxLength: ciphertextChunk.count)
-			progress.completedUnitCount += Int64(ciphertextChunk.count)
-			chunkNumber += 1
 		}
 	}
 
@@ -286,13 +288,15 @@ public class Cryptor {
 		let ciphertextChunkSize = contentCryptor.nonceLen + cleartextChunkSize + contentCryptor.tagLen
 		var chunkNumber: UInt64 = 0
 		while ciphertextStream.hasBytesAvailable {
-			guard let ciphertextChunk = try ciphertextStream.read(maxLength: ciphertextChunkSize) else {
-				continue
+			try autoreleasepool {
+				guard let ciphertextChunk = try ciphertextStream.read(maxLength: ciphertextChunkSize) else {
+					return
+				}
+				let cleartextChunk = try decryptSingleChunk(ciphertextChunk, chunkNumber: chunkNumber, headerNonce: header.nonce, fileKey: header.contentKey)
+				cleartextStream.write(cleartextChunk, maxLength: cleartextChunk.count)
+				progress.completedUnitCount += Int64(cleartextChunk.count)
+				chunkNumber += 1
 			}
-			let cleartextChunk = try decryptSingleChunk(ciphertextChunk, chunkNumber: chunkNumber, headerNonce: header.nonce, fileKey: header.contentKey)
-			cleartextStream.write(cleartextChunk, maxLength: cleartextChunk.count)
-			progress.completedUnitCount += Int64(cleartextChunk.count)
-			chunkNumber += 1
 		}
 	}
 
