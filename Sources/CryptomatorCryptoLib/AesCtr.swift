@@ -34,7 +34,7 @@ class AesCtr {
 		let outlen = CCCryptorGetOutputLength(cryptor, data.count, true)
 		var ciphertext = [UInt8](repeating: 0x00, count: outlen)
 
-		var numEncryptedBytes: Int = 0
+		var numEncryptedBytes = 0
 		status = CCCryptorUpdate(cryptor, data, data.count, &ciphertext, ciphertext.count, &numEncryptedBytes)
 		guard status == kCCSuccess else {
 			throw CryptoError.ccCryptorError(status)
