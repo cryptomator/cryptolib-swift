@@ -47,11 +47,24 @@ public class Masterkey {
 	/**
 	 Creates masterkey from raw bytes.
 
+	 - Parameter rawKey: Key combination of `aesMasterKey` (used for encryption of file specific keys) and `macMasterKey` (used for file authentication).
+	 - Returns: New masterkey instance using the keys from the supplied raw bytes.
+	 */
+	public static func createFromRaw(rawKey: [UInt8]) -> Masterkey {
+		assert(rawKey.count == 2 * kCCKeySizeAES256)
+		let aesMasterkey = Array(rawKey[0 ..< kCCKeySizeAES256])
+		let macMasterKey = Array(rawKey[kCCKeySizeAES256...])
+		return createFromRaw(aesMasterKey: aesMasterkey, macMasterKey: macMasterKey)
+	}
+
+	/**
+	 Creates masterkey from raw bytes.
+
 	 - Parameter aesMasterKey: Key used for encryption of file specific keys.
 	 - Parameter macMasterKey: Key used for file authentication.
 	 - Returns: New masterkey instance using the keys from the supplied raw bytes.
 	 */
-	public static func createFromRaw(aesMasterKey: [UInt8], macMasterKey: [UInt8]) -> Masterkey {
+	static func createFromRaw(aesMasterKey: [UInt8], macMasterKey: [UInt8]) -> Masterkey {
 		assert(aesMasterKey.count == kCCKeySizeAES256)
 		assert(macMasterKey.count == kCCKeySizeAES256)
 		return Masterkey(aesMasterKey: aesMasterKey, macMasterKey: macMasterKey)
