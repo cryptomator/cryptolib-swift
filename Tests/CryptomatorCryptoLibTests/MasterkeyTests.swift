@@ -13,7 +13,7 @@ class MasterkeyTests: XCTestCase {
 	func testCreateFromRaw() throws {
 		let aesMasterKey = [UInt8](repeating: 0x77, count: 32)
 		let macMasterKey = [UInt8](repeating: 0x55, count: 32)
-		let masterkey = Masterkey.createFromRaw(aesMasterKey: aesMasterKey, macMasterKey: macMasterKey)
+		let masterkey = Masterkey.createFromRaw(rawKey: aesMasterKey + macMasterKey)
 		XCTAssertEqual(aesMasterKey, masterkey.aesMasterKey)
 		XCTAssertEqual(macMasterKey, masterkey.macMasterKey)
 	}
