@@ -7,7 +7,7 @@
 
 This library contains all cryptographic functions that are used by Cryptomator for iOS. The purpose of this project is to provide a separate light-weight library with its own release cycle that can be used in other projects, too.
 
-For more information on the Cryptomator encryption scheme, visit the security architecture page on [docs.cryptomator.org](https://docs.cryptomator.org/en/1.5/security/architecture/).
+For more information on the Cryptomator encryption scheme, visit the security architecture page on [docs.cryptomator.org](https://docs.cryptomator.org/en/1.6/security/architecture/).
 
 ## Requirements
 

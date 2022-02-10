@@ -19,12 +19,14 @@ class AesSiv {
 
 	 - Parameter aesKey: SIV mode requires two separate keys. You can use one long key, which is splitted in half. See [RFC 5297 Section 2.2](https://tools.ietf.org/html/rfc5297#section-2.2).
 	 - Parameter macKey: SIV mode requires two separate keys. You can use one long key, which is splitted in half. See [RFC 5297 Section 2.2](https://tools.ietf.org/html/rfc5297#section-2.2).
-	 - Parameter plaintext: Your plaintext, which shall be encrypted.
+	 - Parameter plaintext: Your plaintext, which shall be encrypted. It must not be longer than 2^32 - 16 bytes.
 	 - Parameter ad: Associated data, which gets authenticated but not encrypted.
 	 - Returns: IV + Ciphertext as a concatenated byte array.
 	 */
 	static func encrypt(aesKey: [UInt8], macKey: [UInt8], plaintext: [UInt8], ad: [UInt8]...) throws -> [UInt8] {
-		assert(plaintext.count <= UInt32.max - 16, "plaintext must not be longer than 2^32 - 16 bytes")
+		guard plaintext.count <= UInt32.max - 16 else {
+			throw CryptoError.invalidParameter("plaintext must not be longer than 2^32 - 16 bytes")
+		}
 		let iv = try s2v(macKey: macKey, plaintext: plaintext, ad: ad)
 		let ciphertext = try ctr(aesKey: aesKey, iv: iv, plaintext: plaintext)
 		return iv + ciphertext
@@ -35,12 +37,14 @@ class AesSiv {
 
 	 - Parameter aesKey: SIV mode requires two separate keys. You can use one long key, which is splitted in half. See [RFC 5297 Section 2.2](https://tools.ietf.org/html/rfc5297#section-2.2).
 	 - Parameter macKey: SIV mode requires two separate keys. You can use one long key, which is splitted in half. See [RFC 5297 Section 2.2](https://tools.ietf.org/html/rfc5297#section-2.2).
-	 - Parameter ciphertext: Your ciphertext, which shall be decrypted.
+	 - Parameter ciphertext: Your ciphertext, which shall be decrypted. It must be at least 16 bytes.
 	 - Parameter ad: Associated data, which needs to be authenticated during decryption.
 	 - Returns: Plaintext byte array.
 	 */
 	static func decrypt(aesKey: [UInt8], macKey: [UInt8], ciphertext: [UInt8], ad: [UInt8]...) throws -> [UInt8] {
-		assert(ciphertext.count >= 16, "ciphertext must be at least 16 bytes")
+		guard ciphertext.count >= 16 else {
+			throw CryptoError.invalidParameter("ciphertext must be at least 16 bytes")
+		}
 		let iv = Array(ciphertext[..<16])
 		let actualCiphertext = Array(ciphertext[16...])
 		let plaintext = try ctr(aesKey: aesKey, iv: iv, plaintext: actualCiphertext)
