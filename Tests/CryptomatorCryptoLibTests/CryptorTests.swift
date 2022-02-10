@@ -49,6 +49,16 @@ class CryptorTests: XCTestCase {
 		XCTAssertEqual(originalName, cleartextName)
 	}
 
+	func testDecryptInvalidName() throws {
+		let dirId = "foo".data(using: .utf8)!
+		XCTAssertThrowsError(try cryptor.decryptFileName("****", dirId: dirId), "invalid ciphertext name encoding") { error in
+			XCTAssertEqual(.invalidParameter("Can't base64url-decode ciphertext name: ****"), error as? CryptoError)
+		}
+		XCTAssertThrowsError(try cryptor.decryptFileName("test", dirId: dirId), "invalid ciphertext name count") { error in
+			XCTAssertEqual(.invalidParameter("ciphertext must be at least 16 bytes"), error as? CryptoError)
+		}
+	}
+
 	func testCreateHeader() throws {
 		let header = try cryptor.createHeader()
 		XCTAssertEqual([UInt8](repeating: 0xF0, count: 16), header.nonce)
