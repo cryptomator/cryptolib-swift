@@ -35,6 +35,7 @@
 		9EB822C1248AF82200879838 /* AesCtr.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EB822C0248AF82200879838 /* AesCtr.swift */; };
 		9EB822C3248AF9C500879838 /* AesCtrTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EB822C2248AF9C500879838 /* AesCtrTests.swift */; };
 		9EBEC947283782E6002210DE /* CtrCryptorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EBEC946283782E6002210DE /* CtrCryptorTests.swift */; };
+		9EBEC94928378308002210DE /* GcmCryptorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EBEC94828378308002210DE /* GcmCryptorTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -99,6 +100,7 @@
 		9EB822C0248AF82200879838 /* AesCtr.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AesCtr.swift; sourceTree = "<group>"; };
 		9EB822C2248AF9C500879838 /* AesCtrTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AesCtrTests.swift; sourceTree = "<group>"; };
 		9EBEC946283782E6002210DE /* CtrCryptorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CtrCryptorTests.swift; sourceTree = "<group>"; };
+		9EBEC94828378308002210DE /* GcmCryptorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GcmCryptorTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -174,6 +176,7 @@
 				9E44EEA724599C7800A37B01 /* AesSivTests.swift */,
 				9E35C4EA24576A3D0006E50C /* CryptorTests.swift */,
 				9EBEC946283782E6002210DE /* CtrCryptorTests.swift */,
+				9EBEC94828378308002210DE /* GcmCryptorTests.swift */,
 				74A5B57D25A86A69002D10F7 /* CryptoSupportMock.swift */,
 				74A5B57525A869DD002D10F7 /* MasterkeyFileTests.swift */,
 				9E9BB81524558DFF00F9FF51 /* MasterkeyTests.swift */,
@@ -451,6 +454,7 @@
 				74A5B57625A869DD002D10F7 /* MasterkeyFileTests.swift in Sources */,
 				9E9BB81624558DFF00F9FF51 /* MasterkeyTests.swift in Sources */,
 				9E35C4EB24576A3D0006E50C /* CryptorTests.swift in Sources */,
+				9EBEC94928378308002210DE /* GcmCryptorTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

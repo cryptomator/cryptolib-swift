@@ -7,6 +7,7 @@
 //
 
 import CommonCrypto
+import CryptoKit
 import Foundation
 
 protocol ContentCryptor {
@@ -33,6 +34,31 @@ protocol ContentCryptor {
 	 - Returns: The original cleartext.
 	 */
 	func decrypt(_ chunk: [UInt8], key: [UInt8], ad: [UInt8]...) throws -> [UInt8]
+}
+
+class GcmContentCryptor: ContentCryptor {
+	let nonceLen = 12 // 96 bit
+	let tagLen = 16 // 128 bit
+
+	func encrypt(_ chunk: [UInt8], key keyBytes: [UInt8], nonce nonceBytes: [UInt8], ad: [UInt8]...) throws -> [UInt8] {
+		let concatAd = ad.reduce([], +)
+		let key = SymmetricKey(data: keyBytes)
+		let nonce = try AES.GCM.Nonce(data: nonceBytes)
+		let encrypted = try AES.GCM.seal(chunk, using: key, nonce: nonce, authenticating: concatAd)
+
+		return [UInt8](encrypted.nonce + encrypted.ciphertext + encrypted.tag)
+	}
+
+	func decrypt(_ chunk: [UInt8], key keyBytes: [UInt8], ad: [UInt8]...) throws -> [UInt8] {
+		assert(chunk.count >= nonceLen + tagLen, "ciphertext chunk must at least contain nonce + tag")
+
+		let concatAd = ad.reduce([], +)
+		let key = SymmetricKey(data: keyBytes)
+		let encrypted = try AES.GCM.SealedBox(combined: chunk)
+		let decrypted = try AES.GCM.open(encrypted, using: key, authenticating: concatAd)
+
+		return [UInt8](decrypted)
+	}
 }
 
 class CtrThenHmacContentCryptor: ContentCryptor {
