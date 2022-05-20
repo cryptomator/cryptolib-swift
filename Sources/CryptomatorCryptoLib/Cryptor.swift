@@ -154,7 +154,7 @@ public class Cryptor {
 	// MARK: - File Header Encryption and Decryption
 
 	func createHeader() throws -> FileHeader {
-		let nonce = try cryptoSupport.createRandomBytes(size: kCCBlockSizeAES128)
+		let nonce = try cryptoSupport.createRandomBytes(size: contentCryptor.nonceLen)
 		let contentKey = try cryptoSupport.createRandomBytes(size: kCCKeySizeAES256)
 		return FileHeader(nonce: nonce, contentKey: contentKey)
 	}
@@ -301,7 +301,7 @@ public class Cryptor {
 	}
 
 	func encryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {
-		let chunkNonce = try cryptoSupport.createRandomBytes(size: kCCBlockSizeAES128)
+		let chunkNonce = try cryptoSupport.createRandomBytes(size: contentCryptor.nonceLen)
 		return try contentCryptor.encrypt(chunk, key: fileKey, nonce: chunkNonce, ad: headerNonce, chunkNumber.bigEndian.byteArray())
 	}
 
