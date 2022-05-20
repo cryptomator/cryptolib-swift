@@ -121,12 +121,15 @@ try MasterkeyFile.changePassphrase(masterkeyFileData: masterkeyFileData, oldPass
 
 #### Constructor
 
-Create a cryptor by providing a masterkey.
+Create a cryptor by providing a masterkey and a scheme (e.g., `.sivGcm`).
 
 ```swift
 let masterkey = ...
-let cryptor = Cryptor(masterkey: masterkey)
+let scheme = ...
+let cryptor = Cryptor(masterkey: masterkey, scheme: scheme)
 ```
+
+Make sure that the data you're working with is compatible with the provided scheme.
 
 #### Path Encryption and Decryption
 

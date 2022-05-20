@@ -49,6 +49,11 @@ public extension InputStream {
 	}
 }
 
+public enum CryptorScheme {
+	case sivCtrMac
+	case sivGcm
+}
+
 public enum FileNameEncoding: String {
 	case base64url
 	case base32
@@ -81,9 +86,15 @@ public class Cryptor {
 		self.contentCryptor = contentCryptor
 	}
 
-	public convenience init(masterkey: Masterkey) {
+	public convenience init(masterkey: Masterkey, scheme: CryptorScheme) {
 		let cryptoSupport = CryptoSupport()
-		let contentCryptor = CtrThenHmacContentCryptor(macKey: masterkey.macMasterKey, cryptoSupport: cryptoSupport)
+		let contentCryptor: ContentCryptor
+		switch scheme {
+		case .sivCtrMac:
+			contentCryptor = CtrThenHmacContentCryptor(macKey: masterkey.macMasterKey, cryptoSupport: cryptoSupport)
+		case .sivGcm:
+			contentCryptor = GcmContentCryptor()
+		}
 		self.init(masterkey: masterkey, cryptoSupport: cryptoSupport, contentCryptor: contentCryptor)
 	}
 
