@@ -71,7 +71,7 @@ public class Cryptor {
 		return contentCryptor.nonceLen + fileHeaderPayloadSize + contentCryptor.tagLen
 	}
 
-	private let cleartextChunkSize = 32 * 1024
+	let cleartextChunkSize = 32 * 1024
 	var ciphertextChunkSize: Int {
 		return contentCryptor.nonceLen + cleartextChunkSize + contentCryptor.tagLen
 	}
