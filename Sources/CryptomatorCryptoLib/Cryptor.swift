@@ -49,9 +49,9 @@ public extension InputStream {
 	}
 }
 
-public enum CryptorScheme {
-	case sivCtrMac
-	case sivGcm
+public enum CryptorScheme: String, Codable {
+	case sivCtrMac = "SIV_CTRMAC"
+	case sivGcm = "SIV_GCM"
 }
 
 public enum FileNameEncoding: String {
