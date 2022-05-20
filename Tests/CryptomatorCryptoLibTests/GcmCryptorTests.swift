@@ -1,9 +1,9 @@
 //
-//  CryptorTests.swift
+//  GcmCryptorTests.swift
 //  CryptomatorCryptoLibTests
 //
-//  Created by Sebastian Stenzel on 27.04.20.
-//  Copyright © 2020 Skymatic GmbH. All rights reserved.
+//  Created by Sebastian Stenzel on 20.05.22.
+//  Copyright © 2022 Skymatic GmbH. All rights reserved.
 //
 
 import XCTest

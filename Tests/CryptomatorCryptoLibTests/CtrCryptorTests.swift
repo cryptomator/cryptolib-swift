@@ -1,5 +1,5 @@
 //
-//  CryptorTests.swift
+//  CtrCryptorTests.swift
 //  CryptomatorCryptoLibTests
 //
 //  Created by Sebastian Stenzel on 27.04.20.
