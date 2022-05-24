@@ -13,8 +13,8 @@ import PackageDescription
 let package = Package(
 	name: "CryptomatorCryptoLib",
 	platforms: [
-		.iOS(.v9),
-		.macOS(.v10_12)
+		.iOS(.v13),
+		.macOS(.v10_15)
 	],
 	products: [
 		.library(name: "CryptomatorCryptoLib", targets: ["CryptomatorCryptoLib"])
