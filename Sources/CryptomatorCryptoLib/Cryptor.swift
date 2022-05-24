@@ -172,12 +172,12 @@ public class Cryptor {
 
 	func encryptHeader(_ header: FileHeader) throws -> [UInt8] {
 		let cleartext = [UInt8](repeating: 0xFF, count: fileHeaderLegacyPayloadSize) + header.contentKey
-		return try contentCryptor.encrypt(cleartext, key: masterkey.aesMasterKey, nonce: header.nonce)
+		return try contentCryptor.encryptHeader(cleartext, key: masterkey.aesMasterKey, nonce: header.nonce)
 	}
 
 	func decryptHeader(_ header: [UInt8]) throws -> FileHeader {
 		let nonce = [UInt8](header[0 ..< contentCryptor.nonceLen])
-		let cleartext = try contentCryptor.decrypt(header, key: masterkey.aesMasterKey)
+		let cleartext = try contentCryptor.decryptHeader(header, key: masterkey.aesMasterKey)
 		let contentKey = [UInt8](cleartext[fileHeaderLegacyPayloadSize...])
 		return FileHeader(nonce: nonce, contentKey: contentKey)
 	}
@@ -313,11 +313,11 @@ public class Cryptor {
 
 	func encryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {
 		let chunkNonce = try cryptoSupport.createRandomBytes(size: contentCryptor.nonceLen)
-		return try contentCryptor.encrypt(chunk, key: fileKey, nonce: chunkNonce, ad: headerNonce, chunkNumber.bigEndian.byteArray())
+		return try contentCryptor.encryptChunk(chunk, chunkNumber: chunkNumber, chunkNonce: chunkNonce, fileKey: fileKey, headerNonce: headerNonce)
 	}
 
 	func decryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {
-		return try contentCryptor.decrypt(chunk, key: fileKey, ad: headerNonce, chunkNumber.bigEndian.byteArray())
+		return try contentCryptor.decryptChunk(chunk, chunkNumber: chunkNumber, fileKey: fileKey, headerNonce: headerNonce)
 	}
 
 	// MARK: - File Size Calculation
