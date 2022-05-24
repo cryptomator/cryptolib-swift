@@ -11,8 +11,8 @@ For more information on the Cryptomator encryption scheme, visit the security ar
 
 ## Requirements
 
-- iOS 9.0 or higher
-- macOS 10.12 or higher
+- iOS 13.0 or higher
+- macOS 10.15 or higher
 
 ## Installation
 
@@ -121,12 +121,15 @@ try MasterkeyFile.changePassphrase(masterkeyFileData: masterkeyFileData, oldPass
 
 #### Constructor
 
-Create a cryptor by providing a masterkey.
+Create a cryptor by providing a masterkey and a scheme (e.g., `.sivGcm`).
 
 ```swift
 let masterkey = ...
-let cryptor = Cryptor(masterkey: masterkey)
+let scheme = ...
+let cryptor = Cryptor(masterkey: masterkey, scheme: scheme)
 ```
+
+Make sure that the data you're working with is compatible with the provided scheme.
 
 #### Path Encryption and Decryption
 
@@ -178,8 +181,9 @@ Please read our [contribution guide](.github/CONTRIBUTING.md), if you would like
 
 In general, the following preference is used to choose the implementation of cryptographic primitives:
 
-1. Apple Swift Crypto (HMAC)
-2. Apple CommonCrypto (AES-CTR, RFC 3394 Key Derivation)
+1. Apple CryptoKit (AES-GCM)
+2. Apple Swift Crypto (HMAC)
+3. Apple CommonCrypto (AES-CTR, RFC 3394 Key Derivation)
 
 This project uses [SwiftFormat](https://github.com/nicklockwood/SwiftFormat) and [SwiftLint](https://github.com/realm/SwiftLint) to enforce code style and conventions. Install these tools if you haven't already.
 

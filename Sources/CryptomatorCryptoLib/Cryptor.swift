@@ -49,6 +49,11 @@ public extension InputStream {
 	}
 }
 
+public enum CryptorScheme: String, Codable {
+	case sivCtrMac = "SIV_CTRMAC"
+	case sivGcm = "SIV_GCM"
+}
+
 public enum FileNameEncoding: String {
 	case base64url
 	case base32
@@ -66,8 +71,8 @@ public class Cryptor {
 		return contentCryptor.nonceLen + fileHeaderPayloadSize + contentCryptor.tagLen
 	}
 
-	private let cleartextChunkSize = 32 * 1024
-	private var ciphertextChunkSize: Int {
+	let cleartextChunkSize = 32 * 1024
+	var ciphertextChunkSize: Int {
 		return contentCryptor.nonceLen + cleartextChunkSize + contentCryptor.tagLen
 	}
 
@@ -81,9 +86,15 @@ public class Cryptor {
 		self.contentCryptor = contentCryptor
 	}
 
-	public convenience init(masterkey: Masterkey) {
+	public convenience init(masterkey: Masterkey, scheme: CryptorScheme) {
 		let cryptoSupport = CryptoSupport()
-		let contentCryptor = CtrThenHmacContentCryptor(macKey: masterkey.macMasterKey, cryptoSupport: cryptoSupport)
+		let contentCryptor: ContentCryptor
+		switch scheme {
+		case .sivCtrMac:
+			contentCryptor = CtrThenHmacContentCryptor(macKey: masterkey.macMasterKey, cryptoSupport: cryptoSupport)
+		case .sivGcm:
+			contentCryptor = GcmContentCryptor()
+		}
 		self.init(masterkey: masterkey, cryptoSupport: cryptoSupport, contentCryptor: contentCryptor)
 	}
 
@@ -154,19 +165,19 @@ public class Cryptor {
 	// MARK: - File Header Encryption and Decryption
 
 	func createHeader() throws -> FileHeader {
-		let nonce = try cryptoSupport.createRandomBytes(size: kCCBlockSizeAES128)
+		let nonce = try cryptoSupport.createRandomBytes(size: contentCryptor.nonceLen)
 		let contentKey = try cryptoSupport.createRandomBytes(size: kCCKeySizeAES256)
 		return FileHeader(nonce: nonce, contentKey: contentKey)
 	}
 
 	func encryptHeader(_ header: FileHeader) throws -> [UInt8] {
 		let cleartext = [UInt8](repeating: 0xFF, count: fileHeaderLegacyPayloadSize) + header.contentKey
-		return try contentCryptor.encrypt(cleartext, key: masterkey.aesMasterKey, nonce: header.nonce)
+		return try contentCryptor.encryptHeader(cleartext, key: masterkey.aesMasterKey, nonce: header.nonce)
 	}
 
 	func decryptHeader(_ header: [UInt8]) throws -> FileHeader {
 		let nonce = [UInt8](header[0 ..< contentCryptor.nonceLen])
-		let cleartext = try contentCryptor.decrypt(header, key: masterkey.aesMasterKey)
+		let cleartext = try contentCryptor.decryptHeader(header, key: masterkey.aesMasterKey)
 		let contentKey = [UInt8](cleartext[fileHeaderLegacyPayloadSize...])
 		return FileHeader(nonce: nonce, contentKey: contentKey)
 	}
@@ -301,12 +312,12 @@ public class Cryptor {
 	}
 
 	func encryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {
-		let chunkNonce = try cryptoSupport.createRandomBytes(size: kCCBlockSizeAES128)
-		return try contentCryptor.encrypt(chunk, key: fileKey, nonce: chunkNonce, ad: headerNonce, chunkNumber.bigEndian.byteArray())
+		let chunkNonce = try cryptoSupport.createRandomBytes(size: contentCryptor.nonceLen)
+		return try contentCryptor.encryptChunk(chunk, chunkNumber: chunkNumber, chunkNonce: chunkNonce, fileKey: fileKey, headerNonce: headerNonce)
 	}
 
 	func decryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {
-		return try contentCryptor.decrypt(chunk, key: fileKey, ad: headerNonce, chunkNumber.bigEndian.byteArray())
+		return try contentCryptor.decryptChunk(chunk, chunkNumber: chunkNumber, fileKey: fileKey, headerNonce: headerNonce)
 	}
 
 	// MARK: - File Size Calculation
