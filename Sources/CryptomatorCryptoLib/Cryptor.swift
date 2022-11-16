@@ -59,9 +59,9 @@ public enum FileNameEncoding: String {
 	case base32
 }
 
-struct FileHeader {
-	let nonce: [UInt8]
-	let contentKey: [UInt8]
+public struct FileHeader {
+	public let nonce: [UInt8]
+	public let contentKey: [UInt8]
 }
 
 public class Cryptor {
@@ -71,8 +71,8 @@ public class Cryptor {
 		return contentCryptor.nonceLen + fileHeaderPayloadSize + contentCryptor.tagLen
 	}
 
-	let cleartextChunkSize = 32 * 1024
-	var ciphertextChunkSize: Int {
+	public let cleartextChunkSize = 32 * 1024
+	public var ciphertextChunkSize: Int {
 		return contentCryptor.nonceLen + cleartextChunkSize + contentCryptor.tagLen
 	}
 
@@ -164,18 +164,18 @@ public class Cryptor {
 
 	// MARK: - File Header Encryption and Decryption
 
-	func createHeader() throws -> FileHeader {
+	public func createHeader() throws -> FileHeader {
 		let nonce = try cryptoSupport.createRandomBytes(size: contentCryptor.nonceLen)
 		let contentKey = try cryptoSupport.createRandomBytes(size: kCCKeySizeAES256)
 		return FileHeader(nonce: nonce, contentKey: contentKey)
 	}
 
-	func encryptHeader(_ header: FileHeader) throws -> [UInt8] {
+	public func encryptHeader(_ header: FileHeader) throws -> [UInt8] {
 		let cleartext = [UInt8](repeating: 0xFF, count: fileHeaderLegacyPayloadSize) + header.contentKey
 		return try contentCryptor.encryptHeader(cleartext, key: masterkey.aesMasterKey, nonce: header.nonce)
 	}
 
-	func decryptHeader(_ header: [UInt8]) throws -> FileHeader {
+	public func decryptHeader(_ header: [UInt8]) throws -> FileHeader {
 		let nonce = [UInt8](header[0 ..< contentCryptor.nonceLen])
 		let cleartext = try contentCryptor.decryptHeader(header, key: masterkey.aesMasterKey)
 		let contentKey = [UInt8](cleartext[fileHeaderLegacyPayloadSize...])
@@ -311,12 +311,12 @@ public class Cryptor {
 		}
 	}
 
-	func encryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {
+	public func encryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {
 		let chunkNonce = try cryptoSupport.createRandomBytes(size: contentCryptor.nonceLen)
 		return try contentCryptor.encryptChunk(chunk, chunkNumber: chunkNumber, chunkNonce: chunkNonce, fileKey: fileKey, headerNonce: headerNonce)
 	}
 
-	func decryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {
+	public func decryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {
 		return try contentCryptor.decryptChunk(chunk, chunkNumber: chunkNumber, fileKey: fileKey, headerNonce: headerNonce)
 	}
 
