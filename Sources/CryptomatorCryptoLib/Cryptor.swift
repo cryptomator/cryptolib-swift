@@ -155,7 +155,10 @@ public class Cryptor {
 
 		// decrypt:
 		let cleartext = try AesSiv.decrypt(aesKey: masterkey.aesMasterKey, macKey: masterkey.macMasterKey, ciphertext: [UInt8](ciphertextData), ad: [UInt8](dirId))
-		return String(decoding: Data(cleartext), as: UTF8.self)
+		guard let cleartextString = String(bytes: cleartext, encoding: .utf8) else {
+			throw CryptoError.invalidParameter("Can't UTF-8-decode cleartext")
+		}
+		return cleartextString
 	}
 
 	// MARK: - File Header Encryption and Decryption
