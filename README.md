@@ -1,7 +1,7 @@
 [![Swift Compatibility](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fcryptomator%2Fcryptolib-swift%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/cryptomator/cryptolib-swift)
 [![Platform Compatibility](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fcryptomator%2Fcryptolib-swift%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/cryptomator/cryptolib-swift)
-[![Codacy Code Quality](https://app.codacy.com/project/badge/Grade/dba85991a19942bab0d3d587522397ef)](https://www.codacy.com/gh/cryptomator/cryptolib-swift/dashboard)
-[![Codacy Coverage](https://app.codacy.com/project/badge/Coverage/dba85991a19942bab0d3d587522397ef)](https://www.codacy.com/gh/cryptomator/cryptolib-swift/dashboard)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=cryptomator_cryptolib-swift&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=cryptomator_cryptolib-swift)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=cryptomator_cryptolib-swift&metric=coverage)](https://sonarcloud.io/summary/new_code?id=cryptomator_cryptolib-swift)
 
 # CryptoLib Swift
 
