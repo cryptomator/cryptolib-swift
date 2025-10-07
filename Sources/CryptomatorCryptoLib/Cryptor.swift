@@ -87,15 +87,15 @@ public class Cryptor {
 	}
 
 	public convenience init(masterkey: Masterkey, scheme: CryptorScheme) {
-		let cryptoSupport = CryptoSupport()
-		let contentCryptor: ContentCryptor
+		let defaultCryptoSupport = CryptoSupport()
+		let chosenContentCryptor: ContentCryptor
 		switch scheme {
 		case .sivCtrMac:
-			contentCryptor = CtrThenHmacContentCryptor(macKey: masterkey.macMasterKey, cryptoSupport: cryptoSupport)
+			chosenContentCryptor = CtrThenHmacContentCryptor(macKey: masterkey.macMasterKey, cryptoSupport: defaultCryptoSupport)
 		case .sivGcm:
-			contentCryptor = GcmContentCryptor()
+			chosenContentCryptor = GcmContentCryptor()
 		}
-		self.init(masterkey: masterkey, cryptoSupport: cryptoSupport, contentCryptor: contentCryptor)
+		self.init(masterkey: masterkey, cryptoSupport: defaultCryptoSupport, contentCryptor: chosenContentCryptor)
 	}
 
 	// MARK: - Path Encryption and Decryption
@@ -295,7 +295,6 @@ public class Cryptor {
 		let header = try decryptHeader(ciphertextHeader)
 
 		// decrypt and write cleartext content:
-		let ciphertextChunkSize = contentCryptor.nonceLen + cleartextChunkSize + contentCryptor.tagLen
 		var chunkNumber: UInt64 = 0
 		while ciphertextStream.hasBytesAvailable {
 			try autoreleasepool {
