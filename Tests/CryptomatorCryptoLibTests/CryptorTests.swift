@@ -88,7 +88,7 @@ class CryptorTests: XCTestCase {
 	func testEncryptAndDecryptSingleChunk() throws {
 		let nonce = [UInt8](repeating: 0x00, count: contentCryptor.nonceLen)
 		let filekey = [UInt8](repeating: 0x00, count: 32)
-		let cleartext = [UInt8]("hello world".data(using: .ascii)!)
+		let cleartext = [UInt8]("hello world".utf8)
 
 		let encrypted = try cryptor.encryptSingleChunk(cleartext, chunkNumber: 0, headerNonce: nonce, fileKey: filekey)
 		let decrypted = try cryptor.decryptSingleChunk(encrypted, chunkNumber: 0, headerNonce: nonce, fileKey: filekey)

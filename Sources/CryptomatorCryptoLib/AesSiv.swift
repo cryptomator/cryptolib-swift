@@ -181,7 +181,7 @@ class AesSiv {
 		return result
 	}
 
-	// ISO/IEC 7816-4:2005 Padding: First bit 1, following bits 0
+	/// ISO/IEC 7816-4:2005 Padding: First bit 1, following bits 0
 	private static func pad(_ data: [UInt8]) -> [UInt8] {
 		var result = data
 		if result.count < 16 {
