@@ -26,35 +26,76 @@ public extension FixedWidthInteger {
 	}
 }
 
-public enum InputStreamError: Error {
-	case readOperationFailed
+extension InputStream {
+	func readChunk(maxLength: Int) throws -> [UInt8]? {
+		var buffer = [UInt8](repeating: 0x00, count: maxLength)
+		var length = 0
+		while length < maxLength {
+			let result = buffer.withUnsafeMutableBufferPointer { read($0.baseAddress! + length, maxLength: maxLength - length) }
+			guard result >= 0 else {
+				throw streamError ?? CryptoError.ioError
+			}
+			guard result > 0 else {
+				break
+			}
+			length += result
+		}
+		guard length > 0 else {
+			return nil
+		}
+		buffer.removeSubrange(length...)
+		return buffer
+	}
 }
 
-public extension InputStream {
-	func read(maxLength: Int) throws -> [UInt8]? {
-		var buffer = [UInt8](repeating: 0x00, count: maxLength)
-		let length = read(&buffer, maxLength: maxLength)
-		switch length {
-		case _ where length > 0:
-			assert(length <= buffer.count)
-			buffer.removeSubrange(length...)
-			return buffer
-		case 0:
-			return nil
-		case _ where length < 0:
-			throw streamError ?? InputStreamError.readOperationFailed
-		default:
-			fatalError()
+extension OutputStream {
+	func write(_ bytes: [UInt8]) throws {
+		var written = 0
+		while written < bytes.count {
+			let result = bytes.withUnsafeBufferPointer { write($0.baseAddress! + written, maxLength: bytes.count - written) }
+			guard result > 0 else {
+				throw streamError ?? CryptoError.ioError
+			}
+			written += result
 		}
 	}
 }
 
-public enum CryptorScheme: String, Codable {
+extension Stream {
+	func openChecked() throws {
+		open()
+		if streamStatus == .error {
+			throw streamError ?? CryptoError.ioError
+		}
+	}
+}
+
+private extension Progress {
+	func begin(expectedUnitCount: Int?) {
+		totalUnitCount = expectedUnitCount.map { Int64(max($0, 1)) } ?? -1
+		completedUnitCount = 0
+	}
+
+	/// Stays incomplete until the end of the input has been read successfully.
+	func update(processedUnitCount: Int64) {
+		completedUnitCount = totalUnitCount > 0 ? min(processedUnitCount, totalUnitCount - 1) : processedUnitCount
+	}
+
+	func complete(processedUnitCount: Int64) {
+		let total = max(processedUnitCount, 1)
+		if totalUnitCount != total {
+			totalUnitCount = total
+		}
+		completedUnitCount = total
+	}
+}
+
+public enum CryptorScheme: String, Codable, Sendable {
 	case sivCtrMac = "SIV_CTRMAC"
 	case sivGcm = "SIV_GCM"
 }
 
-public enum FileNameEncoding: String {
+public enum FileNameEncoding: String, Sendable {
 	case base64url
 	case base32
 }
@@ -64,7 +105,7 @@ struct FileHeader {
 	let contentKey: [UInt8]
 }
 
-public class Cryptor {
+public final class Cryptor: Sendable {
 	private let fileHeaderLegacyPayloadSize = 8
 	public var fileHeaderSize: Int {
 		let fileHeaderPayloadSize = fileHeaderLegacyPayloadSize + kCCKeySizeAES256
@@ -87,13 +128,12 @@ public class Cryptor {
 	}
 
 	public convenience init(masterkey: Masterkey, scheme: CryptorScheme) {
-		let defaultCryptoSupport = CryptoSupport()
-		let chosenContentCryptor: ContentCryptor
-		switch scheme {
+		let defaultCryptoSupport = DefaultCryptoSupport()
+		let chosenContentCryptor: ContentCryptor = switch scheme {
 		case .sivCtrMac:
-			chosenContentCryptor = CtrThenHmacContentCryptor(macKey: masterkey.macMasterKey, cryptoSupport: defaultCryptoSupport)
+			CtrThenHmacContentCryptor(macKey: masterkey.macMasterKey, cryptoSupport: defaultCryptoSupport)
 		case .sivGcm:
-			chosenContentCryptor = GcmContentCryptor()
+			GcmContentCryptor()
 		}
 		self.init(masterkey: masterkey, cryptoSupport: defaultCryptoSupport, contentCryptor: chosenContentCryptor)
 	}
@@ -175,6 +215,9 @@ public class Cryptor {
 	}
 
 	func decryptHeader(_ header: [UInt8]) throws -> FileHeader {
+		guard header.count == fileHeaderSize else {
+			throw CryptoError.unauthenticCiphertext
+		}
 		let nonce = [UInt8](header[0 ..< contentCryptor.nonceLen])
 		let cleartext = try contentCryptor.decryptHeader(header, key: masterkey.aesMasterKey)
 		let contentKey = [UInt8](cleartext[fileHeaderLegacyPayloadSize...])
@@ -186,127 +229,132 @@ public class Cryptor {
 	/**
 	 Encrypts file content.
 
-	 This method supports implicit progress composition.
+	 Checks for cancellation of the calling Task before opening the output and before each chunk, and throws `CancellationError` when cancelled. On any error, a partially written ciphertext file is left for the caller to delete.
 
 	 - Parameter cleartextURL: The input URL of a cleartext file.
 	 - Parameter ciphertextURL: The output URL of the ciphertext file.
+	 - Parameter progress: An optional progress whose `totalUnitCount` and `completedUnitCount` this method resets when the call starts and sets from then on. Do not modify them during the call. Units are ciphertext payload bytes, with a total of at least 1. The progress is completed on success and left incomplete on failure or cancellation.
 	 */
-	public func encryptContent(from cleartextURL: URL, to ciphertextURL: URL) throws {
+	@concurrent public func encryptContent(from cleartextURL: URL, to ciphertextURL: URL, progress: Progress? = nil) async throws {
+		progress?.begin(expectedUnitCount: nil)
+
 		// open cleartext input stream:
 		guard let cleartextStream = InputStream(url: cleartextURL) else {
 			throw CryptoError.ioError
 		}
-		cleartextStream.schedule(in: .current, forMode: .default)
-		cleartextStream.open()
 		defer { cleartextStream.close() }
-
-		// open ciphertext output stream:
-		guard let ciphertextStream = OutputStream(url: ciphertextURL, append: false) else {
-			throw CryptoError.ioError
-		}
-		ciphertextStream.schedule(in: .current, forMode: .default)
-		ciphertextStream.open()
-		defer { ciphertextStream.close() }
+		try cleartextStream.openChecked()
 
 		// determine cleartext size:
 		let attributes = try FileManager.default.attributesOfItem(atPath: cleartextURL.path)
 		let cleartextSize = attributes[FileAttributeKey.size] as? Int
 
+		// a cancelled call must not truncate an existing output file:
+		try Task.checkCancellation()
+
+		// open ciphertext output stream:
+		guard let ciphertextStream = OutputStream(url: ciphertextURL, append: false) else {
+			throw CryptoError.ioError
+		}
+		defer { ciphertextStream.close() }
+		try ciphertextStream.openChecked()
+
 		// encrypt:
-		try encryptContent(from: cleartextStream, to: ciphertextStream, cleartextSize: cleartextSize)
+		try await encryptContent(from: cleartextStream, to: ciphertextStream, cleartextSize: cleartextSize, progress: progress)
 	}
 
-	func encryptContent(from cleartextStream: InputStream, to ciphertextStream: OutputStream, cleartextSize: Int?) throws {
-		// create progress:
-		let progress: Progress
-		if let cleartextSize = cleartextSize {
-			let ciphertextSize = calculateCiphertextSize(cleartextSize)
-			progress = Progress(totalUnitCount: Int64(ciphertextSize))
-		} else {
-			progress = Progress(totalUnitCount: -1)
-		}
+	func encryptContent(from cleartextStream: InputStream, to ciphertextStream: OutputStream, cleartextSize: Int?, progress: Progress?) async throws {
+		progress?.begin(expectedUnitCount: cleartextSize.map { calculateCiphertextSize($0) })
 
 		// encrypt and write header:
 		let header = try createHeader()
 		let ciphertextHeader = try encryptHeader(header)
-		ciphertextStream.write(ciphertextHeader, maxLength: ciphertextHeader.count)
+		try ciphertextStream.write(ciphertextHeader)
 
 		// encrypt and write ciphertext content:
 		var chunkNumber: UInt64 = 0
-		while cleartextStream.hasBytesAvailable {
-			try autoreleasepool {
-				guard let cleartextChunk = try cleartextStream.read(maxLength: cleartextChunkSize) else {
-					return
-				}
+		var processedSize: Int64 = 0
+		while let cleartextChunk = try cleartextStream.readChunk(maxLength: cleartextChunkSize) {
+			try Task.checkCancellation()
+			let ciphertextChunk = try autoreleasepool {
 				let ciphertextChunk = try encryptSingleChunk(cleartextChunk, chunkNumber: chunkNumber, headerNonce: header.nonce, fileKey: header.contentKey)
-				ciphertextStream.write(ciphertextChunk, maxLength: ciphertextChunk.count)
-				progress.completedUnitCount += Int64(ciphertextChunk.count)
-				chunkNumber += 1
+				try ciphertextStream.write(ciphertextChunk)
+				return ciphertextChunk
 			}
+			processedSize += Int64(ciphertextChunk.count)
+			progress?.update(processedUnitCount: processedSize)
+			chunkNumber += 1
+			await Task.yield()
 		}
+		progress?.complete(processedUnitCount: processedSize)
 	}
 
 	/**
 	 Decrypts file content.
 
-	 This method supports implicit progress composition.
+	 Checks for cancellation of the calling Task before opening the output and before each chunk, and throws `CancellationError` when cancelled. On any error, a partially written cleartext file is left for the caller to delete.
 
 	 - Parameter ciphertextURL: The input URL of a ciphertext file.
 	 - Parameter cleartextURL: The output URL of the cleartext file.
+	 - Parameter progress: An optional progress whose `totalUnitCount` and `completedUnitCount` this method resets when the call starts and sets from then on. Do not modify them during the call. Units are cleartext bytes, with a total of at least 1. The progress is completed on success and left incomplete on failure or cancellation.
 	 */
-	public func decryptContent(from ciphertextURL: URL, to cleartextURL: URL) throws {
+	@concurrent public func decryptContent(from ciphertextURL: URL, to cleartextURL: URL, progress: Progress? = nil) async throws {
+		progress?.begin(expectedUnitCount: nil)
+
 		// open ciphertext input stream:
 		guard let ciphertextStream = InputStream(url: ciphertextURL) else {
 			throw CryptoError.ioError
 		}
-		ciphertextStream.schedule(in: .current, forMode: .default)
-		ciphertextStream.open()
 		defer { ciphertextStream.close() }
-
-		// open cleartext output stream:
-		guard let cleartextStream = OutputStream(url: cleartextURL, append: false) else {
-			throw CryptoError.ioError
-		}
-		cleartextStream.schedule(in: .current, forMode: .default)
-		cleartextStream.open()
-		defer { cleartextStream.close() }
+		try ciphertextStream.openChecked()
 
 		// determine ciphertext size:
 		let attributes = try FileManager.default.attributesOfItem(atPath: ciphertextURL.path)
 		let ciphertextSize = attributes[FileAttributeKey.size] as? Int
 
+		// a cancelled call must not truncate an existing output file:
+		try Task.checkCancellation()
+
+		// open cleartext output stream:
+		guard let cleartextStream = OutputStream(url: cleartextURL, append: false) else {
+			throw CryptoError.ioError
+		}
+		defer { cleartextStream.close() }
+		try cleartextStream.openChecked()
+
 		// decrypt:
-		try decryptContent(from: ciphertextStream, to: cleartextStream, ciphertextSize: ciphertextSize)
+		try await decryptContent(from: ciphertextStream, to: cleartextStream, ciphertextSize: ciphertextSize, progress: progress)
 	}
 
-	func decryptContent(from ciphertextStream: InputStream, to cleartextStream: OutputStream, ciphertextSize: Int?) throws {
-		// create progress:
-		let progress: Progress
-		if let ciphertextSize = ciphertextSize, let cleartextSize = try? calculateCleartextSize(ciphertextSize - fileHeaderSize) {
-			progress = Progress(totalUnitCount: Int64(cleartextSize))
+	func decryptContent(from ciphertextStream: InputStream, to cleartextStream: OutputStream, ciphertextSize: Int?, progress: Progress?) async throws {
+		if let ciphertextSize, ciphertextSize >= fileHeaderSize {
+			progress?.begin(expectedUnitCount: try? calculateCleartextSize(ciphertextSize - fileHeaderSize))
 		} else {
-			progress = Progress(totalUnitCount: -1)
+			progress?.begin(expectedUnitCount: nil)
 		}
 
 		// read and decrypt header:
-		guard let ciphertextHeader = try ciphertextStream.read(maxLength: fileHeaderSize) else {
-			throw CryptoError.ioError
+		guard let ciphertextHeader = try ciphertextStream.readChunk(maxLength: fileHeaderSize) else {
+			throw CryptoError.unauthenticCiphertext
 		}
 		let header = try decryptHeader(ciphertextHeader)
 
 		// decrypt and write cleartext content:
 		var chunkNumber: UInt64 = 0
-		while ciphertextStream.hasBytesAvailable {
-			try autoreleasepool {
-				guard let ciphertextChunk = try ciphertextStream.read(maxLength: ciphertextChunkSize) else {
-					return
-				}
+		var processedSize: Int64 = 0
+		while let ciphertextChunk = try ciphertextStream.readChunk(maxLength: ciphertextChunkSize) {
+			try Task.checkCancellation()
+			let cleartextChunk = try autoreleasepool {
 				let cleartextChunk = try decryptSingleChunk(ciphertextChunk, chunkNumber: chunkNumber, headerNonce: header.nonce, fileKey: header.contentKey)
-				cleartextStream.write(cleartextChunk, maxLength: cleartextChunk.count)
-				progress.completedUnitCount += Int64(cleartextChunk.count)
-				chunkNumber += 1
+				try cleartextStream.write(cleartextChunk)
+				return cleartextChunk
 			}
+			processedSize += Int64(cleartextChunk.count)
+			progress?.update(processedUnitCount: processedSize)
+			chunkNumber += 1
+			await Task.yield()
 		}
+		progress?.complete(processedUnitCount: processedSize)
 	}
 
 	func encryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {

@@ -8,21 +8,17 @@
 
 import Foundation
 
-class CryptoSupport {
+protocol CryptoSupport: Sendable {
 	/**
 	 Creates an array of cryptographically secure random bytes.
 
 	 - Parameter size: The number of random bytes to return in the array.
 	 - Returns: An array with cryptographically secure random bytes.
 	 */
-	func createRandomBytes(size: Int) throws -> [UInt8] {
-		var randomBytes = [UInt8](repeating: 0x00, count: size)
-		guard SecRandomCopyBytes(kSecRandomDefault, randomBytes.count, &randomBytes) == errSecSuccess else {
-			throw CryptoError.csprngError
-		}
-		return randomBytes
-	}
+	func createRandomBytes(size: Int) throws -> [UInt8]
+}
 
+extension CryptoSupport {
 	/**
 	 Compares byte arrays in constant-time.
 
@@ -45,5 +41,15 @@ class CryptoSupport {
 			}
 			return diff == 0
 		}
+	}
+}
+
+struct DefaultCryptoSupport: CryptoSupport {
+	func createRandomBytes(size: Int) throws -> [UInt8] {
+		var randomBytes = [UInt8](repeating: 0x00, count: size)
+		guard SecRandomCopyBytes(kSecRandomDefault, randomBytes.count, &randomBytes) == errSecSuccess else {
+			throw CryptoError.csprngError
+		}
+		return randomBytes
 	}
 }

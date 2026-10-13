@@ -10,7 +10,7 @@ import CommonCrypto
 import Foundation
 
 class AesSiv {
-	static let cryptoSupport = CryptoSupport()
+	static let cryptoSupport = DefaultCryptoSupport()
 	static let zero = [UInt8](repeating: 0x00, count: 16)
 	static let dblConst: UInt8 = 0x87
 
@@ -79,11 +79,10 @@ class AesSiv {
 			d = try xor(dbl(d), cmac(macKey: macKey, data: s))
 		}
 
-		let t: [UInt8]
-		if plaintext.count >= 16 {
-			t = xorend(plaintext, d)
+		let t: [UInt8] = if plaintext.count >= 16 {
+			xorend(plaintext, d)
 		} else {
-			t = xor(dbl(d), pad(plaintext))
+			xor(dbl(d), pad(plaintext))
 		}
 
 		return try cmac(macKey: macKey, data: t)

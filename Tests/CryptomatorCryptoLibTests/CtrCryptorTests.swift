@@ -67,4 +67,8 @@ class CtrCryptorTest: CryptorTests {
 		XCTAssertEqual([UInt8](repeating: 0xF0, count: 16), decrypted.nonce)
 		XCTAssertEqual([UInt8](repeating: 0xF0, count: 32), decrypted.contentKey)
 	}
+
+	func testEncryptContentMatches110Fixture() async throws {
+		try await assertEncryptContentMatchesFixture(expectedSize: 70232, expectedSHA256: "0c22b73f0e99ef06c12db5d56784977921bb69dc477f32b7aea7fc17f3590dbe")
+	}
 }

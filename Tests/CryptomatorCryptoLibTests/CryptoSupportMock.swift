@@ -9,8 +9,8 @@
 import Foundation
 @testable import CryptomatorCryptoLib
 
-class CryptoSupportMock: CryptoSupport {
-	override func createRandomBytes(size: Int) throws -> [UInt8] {
+struct CryptoSupportMock: CryptoSupport {
+	func createRandomBytes(size: Int) throws -> [UInt8] {
 		return [UInt8](repeating: 0xF0, count: size)
 	}
 }
