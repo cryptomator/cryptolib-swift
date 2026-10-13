@@ -73,6 +73,10 @@ class GcmCryptorTests: CryptorTests {
 		XCTAssertEqual([UInt8](repeating: 0xF0, count: 32), decrypted.contentKey)
 	}
 
+	func testEncryptContentMatches110Fixture() async throws {
+		try await assertEncryptContentMatchesFixture(expectedSize: 70152, expectedSHA256: "69c5e2f68080d9ecde94c0eb75869808635a0057126d1e46d73521d04a54ee92")
+	}
+
 	func testDecryptSingleChunk() throws {
 		let headerNonce: [UInt8] = [
 			0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,

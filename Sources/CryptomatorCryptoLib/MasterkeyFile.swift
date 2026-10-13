@@ -27,7 +27,7 @@ public enum MasterkeyFileError: Error, Equatable {
 	case keyWrapFailed(_ status: CCCryptorStatus)
 }
 
-public class MasterkeyFile {
+public final class MasterkeyFile: Sendable {
 	public static let defaultScryptCostParam = 1 << 15 // 2^15
 	static let defaultScryptSaltSize = 8
 	static let defaultScryptBlockSize = 8
@@ -152,7 +152,7 @@ public class MasterkeyFile {
 		return try JSONEncoder().encode(content)
 	}
 
-	static func lock(masterkey: Masterkey, vaultVersion: Int, passphrase: String, pepper: [UInt8], scryptCostParam: Int, cryptoSupport: CryptoSupport = CryptoSupport()) throws -> Content {
+	static func lock(masterkey: Masterkey, vaultVersion: Int, passphrase: String, pepper: [UInt8], scryptCostParam: Int, cryptoSupport: CryptoSupport = DefaultCryptoSupport()) throws -> Content {
 		let pw = [UInt8](passphrase.precomposedStringWithCanonicalMapping.utf8)
 		let salt = try cryptoSupport.createRandomBytes(size: defaultScryptSaltSize)
 		var kek = [UInt8](repeating: 0x00, count: kCCKeySizeAES256)
@@ -194,7 +194,7 @@ public class MasterkeyFile {
 		return try JSONEncoder().encode(content)
 	}
 
-	static func changePassphrase(masterkeyFileData: Data, oldPassphrase: String, newPassphrase: String, pepper: [UInt8], scryptCostParam: Int, cryptoSupport: CryptoSupport = CryptoSupport()) throws -> Content {
+	static func changePassphrase(masterkeyFileData: Data, oldPassphrase: String, newPassphrase: String, pepper: [UInt8], scryptCostParam: Int, cryptoSupport: CryptoSupport = DefaultCryptoSupport()) throws -> Content {
 		let masterkeyFile = try MasterkeyFile.withContentFromData(data: masterkeyFileData)
 		let masterkey = try masterkeyFile.unlock(passphrase: oldPassphrase, pepper: pepper)
 		return try MasterkeyFile.lock(masterkey: masterkey, vaultVersion: masterkeyFile.version, passphrase: newPassphrase, pepper: pepper, scryptCostParam: scryptCostParam, cryptoSupport: cryptoSupport)

@@ -10,7 +10,7 @@ import CommonCrypto
 import CryptoKit
 import Foundation
 
-protocol ContentCryptor {
+protocol ContentCryptor: Sendable {
 	var nonceLen: Int { get }
 	var tagLen: Int { get }
 
@@ -65,7 +65,7 @@ extension ContentCryptor {
 	}
 }
 
-class GcmContentCryptor: ContentCryptor {
+final class GcmContentCryptor: ContentCryptor {
 	let nonceLen = 12 // 96 bit
 	let tagLen = 16 // 128 bit
 
@@ -82,7 +82,9 @@ class GcmContentCryptor: ContentCryptor {
 	}
 
 	func decrypt(_ chunk: [UInt8], key keyBytes: [UInt8], ad: [UInt8]) throws -> [UInt8] {
-		assert(chunk.count >= nonceLen + tagLen, "ciphertext chunk must at least contain nonce + tag")
+		guard chunk.count >= nonceLen + tagLen else {
+			throw CryptoError.unauthenticCiphertext
+		}
 
 		let key = SymmetricKey(data: keyBytes)
 		let encrypted = try AES.GCM.SealedBox(combined: chunk)
@@ -92,7 +94,7 @@ class GcmContentCryptor: ContentCryptor {
 	}
 }
 
-class CtrThenHmacContentCryptor: ContentCryptor {
+final class CtrThenHmacContentCryptor: ContentCryptor {
 	let nonceLen = kCCBlockSizeAES128
 	let tagLen = Int(CC_SHA256_DIGEST_LENGTH)
 
@@ -115,7 +117,9 @@ class CtrThenHmacContentCryptor: ContentCryptor {
 	}
 
 	func decrypt(_ chunk: [UInt8], key: [UInt8], ad: [UInt8]) throws -> [UInt8] {
-		assert(chunk.count >= nonceLen + tagLen, "ciphertext chunk must at least contain nonce + tag")
+		guard chunk.count >= nonceLen + tagLen else {
+			throw CryptoError.unauthenticCiphertext
+		}
 
 		// decompose chunk:
 		let beginOfMAC = chunk.count - tagLen

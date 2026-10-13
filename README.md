@@ -13,6 +13,7 @@ For more information on the Cryptomator encryption scheme, visit the security ar
 
 - iOS 13.0 or higher
 - macOS 10.15 or higher
+- Swift 6.2 (Xcode 26) or newer
 
 ## Installation
 
@@ -21,7 +22,7 @@ For more information on the Cryptomator encryption scheme, visit the security ar
 You can use [Swift Package Manager](https://swift.org/package-manager/ "Swift Package Manager").
 
 ```swift
-.package(url: "https://github.com/cryptomator/cryptolib-swift.git", .upToNextMinor(from: "1.1.0"))
+.package(url: "https://github.com/cryptomator/cryptolib-swift.git", .upToNextMinor(from: "2.0.0"))
 ```
 
 ## Usage
@@ -153,15 +154,19 @@ let cleartextName = try cryptor.decryptFileName(ciphertextName, dirId: dirId)
 
 #### File Content Encryption and Decryption
 
-Encrypt and decrypt file content via URLs. These methods support [implicit progress composition](https://developer.apple.com/documentation/foundation/progress#1661068).
+Encrypt and decrypt file content via URLs. Both methods run off the caller's actor. Cancelling the calling Task throws `CancellationError`. If a call fails or is cancelled, any partially written output file is left for you to delete.
+
+To observe progress, pass a dedicated `Progress`. The method resets its unit counts when the call starts and sets them itself, so don't modify them during the call. It is completed on success.
 
 ```swift
 let cryptor = ...
 let fileURL = ...
 let ciphertextURL = ...
 let cleartextURL = ...
-try cryptor.encryptContent(from: fileURL, to: ciphertextURL)
-try cryptor.decryptContent(from: ciphertextURL, to: cleartextURL)
+let overallProgress = Progress(totalUnitCount: 1)
+let encryptProgress = Progress(totalUnitCount: 0, parent: overallProgress, pendingUnitCount: 1)
+try await cryptor.encryptContent(from: fileURL, to: ciphertextURL, progress: encryptProgress)
+try await cryptor.decryptContent(from: ciphertextURL, to: cleartextURL)
 ```
 
 #### File Size Calculation
