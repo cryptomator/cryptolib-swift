@@ -12,7 +12,7 @@ import XCTest
 
 class MasterkeyFileTests: XCTestCase {
 	func testCreateWithContentFromData() throws {
-		let data = """
+		let data = Data("""
 		{
 			"version": 7,
 			"scryptSalt": "AAAAAAAAAAA=",
@@ -22,7 +22,7 @@ class MasterkeyFileTests: XCTestCase {
 			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
 			"versionMac": "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g="
 		}
-		""".data(using: .utf8)!
+		""".utf8)
 		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
 		XCTAssertEqual(7, masterkeyFile.content.version)
 		XCTAssertEqual("AAAAAAAAAAA=", masterkeyFile.content.scryptSalt)
@@ -35,7 +35,7 @@ class MasterkeyFileTests: XCTestCase {
 
 	func testUnlockWithPassphrase() throws {
 		let expectedKey = [UInt8](repeating: 0x00, count: 32)
-		let data = """
+		let data = Data("""
 		{
 			"version": 7,
 			"scryptSalt": "AAAAAAAAAAA=",
@@ -45,7 +45,7 @@ class MasterkeyFileTests: XCTestCase {
 			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
 			"versionMac": "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g="
 		}
-		""".data(using: .utf8)!
+		""".utf8)
 		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
 		let masterkey = try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]())
 		XCTAssertEqual(expectedKey, masterkey.aesMasterKey)
@@ -53,7 +53,7 @@ class MasterkeyFileTests: XCTestCase {
 	}
 
 	func testUnlockWithWrongPassphrase() throws {
-		let data = """
+		let data = Data("""
 		{
 			"version": 7,
 			"scryptSalt": "AAAAAAAAAAA=",
@@ -63,7 +63,7 @@ class MasterkeyFileTests: XCTestCase {
 			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
 			"versionMac": "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g="
 		}
-		""".data(using: .utf8)!
+		""".utf8)
 		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
 		XCTAssertThrowsError(try masterkeyFile.unlock(passphrase: "qwe", pepper: [UInt8]()), "wrong passphrase") { error in
 			XCTAssertEqual(.invalidPassphrase, error as? MasterkeyFileError)
@@ -71,7 +71,7 @@ class MasterkeyFileTests: XCTestCase {
 	}
 
 	func testUnlockWithInvalidVersionMac() throws {
-		let data = """
+		let data = Data("""
 		{
 			"version": 7,
 			"scryptSalt": "AAAAAAAAAAA=",
@@ -81,7 +81,7 @@ class MasterkeyFileTests: XCTestCase {
 			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
 			"versionMac": "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+G="
 		}
-		""".data(using: .utf8)!
+		""".utf8)
 		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
 		XCTAssertThrowsError(try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]()), "invalid version mac") { error in
 			XCTAssertEqual(.malformedMasterkeyFile("incorrect version or versionMac"), error as? MasterkeyFileError)
@@ -89,7 +89,7 @@ class MasterkeyFileTests: XCTestCase {
 	}
 
 	func testUnlockWithMalformedJson1() throws {
-		let data = """
+		let data = Data("""
 		{
 			"version": 7,
 			"scryptSalt": "AAAAAAAAAAA=",
@@ -99,7 +99,7 @@ class MasterkeyFileTests: XCTestCase {
 			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
 			"versionMac": "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g="
 		}
-		""".data(using: .utf8)!
+		""".utf8)
 		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
 		XCTAssertThrowsError(try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]()), "malformed json") { error in
 			XCTAssertEqual(.malformedMasterkeyFile("invalid base64 data in primaryMasterKey"), error as? MasterkeyFileError)
@@ -107,7 +107,7 @@ class MasterkeyFileTests: XCTestCase {
 	}
 
 	func testUnlockWithMalformedJson2() throws {
-		let data = """
+		let data = Data("""
 		{
 			"version": 7,
 			"scryptSalt": "AAAAAAAAAAA=",
@@ -117,7 +117,7 @@ class MasterkeyFileTests: XCTestCase {
 			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q!!",
 			"versionMac": "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g="
 		}
-		""".data(using: .utf8)!
+		""".utf8)
 		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
 		XCTAssertThrowsError(try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]()), "malformed json") { error in
 			XCTAssertEqual(.malformedMasterkeyFile("invalid base64 data in hmacMasterKey"), error as? MasterkeyFileError)
@@ -125,7 +125,7 @@ class MasterkeyFileTests: XCTestCase {
 	}
 
 	func testUnlockWithMalformedJson3() throws {
-		let data = """
+		let data = Data("""
 		{
 			"version": 7,
 			"scryptSalt": "AAAAAAAAAAA=",
@@ -135,7 +135,7 @@ class MasterkeyFileTests: XCTestCase {
 			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
 			"versionMac": "cn2sAK6l"
 		}
-		""".data(using: .utf8)!
+		""".utf8)
 		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
 		XCTAssertThrowsError(try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]()), "malformed json") { error in
 			XCTAssertEqual(.malformedMasterkeyFile("invalid base64 data in versionMac"), error as? MasterkeyFileError)
@@ -149,7 +149,7 @@ class MasterkeyFileTests: XCTestCase {
 			0x62, 0x11, 0xD9, 0xAF, 0xE2, 0xF5, 0x5F, 0xDE,
 			0xDF, 0xCB, 0xB5, 0xE7, 0x5A, 0xEF, 0x34, 0xF9
 		]
-		let data = """
+		let data = Data("""
 		{
 			"version": 7,
 			"scryptSalt": "AAAAAAAAAAA=",
@@ -159,7 +159,7 @@ class MasterkeyFileTests: XCTestCase {
 			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
 			"versionMac": "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g="
 		}
-		""".data(using: .utf8)!
+		""".utf8)
 		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
 		let kek = try masterkeyFile.deriveKey(passphrase: "asd", pepper: [UInt8]())
 		XCTAssertEqual(expectedKey, kek)
@@ -167,7 +167,7 @@ class MasterkeyFileTests: XCTestCase {
 
 	func testUnlockWithKEK() throws {
 		let expectedKey = [UInt8](repeating: 0x00, count: 32)
-		let data = """
+		let data = Data("""
 		{
 			"version": 7,
 			"scryptSalt": "AAAAAAAAAAA=",
@@ -177,7 +177,7 @@ class MasterkeyFileTests: XCTestCase {
 			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
 			"versionMac": "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g="
 		}
-		""".data(using: .utf8)!
+		""".utf8)
 		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
 		let kek: [UInt8] = [
 			0x8C, 0xF4, 0xA0, 0x4E, 0xC8, 0x45, 0xF4, 0x28,
@@ -211,7 +211,7 @@ class MasterkeyFileTests: XCTestCase {
 
 	func testChangePassphrase() throws {
 		let expectedKey = [UInt8](repeating: 0x00, count: 32)
-		let data = """
+		let data = Data("""
 		{
 			"version": 7,
 			"scryptSalt": "AAAAAAAAAAA=",
@@ -221,7 +221,7 @@ class MasterkeyFileTests: XCTestCase {
 			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
 			"versionMac": "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g="
 		}
-		""".data(using: .utf8)!
+		""".utf8)
 		let content = try MasterkeyFile.changePassphrase(masterkeyFileData: data, oldPassphrase: "asd", newPassphrase: "qwe", pepper: [UInt8](), scryptCostParam: 2, cryptoSupport: CryptoSupportMock())
 		let masterkeyFile = MasterkeyFile(content: content)
 		let masterkey = try masterkeyFile.unlock(passphrase: "qwe", pepper: [UInt8]())

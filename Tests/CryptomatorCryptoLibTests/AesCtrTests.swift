@@ -9,7 +9,7 @@
 import XCTest
 @testable import CryptomatorCryptoLib
 
-// test vectors F5.5 and F5.6 from https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38a.pdf
+/// test vectors F5.5 and F5.6 from https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38a.pdf
 class AesCtrTests: XCTestCase {
 	let key: [UInt8] = [
 		0x60, 0x3D, 0xEB, 0x10, 0x15, 0xCA, 0x71, 0xBE,

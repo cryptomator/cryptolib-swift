@@ -10,7 +10,7 @@ import XCTest
 @testable import CryptomatorCryptoLib
 
 class MasterkeyTests: XCTestCase {
-	func testCreateFromRaw() throws {
+	func testCreateFromRaw() {
 		let aesMasterKey = [UInt8](repeating: 0x77, count: 32)
 		let macMasterKey = [UInt8](repeating: 0x55, count: 32)
 		let masterkey = Masterkey.createFromRaw(rawKey: aesMasterKey + macMasterKey)

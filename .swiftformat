@@ -1,4 +1,5 @@
---minversion 0.49.2
+--minversion 0.58.3
+--exclude DerivedData
 
 # format options
 
@@ -9,7 +10,7 @@
 --indent tab
 --self init-only
 --stripunusedargs closure-only
---swiftversion 5.1
+--swiftversion 6.2
 --tabwidth 4
 
 # rules

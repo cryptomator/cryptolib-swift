@@ -10,7 +10,7 @@ import CommonCrypto
 import Foundation
 
 class AesSiv {
-	static let cryptoSupport = CryptoSupport()
+	static let cryptoSupport = DefaultCryptoSupport()
 	static let zero = [UInt8](repeating: 0x00, count: 16)
 	static let dblConst: UInt8 = 0x87
 
@@ -76,14 +76,13 @@ class AesSiv {
 
 		var d = try cmac(macKey: macKey, data: zero)
 		for s in ad {
-			d = xor(dbl(d), try cmac(macKey: macKey, data: s))
+			d = try xor(dbl(d), cmac(macKey: macKey, data: s))
 		}
 
-		let t: [UInt8]
-		if plaintext.count >= 16 {
-			t = xorend(plaintext, d)
+		let t: [UInt8] = if plaintext.count >= 16 {
+			xorend(plaintext, d)
 		} else {
-			t = xor(dbl(d), pad(plaintext))
+			xor(dbl(d), pad(plaintext))
 		}
 
 		return try cmac(macKey: macKey, data: t)
@@ -181,7 +180,7 @@ class AesSiv {
 		return result
 	}
 
-	// ISO/IEC 7816-4:2005 Padding: First bit 1, following bits 0
+	/// ISO/IEC 7816-4:2005 Padding: First bit 1, following bits 0
 	private static func pad(_ data: [UInt8]) -> [UInt8] {
 		var result = data
 		if result.count < 16 {

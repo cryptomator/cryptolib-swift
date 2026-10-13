@@ -9,7 +9,9 @@
 import CommonCrypto
 import Foundation
 
-public class Masterkey {
+public final class Masterkey: @unchecked Sendable {
+	// `@unchecked Sendable` is safe because the key arrays are written only in `init` and in `deinit`, which has exclusive access.
+
 	private(set) var aesMasterKey: [UInt8]
 	private(set) var macMasterKey: [UInt8]
 	public var rawKey: [UInt8] {
@@ -38,7 +40,7 @@ public class Masterkey {
 	 - Returns: New masterkey instance with secure random bytes.
 	 */
 	public static func createNew() throws -> Masterkey {
-		let cryptoSupport = CryptoSupport()
+		let cryptoSupport = DefaultCryptoSupport()
 		let aesMasterKey = try cryptoSupport.createRandomBytes(size: kCCKeySizeAES256)
 		let macMasterKey = try cryptoSupport.createRandomBytes(size: kCCKeySizeAES256)
 		return createFromRaw(aesMasterKey: aesMasterKey, macMasterKey: macMasterKey)

@@ -31,3 +31,4 @@ playground.xcworkspace
 .swiftpm
 
 .build/
+.vscode/

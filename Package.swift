@@ -1,4 +1,4 @@
-// swift-tools-version:5.1
+// swift-tools-version:6.2
 
 //
 //  Package.swift
@@ -23,9 +23,9 @@ let package = Package(
 		.package(url: "https://github.com/norio-nomura/Base32.git", .upToNextMinor(from: "0.9.0"))
 	],
 	targets: [
-		.target(name: "CryptomatorCryptoLib", dependencies: ["Base32", "scrypt"]),
+		.target(name: "CryptomatorCryptoLib", dependencies: ["Base32", "scrypt"], exclude: ["Info.plist"]),
 		.target(name: "scrypt"),
-		.testTarget(name: "CryptomatorCryptoLibTests", dependencies: ["CryptomatorCryptoLib"])
+		.testTarget(name: "CryptomatorCryptoLibTests", dependencies: ["CryptomatorCryptoLib"], exclude: ["Info.plist"])
 	],
-	swiftLanguageVersions: [.v5]
+	swiftLanguageModes: [.v6]
 )

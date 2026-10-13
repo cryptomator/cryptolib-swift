@@ -1,18 +1,27 @@
 name: Build
 
 on:
-  [push]
+  push:
+  pull_request_target:
+    types: [labeled]
+
+permissions:
+  contents: read
 
 jobs:
   build:
     name: Build and test
-    runs-on: macos-latest
+    runs-on: [self-hosted, macOS, ARM64]
     env:
       DERIVED_DATA_PATH: 'DerivedData'
-    if: "!contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]')"
+      DEVICE: 'iPhone 17 Pro'
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/cache@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Disable shallow clone for SonarCloud analysis
+          # https://docs.sonarsource.com/sonarqube-cloud/advanced-setup/ci-based-analysis/github-actions-for-sonarcloud
+          fetch-depth: 0
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .build
           key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
@@ -23,25 +32,28 @@ jobs:
           ./Scripts/process.sh
           exit $?
       - name: Build and test
-        run: set -o pipefail && env NSUnbufferedIO=YES xcodebuild -scheme 'CryptomatorCryptoLib' -destination 'platform=macOS' -derivedDataPath $DERIVED_DATA_PATH -enableCodeCoverage YES clean test | xcpretty
-      - name: Upload code coverage report
+        run: set -o pipefail && env NSUnbufferedIO=YES xcodebuild -scheme 'CryptomatorCryptoLib' -destination "name=$DEVICE" -derivedDataPath $DERIVED_DATA_PATH -enableCodeCoverage YES clean test | xcbeautify
+      - name: Generate coverage report
         run: |
-          gem install slather
-          slather coverage -x --build-directory $DERIVED_DATA_PATH --ignore "$DERIVED_DATA_PATH/SourcePackages/*" --scheme CryptomatorCryptoLib CryptomatorCryptoLib.xcodeproj
-          bash <(curl -Ls https://coverage.codacy.com/get.sh)
+          xcresult_path=$(find $DERIVED_DATA_PATH/Logs/Test -name "*.xcresult" | head -n 1)
+          bash Scripts/xccov-to-sonarqube-generic.sh "$xcresult_path" > sonarqube-generic-coverage.xml
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8.3.0
         env:
-          CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         continue-on-error: true
 
   release:
     name: Deploy and draft a release
     runs-on: macos-latest
     needs: build
+    permissions:
+      contents: write # Required for drafting the release
     if: startsWith(github.ref, 'refs/tags/')
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Draft release
-        uses: actions/create-release@v1
+        uses: actions/create-release@0cb9c9b65d5d1901c1f53e5e66eaf4afd303e70e # v1.1.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
