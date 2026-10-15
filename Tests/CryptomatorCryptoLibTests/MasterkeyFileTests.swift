@@ -69,68 +69,21 @@ struct MasterkeyFileTests {
 		#expect(throws: MasterkeyFileError.invalidPassphrase) { try masterkeyFile.unlock(passphrase: "qwe", pepper: [UInt8]()) }
 	}
 
-	@Test func `unlock with invalid version mac`() throws {
-		let data = Data("""
-		{
-			"version": 7,
-			"scryptSalt": "AAAAAAAAAAA=",
-			"scryptCostParam": 2,
-			"scryptBlockSize": 8,
-			"primaryMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
-			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
-			"versionMac": "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+G="
-		}
-		""".utf8)
-		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
-		#expect(throws: MasterkeyFileError.malformedMasterkeyFile("incorrect version or versionMac")) { try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]()) }
-	}
-
-	@Test func `unlock with malformed json 1`() throws {
-		let data = Data("""
-		{
-			"version": 7,
-			"scryptSalt": "AAAAAAAAAAA=",
-			"scryptCostParam": 2,
-			"scryptBlockSize": 8,
-			"primaryMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q!!",
-			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
-			"versionMac": "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g="
-		}
-		""".utf8)
-		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
-		#expect(throws: MasterkeyFileError.malformedMasterkeyFile("invalid base64 data in primaryMasterKey")) { try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]()) }
-	}
-
-	@Test func `unlock with malformed json 2`() throws {
-		let data = Data("""
-		{
-			"version": 7,
-			"scryptSalt": "AAAAAAAAAAA=",
-			"scryptCostParam": 2,
-			"scryptBlockSize": 8,
-			"primaryMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
-			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q!!",
-			"versionMac": "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g="
-		}
-		""".utf8)
-		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
-		#expect(throws: MasterkeyFileError.malformedMasterkeyFile("invalid base64 data in hmacMasterKey")) { try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]()) }
-	}
-
-	@Test func `unlock with malformed json 3`() throws {
-		let data = Data("""
-		{
-			"version": 7,
-			"scryptSalt": "AAAAAAAAAAA=",
-			"scryptCostParam": 2,
-			"scryptBlockSize": 8,
-			"primaryMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
-			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
-			"versionMac": "cn2sAK6l"
-		}
-		""".utf8)
-		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
-		#expect(throws: MasterkeyFileError.malformedMasterkeyFile("invalid base64 data in versionMac")) { try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]()) }
+	@Test(arguments: [
+		(makeContent(scryptSalt: "AAAAAAAAAA!!"), "invalid base64 data in scryptSalt"),
+		(makeContent(scryptCostParam: -1), "invalid scryptCostParam"),
+		(makeContent(scryptBlockSize: -1), "invalid scryptBlockSize"),
+		(makeContent(scryptBlockSize: 0), "invalid scryptBlockSize"),
+		(makeContent(primaryMasterKey: "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q!!"), "invalid base64 data in primaryMasterKey"),
+		(makeContent(primaryMasterKey: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="), "invalid base64 data in primaryMasterKey"),
+		(makeContent(hmacMasterKey: "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q!!"), "invalid base64 data in hmacMasterKey"),
+		(makeContent(hmacMasterKey: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="), "invalid base64 data in hmacMasterKey"),
+		(makeContent(versionMac: "cn2sAK6l"), "invalid base64 data in versionMac"),
+		(makeContent(versionMac: "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+G="), "incorrect version or versionMac"),
+		(makeContent(version: -1), "invalid version")
+	]) func `unlock with malformed content`(content: Content, reason: String) throws {
+		let masterkeyFile = MasterkeyFile(content: content)
+		#expect(throws: MasterkeyFileError.malformedMasterkeyFile(reason)) { try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]()) }
 	}
 
 	@Test func `derive key`() throws {
@@ -192,6 +145,11 @@ struct MasterkeyFileTests {
 		#expect(content.versionMac == "sAWFgFNhmtMPeNWr4zh+9Ps7GOtT0pknX11PRQ7eC9Q=")
 	}
 
+	@Test func `lock with invalid parameters`() {
+		#expect(throws: CryptoError.invalidParameter("vaultVersion must be in range 0...\(UInt32.max)")) { try MasterkeyFile.lock(masterkey: .test, vaultVersion: -1, passphrase: "asd") }
+		#expect(throws: CryptoError.invalidParameter("scryptCostParam must not be negative")) { try MasterkeyFile.lock(masterkey: .test, vaultVersion: 7, passphrase: "asd", scryptCostParam: -1) }
+	}
+
 	@Test func `lock with different peppers`() throws {
 		let content1 = try MasterkeyFile.lock(masterkey: .test, vaultVersion: 7, passphrase: "asd", pepper: [UInt8](arrayLiteral: 0x01), scryptCostParam: 2, cryptoSupport: CryptoSupportMock())
 		let content2 = try MasterkeyFile.lock(masterkey: .test, vaultVersion: 7, passphrase: "asd", pepper: [UInt8](arrayLiteral: 0x02), scryptCostParam: 2, cryptoSupport: CryptoSupportMock())
@@ -231,5 +189,17 @@ struct MasterkeyFileTests {
 		let key = [UInt8](repeating: 0x77, count: 17)
 		let kek = [UInt8](repeating: 0x55, count: 32)
 		#expect(throws: MasterkeyFileError.keyWrapFailed(CCCryptorStatus(kCCParamError))) { try MasterkeyFile.wrapKey(key, kek: kek) }
+	}
+
+	private static func makeContent(version: Int = 7, scryptSalt: String = "AAAAAAAAAAA=", scryptCostParam: Int = 2, scryptBlockSize: Int = 8, primaryMasterKey: String = "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==", hmacMasterKey: String = "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==", versionMac: String = "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g=") -> Content {
+		return Content(
+			version: version,
+			scryptSalt: scryptSalt,
+			scryptCostParam: scryptCostParam,
+			scryptBlockSize: scryptBlockSize,
+			primaryMasterKey: primaryMasterKey,
+			hmacMasterKey: hmacMasterKey,
+			versionMac: versionMac
+		)
 	}
 }

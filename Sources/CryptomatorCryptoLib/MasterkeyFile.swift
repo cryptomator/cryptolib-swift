@@ -31,6 +31,7 @@ public final class MasterkeyFile: Sendable {
 	public static let defaultScryptCostParam = 1 << 15 // 2^15
 	static let defaultScryptSaltSize = 8
 	static let defaultScryptBlockSize = 8
+	private static let wrappedKeySize = CCSymmetricWrappedSize(CCWrappingAlgorithm(kCCWRAPAES), kCCKeySizeAES256)
 
 	let content: Content
 	public var version: Int {
@@ -87,14 +88,16 @@ public final class MasterkeyFile: Sendable {
 	 - Returns: A 256-bit key derived from passphrase using scrypt.
 	 */
 	public func deriveKey(passphrase: String, pepper: [UInt8] = [UInt8]()) throws -> [UInt8] {
-		let pw = [UInt8](passphrase.precomposedStringWithCanonicalMapping.utf8)
-		let salt = [UInt8](Data(base64Encoded: content.scryptSalt)!)
-		var kek = [UInt8](repeating: 0x00, count: kCCKeySizeAES256)
-		let scryptResult = crypto_scrypt(pw, pw.count, salt + pepper, salt.count + pepper.count, UInt64(content.scryptCostParam), UInt32(content.scryptBlockSize), 1, &kek, kCCKeySizeAES256)
-		guard scryptResult == 0 else {
-			throw MasterkeyFileError.keyDerivationFailed
+		guard let salt = Data(base64Encoded: content.scryptSalt) else {
+			throw MasterkeyFileError.malformedMasterkeyFile("invalid base64 data in scryptSalt")
 		}
-		return kek
+		guard let scryptCostParam = UInt64(exactly: content.scryptCostParam) else {
+			throw MasterkeyFileError.malformedMasterkeyFile("invalid scryptCostParam")
+		}
+		guard let scryptBlockSize = UInt32(exactly: content.scryptBlockSize), scryptBlockSize > 0 else {
+			throw MasterkeyFileError.malformedMasterkeyFile("invalid scryptBlockSize")
+		}
+		return try MasterkeyFile.scrypt(passphrase: passphrase, salt: [UInt8](salt), pepper: pepper, scryptCostParam: scryptCostParam, scryptBlockSize: scryptBlockSize)
 	}
 
 	/**
@@ -104,11 +107,11 @@ public final class MasterkeyFile: Sendable {
 	  - Returns: A masterkey with the unwrapped keys.
 	 */
 	public func unlock(kek: [UInt8]) throws -> Masterkey {
-		guard let wrappedMasterKey = Data(base64Encoded: content.primaryMasterKey) else {
+		guard let wrappedMasterKey = Data(base64Encoded: content.primaryMasterKey), wrappedMasterKey.count == MasterkeyFile.wrappedKeySize else {
 			throw MasterkeyFileError.malformedMasterkeyFile("invalid base64 data in primaryMasterKey")
 		}
 		let aesKey = try MasterkeyFile.unwrapKey([UInt8](wrappedMasterKey), kek: kek)
-		guard let wrappedHmacKey = Data(base64Encoded: content.hmacMasterKey) else {
+		guard let wrappedHmacKey = Data(base64Encoded: content.hmacMasterKey), wrappedHmacKey.count == MasterkeyFile.wrappedKeySize else {
 			throw MasterkeyFileError.malformedMasterkeyFile("invalid base64 data in hmacMasterKey")
 		}
 		let macKey = try MasterkeyFile.unwrapKey([UInt8](wrappedHmacKey), kek: kek)
@@ -124,9 +127,10 @@ public final class MasterkeyFile: Sendable {
 		guard let storedVersionMac = Data(base64Encoded: content.versionMac), storedVersionMac.count == CC_SHA256_DIGEST_LENGTH else {
 			throw MasterkeyFileError.malformedMasterkeyFile("invalid base64 data in versionMac")
 		}
-		var calculatedVersionMac = [UInt8](repeating: 0x00, count: Int(CC_SHA256_DIGEST_LENGTH))
-		let versionBytes = withUnsafeBytes(of: UInt32(version).bigEndian, Array.init)
-		CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), macKey, macKey.count, versionBytes, versionBytes.count, &calculatedVersionMac)
+		guard let unsignedVersion = UInt32(exactly: version) else {
+			throw MasterkeyFileError.malformedMasterkeyFile("invalid version")
+		}
+		let calculatedVersionMac = MasterkeyFile.versionMac(version: unsignedVersion, macKey: macKey)
 		var diff: UInt8 = 0x00
 		for i in 0 ..< calculatedVersionMac.count {
 			diff |= calculatedVersionMac[i] ^ storedVersionMac[i]
@@ -153,20 +157,18 @@ public final class MasterkeyFile: Sendable {
 	}
 
 	static func lock(masterkey: Masterkey, vaultVersion: Int, passphrase: String, pepper: [UInt8], scryptCostParam: Int, cryptoSupport: CryptoSupport = DefaultCryptoSupport()) throws -> Content {
-		let pw = [UInt8](passphrase.precomposedStringWithCanonicalMapping.utf8)
-		let salt = try cryptoSupport.createRandomBytes(size: defaultScryptSaltSize)
-		var kek = [UInt8](repeating: 0x00, count: kCCKeySizeAES256)
-		let scryptResult = crypto_scrypt(pw, pw.count, salt + pepper, salt.count + pepper.count, UInt64(scryptCostParam), UInt32(defaultScryptBlockSize), 1, &kek, kCCKeySizeAES256)
-		guard scryptResult == 0 else {
-			throw MasterkeyFileError.keyDerivationFailed
+		guard let unsignedVaultVersion = UInt32(exactly: vaultVersion) else {
+			throw CryptoError.invalidParameter("vaultVersion must be in range 0...\(UInt32.max)")
 		}
+		guard let unsignedScryptCostParam = UInt64(exactly: scryptCostParam) else {
+			throw CryptoError.invalidParameter("scryptCostParam must not be negative")
+		}
+		let salt = try cryptoSupport.createRandomBytes(size: defaultScryptSaltSize)
+		let kek = try scrypt(passphrase: passphrase, salt: salt, pepper: pepper, scryptCostParam: unsignedScryptCostParam, scryptBlockSize: UInt32(defaultScryptBlockSize))
 
 		let wrappedMasterKey = try wrapKey(masterkey.aesMasterKey, kek: kek)
 		let wrappedHmacKey = try wrapKey(masterkey.macMasterKey, kek: kek)
-
-		var versionMac = [UInt8](repeating: 0x00, count: Int(CC_SHA256_DIGEST_LENGTH))
-		let versionBytes = withUnsafeBytes(of: UInt32(vaultVersion).bigEndian, Array.init)
-		CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), masterkey.macMasterKey, masterkey.macMasterKey.count, versionBytes, versionBytes.count, &versionMac)
+		let versionMac = MasterkeyFile.versionMac(version: unsignedVaultVersion, macKey: masterkey.macMasterKey)
 
 		return Content(
 			version: vaultVersion,
@@ -198,6 +200,23 @@ public final class MasterkeyFile: Sendable {
 		let masterkeyFile = try MasterkeyFile.withContentFromData(data: masterkeyFileData)
 		let masterkey = try masterkeyFile.unlock(passphrase: oldPassphrase, pepper: pepper)
 		return try MasterkeyFile.lock(masterkey: masterkey, vaultVersion: masterkeyFile.version, passphrase: newPassphrase, pepper: pepper, scryptCostParam: scryptCostParam, cryptoSupport: cryptoSupport)
+	}
+
+	private static func scrypt(passphrase: String, salt: [UInt8], pepper: [UInt8], scryptCostParam: UInt64, scryptBlockSize: UInt32) throws -> [UInt8] {
+		let pw = [UInt8](passphrase.precomposedStringWithCanonicalMapping.utf8)
+		var kek = [UInt8](repeating: 0x00, count: kCCKeySizeAES256)
+		let scryptResult = crypto_scrypt(pw, pw.count, salt + pepper, salt.count + pepper.count, scryptCostParam, scryptBlockSize, 1, &kek, kCCKeySizeAES256)
+		guard scryptResult == 0 else {
+			throw MasterkeyFileError.keyDerivationFailed
+		}
+		return kek
+	}
+
+	private static func versionMac(version: UInt32, macKey: [UInt8]) -> [UInt8] {
+		var versionMac = [UInt8](repeating: 0x00, count: Int(CC_SHA256_DIGEST_LENGTH))
+		let versionBytes = version.bigEndian.byteArray()
+		CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), macKey, macKey.count, versionBytes, versionBytes.count, &versionMac)
+		return versionMac
 	}
 
 	// MARK: - RFC 3394 Key Wrapping

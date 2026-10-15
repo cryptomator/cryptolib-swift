@@ -333,6 +333,22 @@ final class CryptorTests {
 		#expect(result.error as? CryptoError == .unauthenticCiphertext)
 	}
 
+	@Test(arguments: schemes) func `decrypt tampered header throws`(scheme: CryptorScheme) throws {
+		let cryptor = scheme.makeCryptor()
+		var header = try cryptor.encryptHeader(cryptor.createHeader())
+		header[header.count - 1] ^= 0x01
+		#expect(throws: CryptoError.unauthenticCiphertext) { try cryptor.decryptHeader(header) }
+	}
+
+	@Test(arguments: schemes) func `decrypt tampered chunk throws`(scheme: CryptorScheme) throws {
+		let cryptor = scheme.makeCryptor()
+		let nonce = [UInt8](repeating: 0x00, count: scheme.nonceLength)
+		let filekey = [UInt8](repeating: 0x00, count: 32)
+		var encrypted = try cryptor.encryptSingleChunk([UInt8]("hello world".utf8), chunkNumber: 0, headerNonce: nonce, fileKey: filekey)
+		encrypted[encrypted.count - 1] ^= 0x01
+		#expect(throws: CryptoError.unauthenticCiphertext) { try cryptor.decryptSingleChunk(encrypted, chunkNumber: 0, headerNonce: nonce, fileKey: filekey) }
+	}
+
 	@Test(arguments: schemes) func `concurrent round trips`(scheme: CryptorScheme) async throws {
 		let cryptor = scheme.makeCryptor()
 		let tmpDirURL = tmpDirURL

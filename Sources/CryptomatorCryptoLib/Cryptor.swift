@@ -370,11 +370,11 @@ public final class Cryptor: Sendable {
 	 Calculates ciphertext size from cleartext size.
 
 	 - Parameter cleartextSize: Size of the unencrypted payload.
-	 - Precondition: `cleartextSize` must be positive.
+	 - Precondition: `cleartextSize` must not be negative.
 	 - Returns: Ciphertext size of a `cleartextSize`-sized cleartext encrypted with this `Cryptor`. Not including the file header.
 	 */
 	public func calculateCiphertextSize(_ cleartextSize: Int) -> Int {
-		precondition(cleartextSize >= 0, "expected cleartextSize to be positive, but was \(cleartextSize)")
+		precondition(cleartextSize >= 0, "expected cleartextSize to be non-negative, but was \(cleartextSize)")
 		let overheadPerChunk = ciphertextChunkSize - cleartextChunkSize
 		let numFullChunks = cleartextSize / cleartextChunkSize // floor by int-truncation
 		let additionalCleartextBytes = cleartextSize % cleartextChunkSize
@@ -387,11 +387,11 @@ public final class Cryptor: Sendable {
 	 Calculates cleartext size from ciphertext size.
 
 	 - Parameter ciphertextSize: Size of the encrypted payload. Not including the file header.
-	 - Precondition: `ciphertextSize` must be positive.
+	 - Precondition: `ciphertextSize` must not be negative.
 	 - Returns: Cleartext size of a `ciphertextSize`-sized ciphertext decrypted with this `Cryptor`.
 	 */
 	public func calculateCleartextSize(_ ciphertextSize: Int) throws -> Int {
-		precondition(ciphertextSize >= 0, "expected ciphertextSize to be positive, but was \(ciphertextSize)")
+		precondition(ciphertextSize >= 0, "expected ciphertextSize to be non-negative, but was \(ciphertextSize)")
 		let overheadPerChunk = ciphertextChunkSize - cleartextChunkSize
 		let numFullChunks = ciphertextSize / ciphertextChunkSize // floor by int-truncation
 		let additionalCiphertextBytes = ciphertextSize % ciphertextChunkSize
