@@ -91,11 +91,14 @@ public final class MasterkeyFile: Sendable {
 		guard let salt = Data(base64Encoded: content.scryptSalt) else {
 			throw MasterkeyFileError.malformedMasterkeyFile("invalid base64 data in scryptSalt")
 		}
-		guard let scryptCostParam = UInt64(exactly: content.scryptCostParam) else {
+		guard let scryptCostParam = UInt64(exactly: content.scryptCostParam), MasterkeyFile.isValidScryptCostParam(scryptCostParam) else {
 			throw MasterkeyFileError.malformedMasterkeyFile("invalid scryptCostParam")
 		}
 		guard let scryptBlockSize = UInt32(exactly: content.scryptBlockSize), scryptBlockSize > 0 else {
 			throw MasterkeyFileError.malformedMasterkeyFile("invalid scryptBlockSize")
+		}
+		guard MasterkeyFile.isWithinScryptMemoryLimit(scryptCostParam: scryptCostParam, scryptBlockSize: scryptBlockSize) else {
+			throw MasterkeyFileError.malformedMasterkeyFile("scrypt parameters exceed memory limit")
 		}
 		return try MasterkeyFile.scrypt(passphrase: passphrase, salt: [UInt8](salt), pepper: pepper, scryptCostParam: scryptCostParam, scryptBlockSize: scryptBlockSize)
 	}
@@ -148,7 +151,7 @@ public final class MasterkeyFile: Sendable {
 	 - Parameter vaultVersion: The vault version that should be stored in this masterkey file (for downwards compatibility).
 	 - Parameter passphrase: The passphrase used during key derivation.
 	 - Parameter pepper: An optional application-specific pepper added to the scrypt's salt. Defaults to empty byte array.
-	 - Parameter scryptCostParam: The work factor for the key derivation function (scrypt). Defaults to 32768.
+	 - Parameter scryptCostParam: The work factor for the key derivation function (scrypt). Must be a power of 2 from 2 to 2^20. Defaults to 32768.
 	 - Returns: A JSON representation of the encrypted masterkey with its key derivation parameters.
 	 */
 	public static func lock(masterkey: Masterkey, vaultVersion: Int, passphrase: String, pepper: [UInt8] = [UInt8](), scryptCostParam: Int = defaultScryptCostParam) throws -> Data {
@@ -160,8 +163,11 @@ public final class MasterkeyFile: Sendable {
 		guard let unsignedVaultVersion = UInt32(exactly: vaultVersion) else {
 			throw CryptoError.invalidParameter("vaultVersion must be in range 0...\(UInt32.max)")
 		}
-		guard let unsignedScryptCostParam = UInt64(exactly: scryptCostParam) else {
-			throw CryptoError.invalidParameter("scryptCostParam must not be negative")
+		guard let unsignedScryptCostParam = UInt64(exactly: scryptCostParam), isValidScryptCostParam(unsignedScryptCostParam) else {
+			throw CryptoError.invalidParameter("scryptCostParam must be a power of 2 greater than 1")
+		}
+		guard isWithinScryptMemoryLimit(scryptCostParam: unsignedScryptCostParam, scryptBlockSize: UInt32(defaultScryptBlockSize)) else {
+			throw CryptoError.invalidParameter("scryptCostParam exceeds memory limit")
 		}
 		let salt = try cryptoSupport.createRandomBytes(size: defaultScryptSaltSize)
 		let kek = try scrypt(passphrase: passphrase, salt: salt, pepper: pepper, scryptCostParam: unsignedScryptCostParam, scryptBlockSize: UInt32(defaultScryptBlockSize))
@@ -188,7 +194,7 @@ public final class MasterkeyFile: Sendable {
 	 - Parameter oldPassphrase: The old passphrase.
 	 - Parameter newPassphrase: The new passphrase
 	 - Parameter pepper: An optional application-specific pepper added to the scrypt's salt. Defaults to empty byte array.
-	 - Parameter scryptCostParam: The work factor for the key derivation function (scrypt). Defaults to 32768.
+	 - Parameter scryptCostParam: The work factor for the key derivation function (scrypt). Must be a power of 2 from 2 to 2^20. Defaults to 32768.
 	 - Returns: A JSON representation of the masterkey, now encrypted with `newPassphrase`.
 	 */
 	public static func changePassphrase(masterkeyFileData: Data, oldPassphrase: String, newPassphrase: String, pepper: [UInt8] = [UInt8](), scryptCostParam: Int = defaultScryptCostParam) throws -> Data {
@@ -200,6 +206,15 @@ public final class MasterkeyFile: Sendable {
 		let masterkeyFile = try MasterkeyFile.withContentFromData(data: masterkeyFileData)
 		let masterkey = try masterkeyFile.unlock(passphrase: oldPassphrase, pepper: pepper)
 		return try MasterkeyFile.lock(masterkey: masterkey, vaultVersion: masterkeyFile.version, passphrase: newPassphrase, pepper: pepper, scryptCostParam: scryptCostParam, cryptoSupport: cryptoSupport)
+	}
+
+	private static func isValidScryptCostParam(_ scryptCostParam: UInt64) -> Bool {
+		return scryptCostParam > 1 && scryptCostParam.nonzeroBitCount == 1
+	}
+
+	/// Caps the `128 * r * (N + 3)` bytes that `crypto_scrypt` allocates at `Int32.max`, so an untrusted masterkey file cannot force huge allocations before the passphrase is checked.
+	private static func isWithinScryptMemoryLimit(scryptCostParam: UInt64, scryptBlockSize: UInt32) -> Bool {
+		return scryptCostParam + 3 <= UInt64(Int32.max) / 128 / UInt64(scryptBlockSize)
 	}
 
 	private static func scrypt(passphrase: String, salt: [UInt8], pepper: [UInt8], scryptCostParam: UInt64, scryptBlockSize: UInt32) throws -> [UInt8] {

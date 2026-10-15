@@ -72,8 +72,12 @@ struct MasterkeyFileTests {
 	@Test(arguments: [
 		(makeContent(scryptSalt: "AAAAAAAAAA!!"), "invalid base64 data in scryptSalt"),
 		(makeContent(scryptCostParam: -1), "invalid scryptCostParam"),
+		(makeContent(scryptCostParam: 1), "invalid scryptCostParam"),
+		(makeContent(scryptCostParam: 3), "invalid scryptCostParam"),
 		(makeContent(scryptBlockSize: -1), "invalid scryptBlockSize"),
 		(makeContent(scryptBlockSize: 0), "invalid scryptBlockSize"),
+		(makeContent(scryptCostParam: 1 << 21), "scrypt parameters exceed memory limit"),
+		(makeContent(scryptCostParam: 2, scryptBlockSize: 1 << 22), "scrypt parameters exceed memory limit"),
 		(makeContent(primaryMasterKey: "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q!!"), "invalid base64 data in primaryMasterKey"),
 		(makeContent(primaryMasterKey: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="), "invalid base64 data in primaryMasterKey"),
 		(makeContent(hmacMasterKey: "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q!!"), "invalid base64 data in hmacMasterKey"),
@@ -147,7 +151,9 @@ struct MasterkeyFileTests {
 
 	@Test func `lock with invalid parameters`() {
 		#expect(throws: CryptoError.invalidParameter("vaultVersion must be in range 0...\(UInt32.max)")) { try MasterkeyFile.lock(masterkey: .test, vaultVersion: -1, passphrase: "asd") }
-		#expect(throws: CryptoError.invalidParameter("scryptCostParam must not be negative")) { try MasterkeyFile.lock(masterkey: .test, vaultVersion: 7, passphrase: "asd", scryptCostParam: -1) }
+		#expect(throws: CryptoError.invalidParameter("scryptCostParam must be a power of 2 greater than 1")) { try MasterkeyFile.lock(masterkey: .test, vaultVersion: 7, passphrase: "asd", scryptCostParam: -1) }
+		#expect(throws: CryptoError.invalidParameter("scryptCostParam must be a power of 2 greater than 1")) { try MasterkeyFile.lock(masterkey: .test, vaultVersion: 7, passphrase: "asd", scryptCostParam: 3) }
+		#expect(throws: CryptoError.invalidParameter("scryptCostParam exceeds memory limit")) { try MasterkeyFile.lock(masterkey: .test, vaultVersion: 7, passphrase: "asd", scryptCostParam: 1 << 21) }
 	}
 
 	@Test func `lock with different peppers`() throws {
