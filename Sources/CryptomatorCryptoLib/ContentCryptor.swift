@@ -87,10 +87,13 @@ final class GcmContentCryptor: ContentCryptor {
 		}
 
 		let key = SymmetricKey(data: keyBytes)
-		let encrypted = try AES.GCM.SealedBox(combined: chunk)
-		let decrypted = try AES.GCM.open(encrypted, using: key, authenticating: ad)
-
-		return [UInt8](decrypted)
+		do {
+			let encrypted = try AES.GCM.SealedBox(combined: chunk)
+			let decrypted = try AES.GCM.open(encrypted, using: key, authenticating: ad)
+			return [UInt8](decrypted)
+		} catch CryptoKitError.authenticationFailure {
+			throw CryptoError.unauthenticCiphertext
+		}
 	}
 }
 

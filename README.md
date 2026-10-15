@@ -42,9 +42,8 @@ let masterkey = try Masterkey.createNew()
 Another way is to create a masterkey from raw bytes.
 
 ```swift
-let aesMasterKey = ...
-let macMasterKey = ...
-let masterkey = Masterkey.createFromRaw(aesMasterKey: aesMasterKey, macMasterKey: macMasterKey)
+let rawKey = ... // 64 bytes: AES master key followed by MAC master key
+let masterkey = try Masterkey.createFromRaw(rawKey: rawKey)
 ```
 
 ### MasterkeyFile
@@ -113,7 +112,7 @@ let oldPassphrase = ...
 let newPassphrase = ...
 let pepper = ... // optional
 let scryptCostParam = ... // optional
-try MasterkeyFile.changePassphrase(masterkeyFileData: masterkeyFileData, oldPassphrase: oldPassphrase, newPassphrase: newPassphrase, pepper: pepper, scryptCostParam: scryptCostParam)
+let newMasterkeyFileData = try MasterkeyFile.changePassphrase(masterkeyFileData: masterkeyFileData, oldPassphrase: oldPassphrase, newPassphrase: newPassphrase, pepper: pepper, scryptCostParam: scryptCostParam)
 ```
 
 ### Cryptor
@@ -187,8 +186,8 @@ Please read our [contribution guide](.github/CONTRIBUTING.md), if you would like
 In general, the following preference is used to choose the implementation of cryptographic primitives:
 
 1. Apple CryptoKit (AES-GCM)
-2. Apple Swift Crypto (HMAC)
-3. Apple CommonCrypto (AES-CTR, RFC 3394 Key Derivation)
+2. Apple CommonCrypto (AES-CTR, AES-ECB for AES-SIV, HMAC, SHA-1, RFC 3394 Key Wrap)
+3. Vendored C code from Tarsnap (scrypt)
 
 This project uses [SwiftFormat](https://github.com/nicklockwood/SwiftFormat) and [SwiftLint](https://github.com/realm/SwiftLint) to enforce code style and conventions. Install these tools if you haven't already.
 

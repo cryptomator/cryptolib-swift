@@ -49,11 +49,13 @@ public final class Masterkey: @unchecked Sendable {
 	/**
 	 Creates masterkey from raw bytes.
 
-	 - Parameter rawKey: Key combination of `aesMasterKey` (used for encryption of file specific keys) and `macMasterKey` (used for file authentication).
+	 - Parameter rawKey: The 32-byte `aesMasterKey` (used for encryption of file specific keys) followed by the 32-byte `macMasterKey` (used for file authentication).
 	 - Returns: New masterkey instance using the keys from the supplied raw bytes.
 	 */
-	public static func createFromRaw(rawKey: [UInt8]) -> Masterkey {
-		assert(rawKey.count == 2 * kCCKeySizeAES256)
+	public static func createFromRaw(rawKey: [UInt8]) throws -> Masterkey {
+		guard rawKey.count == 2 * kCCKeySizeAES256 else {
+			throw CryptoError.invalidParameter("rawKey must be \(2 * kCCKeySizeAES256) bytes")
+		}
 		let aesMasterkey = Array(rawKey[0 ..< kCCKeySizeAES256])
 		let macMasterKey = Array(rawKey[kCCKeySizeAES256...])
 		return createFromRaw(aesMasterKey: aesMasterkey, macMasterKey: macMasterKey)
