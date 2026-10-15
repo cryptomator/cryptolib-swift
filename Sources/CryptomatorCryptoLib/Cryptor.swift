@@ -325,11 +325,7 @@ public final class Cryptor: Sendable {
 	}
 
 	func decryptContent(from ciphertextStream: InputStream, to cleartextStream: OutputStream, ciphertextSize: Int?, progress: Progress?) async throws {
-		if let ciphertextSize, ciphertextSize >= fileHeaderSize {
-			progress?.begin(expectedUnitCount: try? calculateCleartextSize(ciphertextSize - fileHeaderSize))
-		} else {
-			progress?.begin(expectedUnitCount: nil)
-		}
+		progress?.begin(expectedUnitCount: ciphertextSize.flatMap { try? calculateCleartextSize($0 - fileHeaderSize) })
 
 		// read and decrypt header:
 		guard let ciphertextHeader = try ciphertextStream.readChunk(maxLength: fileHeaderSize) else {
@@ -387,15 +383,13 @@ public final class Cryptor: Sendable {
 	 Calculates cleartext size from ciphertext size.
 
 	 - Parameter ciphertextSize: Size of the encrypted payload. Not including the file header.
-	 - Precondition: `ciphertextSize` must not be negative.
 	 - Returns: Cleartext size of a `ciphertextSize`-sized ciphertext decrypted with this `Cryptor`.
 	 */
 	public func calculateCleartextSize(_ ciphertextSize: Int) throws -> Int {
-		precondition(ciphertextSize >= 0, "expected ciphertextSize to be non-negative, but was \(ciphertextSize)")
 		let overheadPerChunk = ciphertextChunkSize - cleartextChunkSize
 		let numFullChunks = ciphertextSize / ciphertextChunkSize // floor by int-truncation
 		let additionalCiphertextBytes = ciphertextSize % ciphertextChunkSize
-		guard additionalCiphertextBytes == 0 || additionalCiphertextBytes > overheadPerChunk else {
+		guard ciphertextSize >= 0, additionalCiphertextBytes == 0 || additionalCiphertextBytes > overheadPerChunk else {
 			throw CryptoError.invalidParameter("Method not defined for input value \(ciphertextSize)")
 		}
 		let additionalCleartextBytes = (additionalCiphertextBytes == 0) ? 0 : additionalCiphertextBytes - overheadPerChunk
