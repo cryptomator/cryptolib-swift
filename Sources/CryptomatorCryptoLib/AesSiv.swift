@@ -10,7 +10,6 @@ import CommonCrypto
 import Foundation
 
 class AesSiv {
-	static let cryptoSupport = DefaultCryptoSupport()
 	static let zero = [UInt8](repeating: 0x00, count: 16)
 	static let dblConst: UInt8 = 0x87
 
@@ -49,7 +48,7 @@ class AesSiv {
 		let actualCiphertext = Array(ciphertext[16...])
 		let plaintext = try ctr(aesKey: aesKey, iv: iv, plaintext: actualCiphertext)
 		let control = try s2v(macKey: macKey, plaintext: plaintext, ad: ad)
-		guard cryptoSupport.compareBytes(expected: control, actual: iv) else {
+		guard compareBytes(expected: control, actual: iv) else {
 			throw CryptoError.unauthenticCiphertext
 		}
 		return plaintext

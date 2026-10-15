@@ -130,7 +130,7 @@ public final class Cryptor: Sendable {
 		self.cryptoSupport = cryptoSupport
 		self.contentCryptor = switch scheme {
 		case .sivCtrMac:
-			CtrThenHmacContentCryptor(macKey: masterkey.macMasterKey, cryptoSupport: cryptoSupport)
+			CtrThenHmacContentCryptor(macKey: masterkey.macMasterKey)
 		case .sivGcm:
 			GcmContentCryptor()
 		}

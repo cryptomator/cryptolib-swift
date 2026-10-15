@@ -49,6 +49,9 @@ final class CryptorTests {
 		let dirId = Data("foo".utf8)
 		#expect(throws: CryptoError.invalidParameter("Can't base64url-decode ciphertext name: ****")) { try cryptor.decryptFileName("****", dirId: dirId) }
 		#expect(throws: CryptoError.invalidParameter("ciphertext must be at least 16 bytes")) { try cryptor.decryptFileName("test", dirId: dirId) }
+
+		let ciphertextName = try cryptor.encryptFileName("hello.txt", dirId: dirId)
+		#expect(throws: CryptoError.unauthenticCiphertext) { try cryptor.decryptFileName(ciphertextName, dirId: Data("bar".utf8)) }
 	}
 
 	@Test(arguments: schemes) func `public initializer creates fresh headers`(scheme: CryptorScheme) throws {

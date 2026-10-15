@@ -18,30 +18,20 @@ protocol CryptoSupport: Sendable {
 	func createRandomBytes(size: Int) throws -> [UInt8]
 }
 
-extension CryptoSupport {
-	/**
-	 Compares byte arrays in constant-time.
+/**
+ Compares byte arrays in constant-time.
 
-	 The running time of this method is independent of the byte arrays compared, making it safe to use for comparing secret values such as cryptographic MACs.
+ The running time of this function depends only on the lengths of the byte arrays, not on their contents, making it safe to use for comparing secret values such as cryptographic MACs.
 
-	 The byte arrays are expected to be of same length.
-
-	 - Parameter expected: Expected bytes for comparison.
-	 - Parameter actual: Actual bytes for comparison.
-	 - Returns: `true` if `expected` and `actual` are equal, otherwise `false`.
-	 */
-	func compareBytes(expected: [UInt8], actual: [UInt8]) -> Bool {
-		assert(expected.count == actual.count, "parameters should be of same length")
-		if #available(iOS 10.1, macCatalyst 13.0, macOS 10.12.1, *) {
-			return timingsafe_bcmp(expected, actual, expected.count) == 0
-		} else {
-			var diff: UInt8 = 0
-			for i in 0 ..< expected.count {
-				diff |= expected[i] ^ actual[i]
-			}
-			return diff == 0
-		}
+ - Parameter expected: Expected bytes for comparison.
+ - Parameter actual: Actual bytes for comparison.
+ - Returns: `true` if `expected` and `actual` are equal, otherwise `false`. Byte arrays of different lengths are never equal.
+ */
+func compareBytes(expected: [UInt8], actual: [UInt8]) -> Bool {
+	guard expected.count == actual.count else {
+		return false
 	}
+	return timingsafe_bcmp(expected, actual, expected.count) == 0
 }
 
 struct DefaultCryptoSupport: CryptoSupport {
