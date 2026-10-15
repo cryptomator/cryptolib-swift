@@ -7,10 +7,11 @@
 //
 
 import CryptomatorCryptoLib
-import XCTest
+import Foundation
+import Testing
 
-class SendableTests: XCTestCase {
-	func testPublicTypesAreSendable() {
+struct SendableTests {
+	@Test func `public types are sendable`() {
 		assertSendable(Cryptor.self)
 		assertSendable(Masterkey.self)
 		assertSendable(MasterkeyFile.self)

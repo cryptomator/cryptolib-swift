@@ -121,21 +121,19 @@ public final class Cryptor: Sendable {
 	private let cryptoSupport: CryptoSupport
 	private let contentCryptor: ContentCryptor
 
-	init(masterkey: Masterkey, cryptoSupport: CryptoSupport, contentCryptor: ContentCryptor) {
-		self.masterkey = masterkey
-		self.cryptoSupport = cryptoSupport
-		self.contentCryptor = contentCryptor
+	public convenience init(masterkey: Masterkey, scheme: CryptorScheme) {
+		self.init(masterkey: masterkey, scheme: scheme, cryptoSupport: DefaultCryptoSupport())
 	}
 
-	public convenience init(masterkey: Masterkey, scheme: CryptorScheme) {
-		let defaultCryptoSupport = DefaultCryptoSupport()
-		let chosenContentCryptor: ContentCryptor = switch scheme {
+	init(masterkey: Masterkey, scheme: CryptorScheme, cryptoSupport: CryptoSupport) {
+		self.masterkey = masterkey
+		self.cryptoSupport = cryptoSupport
+		self.contentCryptor = switch scheme {
 		case .sivCtrMac:
-			CtrThenHmacContentCryptor(macKey: masterkey.macMasterKey, cryptoSupport: defaultCryptoSupport)
+			CtrThenHmacContentCryptor(macKey: masterkey.macMasterKey, cryptoSupport: cryptoSupport)
 		case .sivGcm:
 			GcmContentCryptor()
 		}
-		self.init(masterkey: masterkey, cryptoSupport: defaultCryptoSupport, contentCryptor: chosenContentCryptor)
 	}
 
 	// MARK: - Path Encryption and Decryption
