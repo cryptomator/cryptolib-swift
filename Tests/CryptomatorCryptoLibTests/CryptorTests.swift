@@ -419,6 +419,9 @@ final class CryptorTests {
 
 	@Test(arguments: schemes) func `calculate cleartext size with invalid ciphertext size`(scheme: CryptorScheme) throws {
 		let cryptor = scheme.makeCryptor()
+		let minusOneChunk = -cryptor.ciphertextChunkSize
+		#expect(throws: CryptoError.invalidParameter("Method not defined for input value \(minusOneChunk)")) { try cryptor.calculateCleartextSize(minusOneChunk) }
+
 		#expect(throws: CryptoError.invalidParameter("Method not defined for input value 1")) { try cryptor.calculateCleartextSize(1) }
 
 		let emptyPayload = scheme.nonceLength + scheme.tagLength
