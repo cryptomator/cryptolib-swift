@@ -7,8 +7,6 @@ disabled_rules:
 included:
   - Sources/CryptomatorCryptoLib
   - Tests/CryptomatorCryptoLibTests
-excluded:
-  - Tests/CryptomatorCryptoLibTests/XCTestManifests.swift
 
 identifier_name:
   min_length: 1

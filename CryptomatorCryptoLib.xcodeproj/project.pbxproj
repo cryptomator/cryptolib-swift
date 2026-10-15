@@ -38,6 +38,7 @@
 		9EBEC94928378308002210DE /* GcmCryptorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EBEC94828378308002210DE /* GcmCryptorTests.swift */; };
 		3142589AD1F7A4BDDB9E8D01 /* ScriptedInputStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC7ABD0900B03BF45FCA93EC /* ScriptedInputStream.swift */; };
 		C7FF2E859B5148117A428DCB /* SendableTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F6969C960B323DB2E493EA1 /* SendableTests.swift */; };
+		08BE82F87BC52F1F0E53D642 /* CryptorTestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDAD54E0AEE931D7929BD515 /* CryptorTestSupport.swift */; };
 		375F1AC84ED46DB52E876872 /* ScriptedOutputStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B3C4246EBB153976E6D85C4 /* ScriptedOutputStream.swift */; };
 /* End PBXBuildFile section */
 
@@ -106,6 +107,7 @@
 		9EBEC94828378308002210DE /* GcmCryptorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GcmCryptorTests.swift; sourceTree = "<group>"; };
 		AC7ABD0900B03BF45FCA93EC /* ScriptedInputStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptedInputStream.swift; sourceTree = "<group>"; };
 		3F6969C960B323DB2E493EA1 /* SendableTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendableTests.swift; sourceTree = "<group>"; };
+		FDAD54E0AEE931D7929BD515 /* CryptorTestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptorTestSupport.swift; sourceTree = "<group>"; };
 		5B3C4246EBB153976E6D85C4 /* ScriptedOutputStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptedOutputStream.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -181,6 +183,7 @@
 				9EB822C2248AF9C500879838 /* AesCtrTests.swift */,
 				9E44EEA724599C7800A37B01 /* AesSivTests.swift */,
 				9E35C4EA24576A3D0006E50C /* CryptorTests.swift */,
+				FDAD54E0AEE931D7929BD515 /* CryptorTestSupport.swift */,
 				74A5B57D25A86A69002D10F7 /* CryptoSupportMock.swift */,
 				9EBEC946283782E6002210DE /* CtrCryptorTests.swift */,
 				9EBEC94828378308002210DE /* GcmCryptorTests.swift */,
@@ -469,6 +472,7 @@
 				C7FF2E859B5148117A428DCB /* SendableTests.swift in Sources */,
 				3142589AD1F7A4BDDB9E8D01 /* ScriptedInputStream.swift in Sources */,
 				375F1AC84ED46DB52E876872 /* ScriptedOutputStream.swift in Sources */,
+				08BE82F87BC52F1F0E53D642 /* CryptorTestSupport.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

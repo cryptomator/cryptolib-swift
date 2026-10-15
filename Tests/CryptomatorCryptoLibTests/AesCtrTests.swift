@@ -6,11 +6,11 @@
 //  Copyright © 2020 Skymatic GmbH. All rights reserved.
 //
 
-import XCTest
+import Testing
 @testable import CryptomatorCryptoLib
 
 /// test vectors F5.5 and F5.6 from https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38a.pdf
-class AesCtrTests: XCTestCase {
+struct AesCtrTests {
 	let key: [UInt8] = [
 		0x60, 0x3D, 0xEB, 0x10, 0x15, 0xCA, 0x71, 0xBE,
 		0x2B, 0x73, 0xAE, 0xF0, 0x85, 0x7D, 0x77, 0x81,
@@ -45,13 +45,13 @@ class AesCtrTests: XCTestCase {
 		0x13, 0xC2, 0xDD, 0x08, 0x45, 0x79, 0x41, 0xA6
 	]
 
-	func testEncrypt() {
-		let result = try? AesCtr.compute(key: key, iv: iv, data: plaintext)
-		XCTAssertEqual(ciphertext, result)
+	@Test func encrypt() throws {
+		let result = try AesCtr.compute(key: key, iv: iv, data: plaintext)
+		#expect(ciphertext == result)
 	}
 
-	func testDecrypt() {
-		let result = try? AesCtr.compute(key: key, iv: iv, data: ciphertext)
-		XCTAssertEqual(plaintext, result)
+	@Test func decrypt() throws {
+		let result = try AesCtr.compute(key: key, iv: iv, data: ciphertext)
+		#expect(plaintext == result)
 	}
 }

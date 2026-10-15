@@ -6,78 +6,48 @@
 //  Copyright © 2022 Skymatic GmbH. All rights reserved.
 //
 
-import XCTest
+import Testing
 @testable import CryptomatorCryptoLib
 
-class GcmCryptorTests: CryptorTests {
-	override class var defaultTestSuite: XCTestSuite {
-		return XCTestSuite(forTestCaseClass: GcmCryptorTests.self)
-	}
+struct GcmCryptorTests {
+	let cryptor = CryptorScheme.sivGcm.makeCryptor()
 
-	override func setUpWithError() throws {
-		let aesKey = [UInt8](repeating: 0x55, count: 32)
-		let macKey = [UInt8](repeating: 0x77, count: 32)
-		let masterkey = Masterkey.createFromRaw(aesMasterKey: aesKey, macMasterKey: macKey)
-		let cryptoSupport = CryptoSupportMock()
-		let contentCryptor = GcmContentCryptor()
+	/// AES-256-GCM of the header payload (8 × 0xFF, then the content key 32 × 0xF0) with key 32 × 0x55 and nonce 12 × 0xF0.
+	let headerCiphertext: [UInt8] = [
+		// nonce
+		0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0,
+		0xF0, 0xF0, 0xF0, 0xF0,
+		// ciphertext
+		0x1C, 0x87, 0x19, 0xF0, 0x31, 0x22, 0x86, 0x8F,
+		0xDB, 0x9D, 0x97, 0x03, 0xA0, 0x86, 0x08, 0xD5,
+		0x88, 0x58, 0x96, 0xC2, 0xE6, 0x60, 0x4B, 0xB9,
+		0xEA, 0x64, 0x31, 0xD4, 0xA0, 0x5D, 0x47, 0x6F,
+		0xE4, 0x1F, 0x32, 0x31, 0xF2, 0xC0, 0x61, 0x1F,
+		// tag
+		0x6D, 0x42, 0x98, 0x82, 0x43, 0xF2, 0x1F, 0x43,
+		0xF6, 0x44, 0xFD, 0x6D, 0xF7, 0xA9, 0x3F, 0x0B
+	]
 
-		try super.setUpWithError(masterkey: masterkey, cryptoSupport: cryptoSupport, contentCryptor: contentCryptor)
-	}
-
-	func testCreateHeader() throws {
+	@Test func `create header`() throws {
 		let header = try cryptor.createHeader()
-		XCTAssertEqual([UInt8](repeating: 0xF0, count: 12), header.nonce)
-		XCTAssertEqual([UInt8](repeating: 0xF0, count: 32), header.contentKey)
+		#expect([UInt8](repeating: 0xF0, count: 12) == header.nonce)
+		#expect([UInt8](repeating: 0xF0, count: 32) == header.contentKey)
 	}
 
-	func testEncryptHeader() throws {
+	@Test func `encrypt header`() throws {
 		let header = try cryptor.createHeader()
 		let encrypted = try cryptor.encryptHeader(header)
-
-		// echo -n "///////////w8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8A==" | base64 --decode \
-		// | openssl enc -aes-256-gcm -K 5555555555555555555555555555555555555555555555555555555555555555 -iv F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0 -a
-		let expected: [UInt8] = [
-			// nonce
-			0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0,
-			0xF0, 0xF0, 0xF0, 0xF0,
-			// ciphertext
-			0x1C, 0x87, 0x19, 0xF0, 0x31, 0x22, 0x86, 0x8F,
-			0xDB, 0x9D, 0x97, 0x03, 0xA0, 0x86, 0x08, 0xD5,
-			0x88, 0x58, 0x96, 0xC2, 0xE6, 0x60, 0x4B, 0xB9,
-			0xEA, 0x64, 0x31, 0xD4, 0xA0, 0x5D, 0x47, 0x6F,
-			0xE4, 0x1F, 0x32, 0x31, 0xF2, 0xC0, 0x61, 0x1F,
-			// tag
-			0x6D, 0x42, 0x98, 0x82, 0x43, 0xF2, 0x1F, 0x43,
-			0xF6, 0x44, 0xFD, 0x6D, 0xF7, 0xA9, 0x3F, 0x0B
-		]
-		XCTAssertEqual(expected, encrypted)
+		#expect(headerCiphertext == encrypted)
 	}
 
-	func testDecryptHeader() throws {
-		let ciphertext: [UInt8] = [
-			// nonce
-			0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0,
-			0xF0, 0xF0, 0xF0, 0xF0,
-			// ciphertext
-			0x1C, 0x87, 0x19, 0xF0, 0x31, 0x22, 0x86, 0x8F,
-			0xDB, 0x9D, 0x97, 0x03, 0xA0, 0x86, 0x08, 0xD5,
-			0x88, 0x58, 0x96, 0xC2, 0xE6, 0x60, 0x4B, 0xB9,
-			0xEA, 0x64, 0x31, 0xD4, 0xA0, 0x5D, 0x47, 0x6F,
-			0xE4, 0x1F, 0x32, 0x31, 0xF2, 0xC0, 0x61, 0x1F,
-			// tag
-			0x6D, 0x42, 0x98, 0x82, 0x43, 0xF2, 0x1F, 0x43,
-			0xF6, 0x44, 0xFD, 0x6D, 0xF7, 0xA9, 0x3F, 0x0B
-		]
-		let decrypted = try cryptor.decryptHeader(ciphertext)
-		XCTAssertEqual([UInt8](repeating: 0xF0, count: 12), decrypted.nonce)
-		XCTAssertEqual([UInt8](repeating: 0xF0, count: 32), decrypted.contentKey)
+	@Test func `decrypt header`() throws {
+		let cryptor = Cryptor(masterkey: .test, scheme: .sivGcm)
+		let decrypted = try cryptor.decryptHeader(headerCiphertext)
+		#expect([UInt8](repeating: 0xF0, count: 12) == decrypted.nonce)
+		#expect([UInt8](repeating: 0xF0, count: 32) == decrypted.contentKey)
 	}
 
-	func testEncryptContentMatches110Fixture() async throws {
-		try await assertEncryptContentMatchesFixture(expectedSize: 70152, expectedSHA256: "69c5e2f68080d9ecde94c0eb75869808635a0057126d1e46d73521d04a54ee92")
-	}
-
-	func testDecryptSingleChunk() throws {
+	@Test func `decrypt single chunk`() throws {
 		let headerNonce: [UInt8] = [
 			0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
 			0x55, 0x55, 0x55, 0x55
@@ -102,6 +72,6 @@ class GcmCryptorTests: CryptorTests {
 
 		let cleartext = try cryptor.decryptSingleChunk(ciphertext, chunkNumber: 0, headerNonce: headerNonce, fileKey: fileKey)
 
-		XCTAssertEqual([UInt8]("hello world".utf8), cleartext)
+		#expect([UInt8]("hello world".utf8) == cleartext)
 	}
 }
