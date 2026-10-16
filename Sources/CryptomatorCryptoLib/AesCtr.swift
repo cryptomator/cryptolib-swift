@@ -46,7 +46,7 @@ class AesCtr {
 		var cryptor: CCCryptorRef?
 		var status = CCCryptorCreateWithMode(CCOperation(kCCEncrypt), CCMode(kCCModeCTR), CCAlgorithm(kCCAlgorithmAES), CCPadding(ccNoPadding), iv, key.baseAddress, key.count, nil, 0, 0, CCModeOptions(kCCModeOptionCTR_BE), &cryptor)
 		guard status == kCCSuccess, cryptor != nil else {
-			throw CryptoError.invalidParameter("failed to initialize cryptor")
+			throw CryptoError.ccCryptorError(status)
 		}
 		defer {
 			CCCryptorRelease(cryptor)
