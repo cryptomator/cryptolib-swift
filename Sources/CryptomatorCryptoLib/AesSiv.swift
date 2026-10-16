@@ -145,7 +145,7 @@ class AesSiv {
 			assert(mac.count == kCCBlockSizeAES128 && mac.withUnsafeBytes { $0.allSatisfy { $0 == 0x00 } }, "mac expected to be one zero-filled block")
 
 			// determine the last block, treating empty data as one incomplete block:
-			let lastBlockIdx = max((data.count + 15) / 16 - 1, 0)
+			let lastBlockIdx = data.isEmpty ? 0 : (data.count - 1) / 16
 			let lastBlockComplete = !data.isEmpty && data.count % 16 == 0
 
 			// all but the last block:
