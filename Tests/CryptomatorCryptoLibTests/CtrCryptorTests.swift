@@ -28,8 +28,9 @@ struct CtrCryptorTests {
 
 	@Test func `create header`() throws {
 		let header = try cryptor.createHeader()
+		let contentKey = header.contentKey.exportBytes()
 		#expect([UInt8](repeating: 0xF0, count: 16) == header.nonce)
-		#expect([UInt8](repeating: 0xF0, count: 32) == header.contentKey)
+		#expect([UInt8](repeating: 0xF0, count: 32) == contentKey)
 	}
 
 	@Test func `encrypt header`() throws {
@@ -41,7 +42,20 @@ struct CtrCryptorTests {
 	@Test func `decrypt header`() throws {
 		let cryptor = Cryptor(masterkey: .test, scheme: .sivCtrMac)
 		let decrypted = try cryptor.decryptHeader(headerCiphertext)
+		let contentKey = decrypted.contentKey.exportBytes()
 		#expect([UInt8](repeating: 0xF0, count: 16) == decrypted.nonce)
-		#expect([UInt8](repeating: 0xF0, count: 32) == decrypted.contentKey)
+		#expect([UInt8](repeating: 0xF0, count: 32) == contentKey)
+	}
+
+	@Test func `decrypt tampered chunk leaves cleartext untouched`() throws {
+		let contentCryptor = CtrThenHmacContentCryptor(masterkey: .test)
+		let key = SecretBytes(count: 32)
+		var chunk = try [UInt8]("hello world".utf8).withUnsafeBytes { try contentCryptor.encrypt($0, key: key, nonce: [UInt8](repeating: 0x00, count: 16), ad: []) }
+		chunk[chunk.count - 1] ^= 0x01
+		var cleartext = [UInt8](repeating: 0xAA, count: 11)
+		#expect(throws: CryptoError.unauthenticCiphertext) {
+			try cleartext.withUnsafeMutableBytes { try contentCryptor.decrypt(chunk, key: key, ad: [], into: $0) }
+		}
+		#expect([UInt8](repeating: 0xAA, count: 11) == cleartext)
 	}
 }

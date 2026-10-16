@@ -30,8 +30,9 @@ struct GcmCryptorTests {
 
 	@Test func `create header`() throws {
 		let header = try cryptor.createHeader()
+		let contentKey = header.contentKey.exportBytes()
 		#expect([UInt8](repeating: 0xF0, count: 12) == header.nonce)
-		#expect([UInt8](repeating: 0xF0, count: 32) == header.contentKey)
+		#expect([UInt8](repeating: 0xF0, count: 32) == contentKey)
 	}
 
 	@Test func `encrypt header`() throws {
@@ -43,8 +44,9 @@ struct GcmCryptorTests {
 	@Test func `decrypt header`() throws {
 		let cryptor = Cryptor(masterkey: .test, scheme: .sivGcm)
 		let decrypted = try cryptor.decryptHeader(headerCiphertext)
+		let contentKey = decrypted.contentKey.exportBytes()
 		#expect([UInt8](repeating: 0xF0, count: 12) == decrypted.nonce)
-		#expect([UInt8](repeating: 0xF0, count: 32) == decrypted.contentKey)
+		#expect([UInt8](repeating: 0xF0, count: 32) == contentKey)
 	}
 
 	@Test func `decrypt single chunk`() throws {
@@ -52,12 +54,12 @@ struct GcmCryptorTests {
 			0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
 			0x55, 0x55, 0x55, 0x55
 		]
-		let fileKey: [UInt8] = [
+		let fileKey = SecretBytes(copying: [
 			0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77,
 			0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77,
 			0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77,
 			0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77
-		]
+		] as [UInt8])
 		let ciphertext: [UInt8] = [
 			// nonce
 			0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,

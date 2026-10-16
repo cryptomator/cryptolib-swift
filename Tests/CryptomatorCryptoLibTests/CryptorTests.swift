@@ -59,7 +59,9 @@ final class CryptorTests {
 		let first = try cryptor.createHeader()
 		let second = try cryptor.createHeader()
 		#expect(first.nonce != second.nonce)
-		#expect(first.contentKey != second.contentKey)
+		let firstContentKey = first.contentKey.exportBytes()
+		let secondContentKey = second.contentKey.exportBytes()
+		#expect(firstContentKey != secondContentKey)
 	}
 
 	@Test(arguments: schemes) func `encrypt and decrypt content`(scheme: CryptorScheme) async throws {
@@ -336,17 +338,28 @@ final class CryptorTests {
 		#expect(result.error as? CryptoError == .unauthenticCiphertext)
 	}
 
+	@Test(arguments: schemes) func `decrypt empty last chunk`(scheme: CryptorScheme) async throws {
+		let cryptor = scheme.makeCryptor()
+		let header = try cryptor.createHeader()
+		let ciphertext = try cryptor.encryptHeader(header) + cryptor.encryptSingleChunk([], chunkNumber: 0, headerNonce: header.nonce, fileKey: header.contentKey)
+		let result = await runInFreshTask(input: ciphertext) {
+			try await cryptor.decryptContent(from: $0, to: $1, ciphertextSize: ciphertext.count, progress: nil)
+		}
+		#expect(result.error == nil)
+		#expect(result.output.isEmpty)
+	}
+
 	@Test(arguments: schemes) func `decrypt tampered header throws`(scheme: CryptorScheme) throws {
 		let cryptor = scheme.makeCryptor()
 		var header = try cryptor.encryptHeader(cryptor.createHeader())
 		header[header.count - 1] ^= 0x01
-		#expect(throws: CryptoError.unauthenticCiphertext) { try cryptor.decryptHeader(header) }
+		#expect(throws: CryptoError.unauthenticCiphertext) { _ = try cryptor.decryptHeader(header) }
 	}
 
 	@Test(arguments: schemes) func `decrypt tampered chunk throws`(scheme: CryptorScheme) throws {
 		let cryptor = scheme.makeCryptor()
 		let nonce = [UInt8](repeating: 0x00, count: scheme.nonceLength)
-		let filekey = [UInt8](repeating: 0x00, count: 32)
+		let filekey = SecretBytes(count: 32)
 		var encrypted = try cryptor.encryptSingleChunk([UInt8]("hello world".utf8), chunkNumber: 0, headerNonce: nonce, fileKey: filekey)
 		encrypted[encrypted.count - 1] ^= 0x01
 		#expect(throws: CryptoError.unauthenticCiphertext) { try cryptor.decryptSingleChunk(encrypted, chunkNumber: 0, headerNonce: nonce, fileKey: filekey) }
@@ -375,7 +388,7 @@ final class CryptorTests {
 	@Test(arguments: schemes) func `encrypt and decrypt single chunk`(scheme: CryptorScheme) throws {
 		let cryptor = scheme.makeCryptor()
 		let nonce = [UInt8](repeating: 0x00, count: scheme.nonceLength)
-		let filekey = [UInt8](repeating: 0x00, count: 32)
+		let filekey = SecretBytes(count: 32)
 		let cleartext = [UInt8]("hello world".utf8)
 
 		let encrypted = try cryptor.encryptSingleChunk(cleartext, chunkNumber: 0, headerNonce: nonce, fileKey: filekey)

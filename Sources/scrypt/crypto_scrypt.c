@@ -26,6 +26,8 @@
  * This file was originally written by Colin Percival as part of the Tarsnap
  * online backup system.
  */
+#define __STDC_WANT_LIB_EXT1__ 1
+
 #include <errno.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -265,9 +267,16 @@ crypto_scrypt(const uint8_t * passwd, size_t passwdlen,
 	/* 5: DK <-- PBKDF2(P, B, 1, dkLen) */
 	PBKDF2_SHA256(passwd, passwdlen, B, p * 128 * r, 1, buf, buflen);
 
-	/* Free memory. */
+	/*
+	 * Wipe and free memory.  The stack scratch of salsa20_8 (B32, x) and
+	 * blockmix_salsa8 (X) is not wiped, because wiping it on every call slows
+	 * down key derivation significantly.
+	 */
+	memset_s(V, 128 * r * N, 0, 128 * r * N);
 	free(V);
+	memset_s(XY, 256 * r, 0, 256 * r);
 	free(XY);
+	memset_s(B, 128 * r * p, 0, 128 * r * p);
 	free(B);
 
 	/* Success! */

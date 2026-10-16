@@ -46,6 +46,8 @@ let rawKey = ... // 64 bytes: AES master key followed by MAC master key
 let masterkey = try Masterkey.createFromRaw(rawKey: rawKey)
 ```
 
+The masterkey keeps its own copy of `rawKey` and wipes it when the masterkey is deallocated. It never retains your `rawKey`, so wiping it is your responsibility. The same applies to `masterkey.rawKey`, which returns a copy that the library cannot wipe.
+
 ### MasterkeyFile
 
 `MasterkeyFile` is a representation of the masterkey file. With that, you can unlock a masterkey file (and get a `Masterkey`), lock a masterkey file (and serialize it as JSON), or change the passphrase.
@@ -88,6 +90,8 @@ let masterkey = try masterkeyFile.unlock(kek: kek)
 ```
 
 This is useful if you'd like to derive the key in an extra step since the function is memory-intensive (using scrypt). The result can then be used elsewhere, e.g. in a memory-restricted process.
+
+The KEK returned by `deriveKey` belongs to you, and the library cannot wipe it. `unlock(kek:)` copies the KEK without retaining it, so wiping `kek` is your responsibility.
 
 #### Lock
 

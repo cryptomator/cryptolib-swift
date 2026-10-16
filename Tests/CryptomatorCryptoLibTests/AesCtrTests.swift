@@ -46,12 +46,12 @@ struct AesCtrTests {
 	]
 
 	@Test func encrypt() throws {
-		let result = try AesCtr.compute(key: key, iv: iv, data: plaintext)
+		let result = try AesCtr.compute(key: SecretBytes(copying: key), iv: iv, data: plaintext)
 		#expect(ciphertext == result)
 	}
 
 	@Test func decrypt() throws {
-		let result = try AesCtr.compute(key: key, iv: iv, data: ciphertext)
+		let result = try AesCtr.compute(key: SecretBytes(copying: key), iv: iv, data: ciphertext)
 		#expect(plaintext == result)
 	}
 }
