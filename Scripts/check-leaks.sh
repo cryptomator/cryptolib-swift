@@ -21,8 +21,13 @@ trap 'rm -f "$log"' EXIT
 
 # `leaks` launches Xcode's xctest binary directly. `swiftpm-testing-helper` cannot load
 # XCTest.framework under SIP, and an `env` wrapper hides the test process from `leaks`.
+#
+# On macOS 26.6, Xcode 27.1's libXCTestSwiftSupport leaks a weak-reference side table when it
+# starts Swift Testing. The leak is entirely in Apple code, so it is excluded. `-exclude` only
+# works after `--atExit`: placed before it, `leaks` exits with an error.
 status=0
-MallocScribble=1 leaks --atExit -- "$xctest_path" "$bin_path/CryptomatorCryptoLibTests.xctest" 2>&1 | tee "$log" || status=$?
+MallocScribble=1 leaks --atExit -exclude 'SwiftTestingExecutionExtension.startRuntimeIssueDetection()' -- \
+  "$xctest_path" "$bin_path/CryptomatorCryptoLibTests.xctest" 2>&1 | tee "$log" || status=$?
 
 if [[ $status -ne 0 ]]; then
   echo "leaks exited with status $status (1: leaks found, above 1: leaks failed)" >&2
