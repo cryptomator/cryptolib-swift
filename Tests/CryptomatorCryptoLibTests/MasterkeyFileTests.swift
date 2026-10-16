@@ -49,8 +49,7 @@ struct MasterkeyFileTests {
 		""".utf8)
 		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
 		let masterkey = try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]())
-		#expect(expectedKey == masterkey.aesMasterKey)
-		#expect(expectedKey == masterkey.macMasterKey)
+		#expect(expectedKey + expectedKey == masterkey.rawKey)
 	}
 
 	@Test func `unlock with wrong passphrase`() throws {
@@ -113,6 +112,18 @@ struct MasterkeyFileTests {
 		#expect(expectedKey == kek)
 	}
 
+	@Test func `derive key with pepper`() throws {
+		let expectedKey: [UInt8] = [
+			0x76, 0x87, 0x4B, 0x08, 0x08, 0xB1, 0xC3, 0x11,
+			0x09, 0x50, 0x7B, 0x6E, 0x0C, 0x8E, 0xA7, 0x24,
+			0xA7, 0xFB, 0x51, 0x27, 0x78, 0x40, 0xB3, 0x20,
+			0x1B, 0x3D, 0x7E, 0x71, 0x67, 0xE3, 0x91, 0x90
+		]
+		let masterkeyFile = MasterkeyFile(content: Self.makeContent())
+		let kek = try masterkeyFile.deriveKey(passphrase: "asd", pepper: [0x01, 0x02, 0x03])
+		#expect(expectedKey == kek)
+	}
+
 	@Test func `unlock with KEK`() throws {
 		let expectedKey = [UInt8](repeating: 0x00, count: 32)
 		let data = Data("""
@@ -134,8 +145,7 @@ struct MasterkeyFileTests {
 			0xDF, 0xCB, 0xB5, 0xE7, 0x5A, 0xEF, 0x34, 0xF9
 		]
 		let masterkey = try masterkeyFile.unlock(kek: kek)
-		#expect(expectedKey == masterkey.aesMasterKey)
-		#expect(expectedKey == masterkey.macMasterKey)
+		#expect(expectedKey + expectedKey == masterkey.rawKey)
 	}
 
 	@Test func lock() throws {
@@ -162,6 +172,18 @@ struct MasterkeyFileTests {
 		#expect(content1 != content2)
 	}
 
+	@Test func `lock and unlock with empty passphrase`() throws {
+		let content = try MasterkeyFile.lock(masterkey: .test, vaultVersion: 7, passphrase: "", pepper: [UInt8](), scryptCostParam: 2, cryptoSupport: CryptoSupportMock())
+		let masterkey = try MasterkeyFile(content: content).unlock(passphrase: "")
+		#expect(Masterkey.test.rawKey == masterkey.rawKey)
+	}
+
+	@Test func `unlock with canonically equivalent passphrase`() throws {
+		let content = try MasterkeyFile.lock(masterkey: .test, vaultVersion: 7, passphrase: "e\u{301}", pepper: [UInt8](), scryptCostParam: 2, cryptoSupport: CryptoSupportMock())
+		let masterkey = try MasterkeyFile(content: content).unlock(passphrase: "\u{E9}")
+		#expect(Masterkey.test.rawKey == masterkey.rawKey)
+	}
+
 	@Test func `change passphrase`() throws {
 		let expectedKey = [UInt8](repeating: 0x00, count: 32)
 		let data = Data("""
@@ -178,22 +200,21 @@ struct MasterkeyFileTests {
 		let content = try MasterkeyFile.changePassphrase(masterkeyFileData: data, oldPassphrase: "asd", newPassphrase: "qwe", pepper: [UInt8](), scryptCostParam: 2, cryptoSupport: CryptoSupportMock())
 		let masterkeyFile = MasterkeyFile(content: content)
 		let masterkey = try masterkeyFile.unlock(passphrase: "qwe", pepper: [UInt8]())
-		#expect(expectedKey == masterkey.aesMasterKey)
-		#expect(expectedKey == masterkey.macMasterKey)
+		#expect(expectedKey + expectedKey == masterkey.rawKey)
 		#expect(throws: MasterkeyFileError.invalidPassphrase) { try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]()) }
 	}
 
 	@Test func `wrap and unwrap key`() throws {
 		let key = [UInt8](repeating: 0x77, count: 32)
-		let kek = [UInt8](repeating: 0x55, count: 32)
-		let wrapped = try MasterkeyFile.wrapKey(key, kek: kek)
-		let unwrapped = try MasterkeyFile.unwrapKey(wrapped, kek: kek)
+		let kek = SecretBytes(copying: [UInt8](repeating: 0x55, count: 32))
+		let wrapped = try MasterkeyFile.wrapKey(SecretBytes(copying: key), kek: kek)
+		let unwrapped = try MasterkeyFile.unwrapKey(wrapped, kek: kek).exportBytes()
 		#expect(key == unwrapped)
 	}
 
 	@Test func `wrap key with invalid key`() throws {
-		let key = [UInt8](repeating: 0x77, count: 17)
-		let kek = [UInt8](repeating: 0x55, count: 32)
+		let key = SecretBytes(copying: [UInt8](repeating: 0x77, count: 17))
+		let kek = SecretBytes(copying: [UInt8](repeating: 0x55, count: 32))
 		#expect(throws: MasterkeyFileError.keyWrapFailed(CCCryptorStatus(kCCParamError))) { try MasterkeyFile.wrapKey(key, kek: kek) }
 	}
 

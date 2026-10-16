@@ -9,7 +9,7 @@
 @testable import CryptomatorCryptoLib
 
 extension Masterkey {
-	static let test = Masterkey.createFromRaw(aesMasterKey: [UInt8](repeating: 0x55, count: 32), macMasterKey: [UInt8](repeating: 0x77, count: 32))
+	static let test = Masterkey.createFromRaw(aesMasterKey: SecretBytes(copying: [UInt8](repeating: 0x55, count: 32)), macMasterKey: SecretBytes(copying: [UInt8](repeating: 0x77, count: 32)))
 }
 
 extension CryptorScheme {

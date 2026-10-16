@@ -100,9 +100,9 @@ public enum FileNameEncoding: String, Sendable {
 	case base32
 }
 
-struct FileHeader {
+struct FileHeader: ~Copyable {
 	let nonce: [UInt8]
-	let contentKey: [UInt8]
+	let contentKey: SecretBytes
 }
 
 public final class Cryptor: Sendable {
@@ -130,7 +130,7 @@ public final class Cryptor: Sendable {
 		self.cryptoSupport = cryptoSupport
 		self.contentCryptor = switch scheme {
 		case .sivCtrMac:
-			CtrThenHmacContentCryptor(macKey: masterkey.macMasterKey)
+			CtrThenHmacContentCryptor(masterkey: masterkey)
 		case .sivGcm:
 			GcmContentCryptor()
 		}
@@ -203,13 +203,17 @@ public final class Cryptor: Sendable {
 
 	func createHeader() throws -> FileHeader {
 		let nonce = try cryptoSupport.createRandomBytes(size: contentCryptor.nonceLen)
-		let contentKey = try cryptoSupport.createRandomBytes(size: kCCKeySizeAES256)
+		let contentKey = try cryptoSupport.createRandomSecret(size: kCCKeySizeAES256)
 		return FileHeader(nonce: nonce, contentKey: contentKey)
 	}
 
-	func encryptHeader(_ header: FileHeader) throws -> [UInt8] {
-		let cleartext = [UInt8](repeating: 0xFF, count: fileHeaderLegacyPayloadSize) + header.contentKey
-		return try contentCryptor.encryptHeader(cleartext, key: masterkey.aesMasterKey, nonce: header.nonce)
+	func encryptHeader(_ header: borrowing FileHeader) throws -> [UInt8] {
+		var payload = SecretBytes(count: fileHeaderLegacyPayloadSize + kCCKeySizeAES256)
+		payload.withUnsafeMutableBytes { payloadBytes in
+			payloadBytes[..<fileHeaderLegacyPayloadSize].initializeMemory(as: UInt8.self, repeating: 0xFF)
+			header.contentKey.withUnsafeBytes { payloadBytes[fileHeaderLegacyPayloadSize...].copyBytes(from: $0) }
+		}
+		return try contentCryptor.encryptHeader(payload, key: masterkey.aesMasterKey, nonce: header.nonce)
 	}
 
 	func decryptHeader(_ header: [UInt8]) throws -> FileHeader {
@@ -217,8 +221,8 @@ public final class Cryptor: Sendable {
 			throw CryptoError.unauthenticCiphertext
 		}
 		let nonce = [UInt8](header[0 ..< contentCryptor.nonceLen])
-		let cleartext = try contentCryptor.decryptHeader(header, key: masterkey.aesMasterKey)
-		let contentKey = [UInt8](cleartext[fileHeaderLegacyPayloadSize...])
+		let payload = try contentCryptor.decryptHeader(header, key: masterkey.aesMasterKey)
+		let contentKey = payload.withUnsafeBytes { SecretBytes(copying: $0[fileHeaderLegacyPayloadSize...]) }
 		return FileHeader(nonce: nonce, contentKey: contentKey)
 	}
 
@@ -351,12 +355,12 @@ public final class Cryptor: Sendable {
 		progress?.complete(processedUnitCount: processedSize)
 	}
 
-	func encryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {
+	func encryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: borrowing SecretBytes) throws -> [UInt8] {
 		let chunkNonce = try cryptoSupport.createRandomBytes(size: contentCryptor.nonceLen)
 		return try contentCryptor.encryptChunk(chunk, chunkNumber: chunkNumber, chunkNonce: chunkNonce, fileKey: fileKey, headerNonce: headerNonce)
 	}
 
-	func decryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {
+	func decryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: borrowing SecretBytes) throws -> [UInt8] {
 		return try contentCryptor.decryptChunk(chunk, chunkNumber: chunkNumber, fileKey: fileKey, headerNonce: headerNonce)
 	}
 

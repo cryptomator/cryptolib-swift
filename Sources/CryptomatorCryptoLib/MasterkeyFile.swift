@@ -71,23 +71,27 @@ public final class MasterkeyFile: Sendable {
 	/**
 	 Derives a KEK from the given passphrase and the params from this masterkey file using scrypt and unwraps the stored encryption and MAC keys.
 
-	 - Parameter passphrase: The passphrase used during key derivation.
-	 - Parameter pepper: An optional application-specific pepper added to the scrypt's salt. Defaults to empty byte array.
+	 - Parameter passphrase: The passphrase used during key derivation. The library cannot wipe the string.
+	 - Parameter pepper: An optional application-specific pepper added to the scrypt's salt. Defaults to empty byte array. The bytes are copied and never retained.
 	 - Returns: A masterkey with the unwrapped keys.
 	 */
 	public func unlock(passphrase: String, pepper: [UInt8] = [UInt8]()) throws -> Masterkey {
-		let kek = try deriveKey(passphrase: passphrase, pepper: pepper)
+		let kek = try deriveSecretKey(passphrase: passphrase, pepper: pepper)
 		return try unlock(kek: kek)
 	}
 
 	/**
 	 Derives a KEK from the given passphrase and the params from this masterkey file using scrypt.
 
-	 - Parameter passphrase: The passphrase used during key derivation.
-	 - Parameter pepper: An optional application-specific pepper added to the scrypt's salt. Defaults to empty byte array.
-	 - Returns: A 256-bit key derived from passphrase using scrypt.
+	 - Parameter passphrase: The passphrase used during key derivation. The library cannot wipe the string.
+	 - Parameter pepper: An optional application-specific pepper added to the scrypt's salt. Defaults to empty byte array. The bytes are copied and never retained.
+	 - Returns: A copy of the 256-bit key derived from passphrase using scrypt. The returned array belongs to the caller, and the library cannot wipe it.
 	 */
 	public func deriveKey(passphrase: String, pepper: [UInt8] = [UInt8]()) throws -> [UInt8] {
+		return try deriveSecretKey(passphrase: passphrase, pepper: pepper).exportBytes()
+	}
+
+	private func deriveSecretKey(passphrase: String, pepper: [UInt8]) throws -> SecretBytes {
 		guard let salt = Data(base64Encoded: content.scryptSalt) else {
 			throw MasterkeyFileError.malformedMasterkeyFile("invalid base64 data in scryptSalt")
 		}
@@ -106,10 +110,14 @@ public final class MasterkeyFile: Sendable {
 	/**
 	  Unwraps the stored encryption and MAC keys with the given KEK.
 
-	  - Parameter kek: The KEK for unwrapping the keys from this masterkey file.
+	  - Parameter kek: The KEK for unwrapping the keys from this masterkey file. The bytes are copied and never retained, so wiping `kek` remains the caller's responsibility.
 	  - Returns: A masterkey with the unwrapped keys.
 	 */
 	public func unlock(kek: [UInt8]) throws -> Masterkey {
+		return try unlock(kek: SecretBytes(copying: kek))
+	}
+
+	private func unlock(kek: borrowing SecretBytes) throws -> Masterkey {
 		guard let wrappedMasterKey = Data(base64Encoded: content.primaryMasterKey), wrappedMasterKey.count == MasterkeyFile.wrappedKeySize else {
 			throw MasterkeyFileError.malformedMasterkeyFile("invalid base64 data in primaryMasterKey")
 		}
@@ -126,7 +134,7 @@ public final class MasterkeyFile: Sendable {
 		return Masterkey.createFromRaw(aesMasterKey: aesKey, macMasterKey: macKey)
 	}
 
-	private func checkVaultVersion(macKey: [UInt8]) throws {
+	private func checkVaultVersion(macKey: borrowing SecretBytes) throws {
 		guard let storedVersionMac = Data(base64Encoded: content.versionMac), storedVersionMac.count == CC_SHA256_DIGEST_LENGTH else {
 			throw MasterkeyFileError.malformedMasterkeyFile("invalid base64 data in versionMac")
 		}
@@ -145,8 +153,8 @@ public final class MasterkeyFile: Sendable {
 
 	 - Parameter masterkey: The key to protect.
 	 - Parameter vaultVersion: The vault version that should be stored in this masterkey file (for downwards compatibility).
-	 - Parameter passphrase: The passphrase used during key derivation.
-	 - Parameter pepper: An optional application-specific pepper added to the scrypt's salt. Defaults to empty byte array.
+	 - Parameter passphrase: The passphrase used during key derivation. The library cannot wipe the string.
+	 - Parameter pepper: An optional application-specific pepper added to the scrypt's salt. Defaults to empty byte array. The bytes are copied and never retained.
 	 - Parameter scryptCostParam: The work factor for the key derivation function (scrypt). Must be a power of 2 from 2 to 2^20. Defaults to 32768.
 	 - Returns: A JSON representation of the encrypted masterkey with its key derivation parameters.
 	 */
@@ -187,9 +195,9 @@ public final class MasterkeyFile: Sendable {
 	 Re-encrypts a masterkey with a new passphrase.
 
 	 - Parameter masterkeyFileData: The original JSON representation of the masterkey.
-	 - Parameter oldPassphrase: The old passphrase.
-	 - Parameter newPassphrase: The new passphrase
-	 - Parameter pepper: An optional application-specific pepper added to the scrypt's salt. Defaults to empty byte array.
+	 - Parameter oldPassphrase: The old passphrase. The library cannot wipe the string.
+	 - Parameter newPassphrase: The new passphrase. The library cannot wipe the string.
+	 - Parameter pepper: An optional application-specific pepper added to the scrypt's salt. Defaults to empty byte array. The bytes are copied and never retained.
 	 - Parameter scryptCostParam: The work factor for the key derivation function (scrypt). Must be a power of 2 from 2 to 2^20. Defaults to 32768.
 	 - Returns: A JSON representation of the masterkey, now encrypted with `newPassphrase`.
 	 */
@@ -213,29 +221,46 @@ public final class MasterkeyFile: Sendable {
 		return scryptCostParam + 3 <= UInt64(Int32.max) / 128 / UInt64(scryptBlockSize)
 	}
 
-	private static func scrypt(passphrase: String, salt: [UInt8], pepper: [UInt8], scryptCostParam: UInt64, scryptBlockSize: UInt32) throws -> [UInt8] {
-		let pw = [UInt8](passphrase.precomposedStringWithCanonicalMapping.utf8)
-		var kek = [UInt8](repeating: 0x00, count: kCCKeySizeAES256)
-		let scryptResult = crypto_scrypt(pw, pw.count, salt + pepper, salt.count + pepper.count, scryptCostParam, scryptBlockSize, 1, &kek, kCCKeySizeAES256)
+	/**
+	 Derives a KEK from the given passphrase using scrypt.
+
+	 The `passphrase` string and its normalized copy cannot be wiped. The vendored scrypt core also leaves its stack scratch unwiped, for performance.
+	 */
+	private static func scrypt(passphrase: String, salt: [UInt8], pepper: [UInt8], scryptCostParam: UInt64, scryptBlockSize: UInt32) throws -> SecretBytes {
+		let pw = SecretBytes(copying: passphrase.precomposedStringWithCanonicalMapping.utf8)
+		var saltAndPepper = SecretBytes(count: salt.count + pepper.count)
+		saltAndPepper.withUnsafeMutableBytes { saltAndPepperBytes in
+			saltAndPepperBytes[..<salt.count].copyBytes(from: salt)
+			saltAndPepperBytes[salt.count...].copyBytes(from: pepper)
+		}
+		var kek = SecretBytes(count: kCCKeySizeAES256)
+		let scryptResult = pw.withUnsafeBytes { pwBytes in
+			saltAndPepper.withUnsafeBytes { saltAndPepperBytes in
+				kek.withUnsafeMutableBytes { kekBytes in
+					crypto_scrypt(pwBytes.baseAddress?.assumingMemoryBound(to: UInt8.self), pwBytes.count, saltAndPepperBytes.baseAddress?.assumingMemoryBound(to: UInt8.self), saltAndPepperBytes.count, scryptCostParam, scryptBlockSize, 1, kekBytes.baseAddress?.assumingMemoryBound(to: UInt8.self), kekBytes.count)
+				}
+			}
+		}
 		guard scryptResult == 0 else {
 			throw MasterkeyFileError.keyDerivationFailed
 		}
 		return kek
 	}
 
-	private static func versionMac(version: UInt32, macKey: [UInt8]) -> [UInt8] {
-		var versionMac = [UInt8](repeating: 0x00, count: Int(CC_SHA256_DIGEST_LENGTH))
-		let versionBytes = version.bigEndian.byteArray()
-		CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), macKey, macKey.count, versionBytes, versionBytes.count, &versionMac)
-		return versionMac
+	private static func versionMac(version: UInt32, macKey: borrowing SecretBytes) -> [UInt8] {
+		return hmacSha256(key: macKey, data: version.bigEndian.byteArray())
 	}
 
 	// MARK: - RFC 3394 Key Wrapping
 
-	static func wrapKey(_ rawKey: [UInt8], kek: [UInt8]) throws -> [UInt8] {
+	static func wrapKey(_ rawKey: borrowing SecretBytes, kek: borrowing SecretBytes) throws -> [UInt8] {
 		var wrappedKeyLen = CCSymmetricWrappedSize(CCWrappingAlgorithm(kCCWRAPAES), rawKey.count)
 		var wrappedKey = [UInt8](repeating: 0x00, count: wrappedKeyLen)
-		let status = CCSymmetricKeyWrap(CCWrappingAlgorithm(kCCWRAPAES), CCrfc3394_iv, CCrfc3394_ivLen, kek, kek.count, rawKey, rawKey.count, &wrappedKey, &wrappedKeyLen)
+		let status = kek.withUnsafeBytes { kekBytes in
+			rawKey.withUnsafeBytes { rawKeyBytes in
+				CCSymmetricKeyWrap(CCWrappingAlgorithm(kCCWRAPAES), CCrfc3394_iv, CCrfc3394_ivLen, kekBytes.baseAddress?.assumingMemoryBound(to: UInt8.self), kekBytes.count, rawKeyBytes.baseAddress?.assumingMemoryBound(to: UInt8.self), rawKeyBytes.count, &wrappedKey, &wrappedKeyLen)
+			}
+		}
 		if status == kCCSuccess {
 			return wrappedKey
 		} else {
@@ -243,10 +268,14 @@ public final class MasterkeyFile: Sendable {
 		}
 	}
 
-	static func unwrapKey(_ wrappedKey: [UInt8], kek: [UInt8]) throws -> [UInt8] {
+	static func unwrapKey(_ wrappedKey: [UInt8], kek: borrowing SecretBytes) throws -> SecretBytes {
 		var unwrappedKeyLen = CCSymmetricUnwrappedSize(CCWrappingAlgorithm(kCCWRAPAES), wrappedKey.count)
-		var unwrappedKey = [UInt8](repeating: 0x00, count: unwrappedKeyLen)
-		let status = CCSymmetricKeyUnwrap(CCWrappingAlgorithm(kCCWRAPAES), CCrfc3394_iv, CCrfc3394_ivLen, kek, kek.count, wrappedKey, wrappedKey.count, &unwrappedKey, &unwrappedKeyLen)
+		var unwrappedKey = SecretBytes(count: unwrappedKeyLen)
+		let status = kek.withUnsafeBytes { kekBytes in
+			unwrappedKey.withUnsafeMutableBytes { unwrappedKeyBytes in
+				CCSymmetricKeyUnwrap(CCWrappingAlgorithm(kCCWRAPAES), CCrfc3394_iv, CCrfc3394_ivLen, kekBytes.baseAddress?.assumingMemoryBound(to: UInt8.self), kekBytes.count, wrappedKey, wrappedKey.count, unwrappedKeyBytes.baseAddress?.assumingMemoryBound(to: UInt8.self), &unwrappedKeyLen)
+			}
+		}
 		if status == kCCSuccess {
 			assert(unwrappedKeyLen == kCCKeySizeAES256)
 			return unwrappedKey

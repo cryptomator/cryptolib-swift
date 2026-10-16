@@ -28,8 +28,9 @@ struct CtrCryptorTests {
 
 	@Test func `create header`() throws {
 		let header = try cryptor.createHeader()
+		let contentKey = header.contentKey.exportBytes()
 		#expect([UInt8](repeating: 0xF0, count: 16) == header.nonce)
-		#expect([UInt8](repeating: 0xF0, count: 32) == header.contentKey)
+		#expect([UInt8](repeating: 0xF0, count: 32) == contentKey)
 	}
 
 	@Test func `encrypt header`() throws {
@@ -41,7 +42,8 @@ struct CtrCryptorTests {
 	@Test func `decrypt header`() throws {
 		let cryptor = Cryptor(masterkey: .test, scheme: .sivCtrMac)
 		let decrypted = try cryptor.decryptHeader(headerCiphertext)
+		let contentKey = decrypted.contentKey.exportBytes()
 		#expect([UInt8](repeating: 0xF0, count: 16) == decrypted.nonce)
-		#expect([UInt8](repeating: 0xF0, count: 32) == decrypted.contentKey)
+		#expect([UInt8](repeating: 0xF0, count: 32) == contentKey)
 	}
 }

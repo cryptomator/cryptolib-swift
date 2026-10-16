@@ -10,7 +10,7 @@ import Foundation
 @testable import CryptomatorCryptoLib
 
 struct CryptoSupportMock: CryptoSupport {
-	func createRandomBytes(size: Int) throws -> [UInt8] {
-		return [UInt8](repeating: 0xF0, count: size)
+	func fillRandomBytes(_ buffer: UnsafeMutableRawBufferPointer) throws {
+		buffer.initializeMemory(as: UInt8.self, repeating: 0xF0)
 	}
 }
