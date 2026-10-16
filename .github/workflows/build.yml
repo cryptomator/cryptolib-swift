@@ -33,6 +33,9 @@ jobs:
           exit $?
       - name: Build and test
         run: set -o pipefail && env NSUnbufferedIO=YES xcodebuild -scheme 'CryptomatorCryptoLib' -destination "name=$DEVICE" -derivedDataPath $DERIVED_DATA_PATH -enableCodeCoverage YES clean test | xcbeautify
+      - name: Check for memory leaks
+        run: ./Scripts/check-leaks.sh
+        timeout-minutes: 15
       - name: Generate coverage report
         run: |
           xcresult_path=$(find $DERIVED_DATA_PATH/Logs/Test -name "*.xcresult" | head -n 1)

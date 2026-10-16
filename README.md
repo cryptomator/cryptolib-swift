@@ -208,6 +208,12 @@ And make your pre-commit hook executable:
 chmod +x .git/hooks/pre-commit
 ```
 
+To check for memory leaks, such as an unreleased CommonCrypto cryptor, run the test suite on macOS under `leaks` with this script. It fails when `leaks` reports a leak or a test fails. CI runs it too:
+
+```sh
+./Scripts/check-leaks.sh
+```
+
 ## Code of Conduct
 
 Help us keep Cryptomator open and inclusive. Please read and follow our [Code of Conduct](.github/CODE_OF_CONDUCT.md).
