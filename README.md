@@ -11,8 +11,8 @@ For more information on the Cryptomator encryption scheme, visit the security ar
 
 ## Requirements
 
-- iOS 13.0 or higher
-- macOS 10.15 or higher
+- iOS 15.0 or higher
+- macOS 12.0 or higher
 - Swift 6.2 (Xcode 26) or newer
 
 ## Installation
