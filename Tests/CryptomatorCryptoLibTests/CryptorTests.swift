@@ -13,6 +13,7 @@ import Testing
 
 final class CryptorTests {
 	static let schemes: [CryptorScheme] = [.sivGcm, .sivCtrMac]
+	static let contentCryptors: [any ContentCryptor] = [GcmContentCryptor(), CtrThenHmacContentCryptor(masterkey: .test)]
 
 	let tmpDirURL: URL
 
@@ -363,6 +364,17 @@ final class CryptorTests {
 		var encrypted = try cryptor.encryptSingleChunk([UInt8]("hello world".utf8), chunkNumber: 0, headerNonce: nonce, fileKey: filekey)
 		encrypted[encrypted.count - 1] ^= 0x01
 		#expect(throws: CryptoError.unauthenticCiphertext) { try cryptor.decryptSingleChunk(encrypted, chunkNumber: 0, headerNonce: nonce, fileKey: filekey) }
+	}
+
+	@Test(arguments: contentCryptors) func `decrypt tampered chunk leaves cleartext untouched`(contentCryptor: any ContentCryptor) throws {
+		let key = SecretBytes(count: 32)
+		var chunk = try [UInt8]("hello world".utf8).withUnsafeBytes { try contentCryptor.encrypt($0, key: key, nonce: [UInt8](repeating: 0x00, count: contentCryptor.nonceLen), ad: []) }
+		chunk[chunk.count - 1] ^= 0x01
+		var cleartext = [UInt8](repeating: 0xAA, count: 11)
+		#expect(throws: CryptoError.unauthenticCiphertext) {
+			try cleartext.withUnsafeMutableBytes { try contentCryptor.decrypt(chunk, key: key, ad: [], into: $0) }
+		}
+		#expect([UInt8](repeating: 0xAA, count: 11) == cleartext)
 	}
 
 	@Test(arguments: schemes) func `concurrent round trips`(scheme: CryptorScheme) async throws {
