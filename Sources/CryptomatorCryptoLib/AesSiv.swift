@@ -16,16 +16,13 @@ class AesSiv {
 	/**
 	 Encrypts plaintext using SIV mode.
 
-	 - Parameter aesKey: SIV mode requires two separate keys. You can use one long key, which is splitted in half. See [RFC 5297 Section 2.2](https://tools.ietf.org/html/rfc5297#section-2.2).
-	 - Parameter macKey: SIV mode requires two separate keys. You can use one long key, which is splitted in half. See [RFC 5297 Section 2.2](https://tools.ietf.org/html/rfc5297#section-2.2).
-	 - Parameter plaintext: Your plaintext, which shall be encrypted. It must not be longer than 2^32 - 16 bytes.
-	 - Parameter ad: Associated data, which gets authenticated but not encrypted.
+	 - Parameter aesKey: SIV mode requires two separate keys. You can use one long key, which is split in half. See [RFC 5297 Section 2.2](https://tools.ietf.org/html/rfc5297#section-2.2).
+	 - Parameter macKey: SIV mode requires two separate keys. You can use one long key, which is split in half. See [RFC 5297 Section 2.2](https://tools.ietf.org/html/rfc5297#section-2.2).
+	 - Parameter plaintext: Your plaintext, which shall be encrypted.
+	 - Parameter ad: Associated data, which gets authenticated but not encrypted. It must not have more than 126 components.
 	 - Returns: IV + Ciphertext as a concatenated byte array.
 	 */
 	static func encrypt(aesKey: borrowing SecretBytes, macKey: borrowing SecretBytes, plaintext: [UInt8], ad: [UInt8]...) throws -> [UInt8] {
-		guard plaintext.count <= UInt32.max - 16 else {
-			throw CryptoError.invalidParameter("plaintext must not be longer than 2^32 - 16 bytes")
-		}
 		let iv = try s2v(macKey: macKey, plaintext: plaintext, ad: ad)
 		let ciphertext = try ctr(aesKey: aesKey, iv: iv, plaintext: plaintext)
 		return iv + ciphertext
@@ -34,10 +31,10 @@ class AesSiv {
 	/**
 	 Decrypts ciphertext using SIV mode.
 
-	 - Parameter aesKey: SIV mode requires two separate keys. You can use one long key, which is splitted in half. See [RFC 5297 Section 2.2](https://tools.ietf.org/html/rfc5297#section-2.2).
-	 - Parameter macKey: SIV mode requires two separate keys. You can use one long key, which is splitted in half. See [RFC 5297 Section 2.2](https://tools.ietf.org/html/rfc5297#section-2.2).
+	 - Parameter aesKey: SIV mode requires two separate keys. You can use one long key, which is split in half. See [RFC 5297 Section 2.2](https://tools.ietf.org/html/rfc5297#section-2.2).
+	 - Parameter macKey: SIV mode requires two separate keys. You can use one long key, which is split in half. See [RFC 5297 Section 2.2](https://tools.ietf.org/html/rfc5297#section-2.2).
 	 - Parameter ciphertext: Your ciphertext, which shall be decrypted. It must be at least 16 bytes.
-	 - Parameter ad: Associated data, which needs to be authenticated during decryption.
+	 - Parameter ad: Associated data, which needs to be authenticated during decryption. It must not have more than 126 components.
 	 - Returns: Plaintext byte array.
 	 */
 	static func decrypt(aesKey: borrowing SecretBytes, macKey: borrowing SecretBytes, ciphertext: [UInt8], ad: [UInt8]...) throws -> [UInt8] {
@@ -65,17 +62,19 @@ class AesSiv {
 	}
 
 	static func s2v(macKey: borrowing SecretBytes, plaintext: [UInt8], ad: [[UInt8]]) throws -> [UInt8] {
-		// Maximum permitted AD length is the block size in bits - 2
-		assert(ad.count <= 126, "too many ad")
+		// Maximum permitted number of AD components is the block size in bits - 2
+		let maxAdCount = 8 * kCCBlockSizeAES128 - 2
+		guard ad.count <= maxAdCount else {
+			throw CryptoError.invalidParameter("ad must not have more than \(maxAdCount) components")
+		}
 
-		// RFC 5297 defines a n == 0 case here. Where n is the length of the input vector:
-		// S1 = associatedData1, S2 = associatedData2, ... Sn = plaintext
-		// Since this method is invoked only by encrypt/decrypt, we always have a plaintext.
-		// Thus n > 0
+		// RFC 5297 S2V has a special case for n == 0, where n is the number of components S1 = AD1, ..., Sn = plaintext.
+		// The plaintext is always the last component, so n > 0 and that case never applies.
 
-		var d = try cmac(macKey: macKey, data: zero)
+		var cmac = try Cmac(key: macKey)
+		var d = try cmac.mac(zero)
 		for s in ad {
-			d = try xor(dbl(d), cmac(macKey: macKey, data: s))
+			d = try xor(dbl(d), cmac.mac(s))
 		}
 
 		let t: SecretBytes = if plaintext.count >= 16 {
@@ -84,86 +83,111 @@ class AesSiv {
 			xorPadded(plaintext, dbl(d))
 		}
 
-		return try cmac(macKey: macKey, data: t).exportBytes()
+		return try cmac.mac(t).exportBytes()
 	}
 
-	static func cmac(macKey key: borrowing SecretBytes, data: [UInt8]) throws -> SecretBytes {
-		var mac = SecretBytes(count: 16)
-		try data.withUnsafeBytes { try cmac(macKey: key, data: $0, into: &mac) }
-		return mac
-	}
+	/// AES-CMAC that derives the subkeys once and runs every block of every MAC through one AES-ECB cryptor.
+	struct Cmac: ~Copyable {
+		private let cryptor: CCCryptorRef
+		private let k1: SecretBytes
+		private let k2: SecretBytes
 
-	static func cmac(macKey key: borrowing SecretBytes, data: borrowing SecretBytes) throws -> SecretBytes {
-		var mac = SecretBytes(count: 16)
-		try data.withUnsafeBytes { try cmac(macKey: key, data: $0, into: &mac) }
-		return mac
-	}
+		init(key: borrowing SecretBytes) throws {
+			assert(key.count == kCCKeySizeAES128 || key.count == kCCKeySizeAES192 || key.count == kCCKeySizeAES256)
 
-	/// `mac` must be zero-filled, because it serves as the CBC-MAC chaining state. It is passed in rather than returned because `Array.withUnsafeBytes` cannot return a noncopyable value.
-	private static func cmac(macKey key: borrowing SecretBytes, data: UnsafeRawBufferPointer, into mac: inout SecretBytes) throws {
-		assert(mac.count == kCCBlockSizeAES128 && mac.withUnsafeBytes { $0.allSatisfy { $0 == 0x00 } }, "mac expected to be one zero-filled block")
+			var newCryptor: CCCryptorRef?
+			let status = key.withUnsafeBytes { keyBytes in
+				CCCryptorCreate(CCOperation(kCCEncrypt), CCAlgorithm(kCCAlgorithmAES), CCOptions(kCCOptionECBMode), keyBytes.baseAddress, keyBytes.count, nil, &newCryptor)
+			}
+			guard status == kCCSuccess, let cryptor = newCryptor else {
+				throw CryptoError.ccCryptorError(status)
+			}
+			var handedOff = false
+			defer {
+				if !handedOff {
+					CCCryptorRelease(cryptor)
+				}
+			}
 
-		// subkey generation:
-		var l = SecretBytes(count: 16)
-		try zero.withUnsafeBytes { zeroBytes in
-			try l.withUnsafeMutableBytes { try aes(key: key, plaintext: zeroBytes, into: $0) }
-		}
-		let k1 = dbl(l)
-		let k2 = dbl(k1)
+			// subkey generation:
+			var l = SecretBytes(count: 16)
+			try zero.withUnsafeBytes { zeroBytes in
+				try l.withUnsafeMutableBytes { try Cmac.aes(cryptor: cryptor, plaintext: zeroBytes, into: $0) }
+			}
+			let k1 = dbl(l)
+			let k2 = dbl(k1)
 
-		// determine number of blocks:
-		let n = (data.count + 15) / 16
-		let lastBlockIdx: Int
-		let lastBlockComplete: Bool
-		if n == 0 {
-			lastBlockIdx = 0
-			lastBlockComplete = false
-		} else {
-			lastBlockIdx = n - 1
-			lastBlockComplete = data.count % 16 == 0
-		}
-
-		// blocks 0..<n:
-		var y = SecretBytes(count: 16)
-		for i in 0 ..< lastBlockIdx {
-			try chain(UnsafeRawBufferPointer(rebasing: data[(16 * i) ..< (16 * (i + 1))]), key: key, mac: &mac, y: &y)
+			// no `try` from here on, because a throw after full initialization would also run `deinit` and release the cryptor twice:
+			self.cryptor = cryptor
+			self.k1 = k1
+			self.k2 = k2
+			handedOff = true
 		}
 
-		// block n:
-		let lastBlockData = UnsafeRawBufferPointer(rebasing: data[(16 * lastBlockIdx)...])
-		var lastBlock = SecretBytes(count: 16)
-		lastBlock.withUnsafeMutableBytes { lastBlockBytes in
-			if lastBlockComplete {
-				k1.withUnsafeBytes { xor(lastBlockData, $0, into: lastBlockBytes) }
-			} else {
-				k2.withUnsafeBytes { xorPadded(lastBlockData, $0, into: lastBlockBytes) }
+		deinit {
+			CCCryptorRelease(cryptor)
+		}
+
+		mutating func mac(_ data: [UInt8]) throws -> SecretBytes {
+			var mac = SecretBytes(count: 16)
+			try data.withUnsafeBytes { try self.mac($0, into: &mac) }
+			return mac
+		}
+
+		mutating func mac(_ data: borrowing SecretBytes) throws -> SecretBytes {
+			var mac = SecretBytes(count: 16)
+			try data.withUnsafeBytes { try self.mac($0, into: &mac) }
+			return mac
+		}
+
+		/// `mac` must be zero-filled, because it serves as the CBC-MAC chaining state. It is passed in rather than returned because `Array.withUnsafeBytes` cannot return a noncopyable value.
+		private mutating func mac(_ data: UnsafeRawBufferPointer, into mac: inout SecretBytes) throws {
+			assert(mac.count == kCCBlockSizeAES128 && mac.withUnsafeBytes { $0.allSatisfy { $0 == 0x00 } }, "mac expected to be one zero-filled block")
+
+			// determine the last block, treating empty data as one incomplete block:
+			let lastBlockIdx = data.isEmpty ? 0 : (data.count - 1) / 16
+			let lastBlockComplete = !data.isEmpty && data.count % 16 == 0
+
+			// all but the last block:
+			var y = SecretBytes(count: 16)
+			for i in 0 ..< lastBlockIdx {
+				try chain(UnsafeRawBufferPointer(rebasing: data[(16 * i) ..< (16 * (i + 1))]), mac: &mac, y: &y)
+			}
+
+			// last block:
+			let lastBlockData = UnsafeRawBufferPointer(rebasing: data[(16 * lastBlockIdx)...])
+			var lastBlock = SecretBytes(count: 16)
+			lastBlock.withUnsafeMutableBytes { lastBlockBytes in
+				if lastBlockComplete {
+					k1.withUnsafeBytes { xor(lastBlockData, $0, into: lastBlockBytes) }
+				} else {
+					k2.withUnsafeBytes { xorPadded(lastBlockData, $0, into: lastBlockBytes) }
+				}
+			}
+			try lastBlock.withUnsafeBytes { try chain($0, mac: &mac, y: &y) }
+		}
+
+		/// One CBC-MAC step, `mac = AES(K, mac ^ block)`, with `y` as scratch for the XOR.
+		private mutating func chain(_ block: UnsafeRawBufferPointer, mac: inout SecretBytes, y: inout SecretBytes) throws {
+			mac.withUnsafeBytes { macBytes in
+				y.withUnsafeMutableBytes { xor(macBytes, block, into: $0) }
+			}
+			try y.withUnsafeBytes { yBytes in
+				try mac.withUnsafeMutableBytes { try Cmac.aes(cryptor: cryptor, plaintext: yBytes, into: $0) }
 			}
 		}
-		try lastBlock.withUnsafeBytes { try chain($0, key: key, mac: &mac, y: &y) }
-	}
 
-	/// One CBC-MAC step, `mac = AES(key, mac ^ block)`, with `y` as scratch for the XOR.
-	private static func chain(_ block: UnsafeRawBufferPointer, key: borrowing SecretBytes, mac: inout SecretBytes, y: inout SecretBytes) throws {
-		mac.withUnsafeBytes { macBytes in
-			y.withUnsafeMutableBytes { xor(macBytes, block, into: $0) }
-		}
-		try y.withUnsafeBytes { yBytes in
-			try mac.withUnsafeMutableBytes { try aes(key: key, plaintext: yBytes, into: $0) }
-		}
-	}
+		/// `plaintext` and `ciphertext` must be separate buffers, because `CCCryptorUpdate` does not support in-place ECB. Without padding, ECB needs no `CCCryptorFinal`, so the cryptor stays usable for the next block.
+		private static func aes(cryptor: CCCryptorRef, plaintext: UnsafeRawBufferPointer, into ciphertext: UnsafeMutableRawBufferPointer) throws {
+			assert(plaintext.count == kCCBlockSizeAES128, "Attempt to run AES-ECB for plaintext != one single block")
+			assert(ciphertext.count == kCCBlockSizeAES128, "Attempt to run AES-ECB for ciphertext != one single block")
 
-	private static func aes(key: borrowing SecretBytes, plaintext: UnsafeRawBufferPointer, into ciphertext: UnsafeMutableRawBufferPointer) throws {
-		assert(key.count == kCCKeySizeAES128 || key.count == kCCKeySizeAES192 || key.count == kCCKeySizeAES256)
-		assert(plaintext.count == kCCBlockSizeAES128, "Attempt to run AES-ECB for plaintext != one single block")
-		assert(ciphertext.count == kCCBlockSizeAES128, "Attempt to run AES-ECB for ciphertext != one single block")
+			var ciphertextLen = 0
+			let status = CCCryptorUpdate(cryptor, plaintext.baseAddress, plaintext.count, ciphertext.baseAddress, ciphertext.count, &ciphertextLen)
 
-		var ciphertextLen = 0
-		let status = key.withUnsafeBytes { keyBytes in
-			CCCrypt(CCOperation(kCCEncrypt), CCAlgorithm(kCCAlgorithmAES), CCOptions(kCCOptionECBMode), keyBytes.baseAddress, keyBytes.count, nil, plaintext.baseAddress, plaintext.count, ciphertext.baseAddress, ciphertext.count, &ciphertextLen)
-		}
-
-		guard status == kCCSuccess else {
-			throw CryptoError.ccCryptorError(status)
+			guard status == kCCSuccess, ciphertextLen == kCCBlockSizeAES128 else {
+				throw CryptoError.ccCryptorError(status)
+			}
 		}
 	}
 
@@ -178,9 +202,9 @@ class AesSiv {
 
 	private static func dbl(_ block: UnsafeRawBufferPointer, into result: UnsafeMutableRawBufferPointer) {
 		shiftLeft(block, into: result)
-		if block[0] & 0x80 != 0x00 {
-			result[block.count - 1] ^= dblConst
-		}
+		// masked instead of branching on the secret top bit:
+		let mask = 0 &- (block[0] >> 7)
+		result[block.count - 1] ^= dblConst & mask
 	}
 
 	private static func dbl(_ block: borrowing SecretBytes) -> SecretBytes {
