@@ -102,11 +102,9 @@ final class CtrThenHmacContentCryptor: ContentCryptor {
 	let tagLen = Int(CC_SHA256_DIGEST_LENGTH)
 
 	private let macKey: [UInt8]
-	private let cryptoSupport: CryptoSupport
 
-	init(macKey: [UInt8], cryptoSupport: CryptoSupport) {
+	init(macKey: [UInt8]) {
 		self.macKey = macKey
-		self.cryptoSupport = cryptoSupport
 	}
 
 	func ad(chunkNumber: UInt64, headerNonce: [UInt8]) -> [UInt8] {
@@ -132,7 +130,7 @@ final class CtrThenHmacContentCryptor: ContentCryptor {
 
 		// check MAC:
 		let mac = computeHmac(ciphertext, nonce: chunkNonce, ad: ad)
-		guard cryptoSupport.compareBytes(expected: expectedMAC, actual: mac) else {
+		guard compareBytes(expected: expectedMAC, actual: mac) else {
 			throw CryptoError.unauthenticCiphertext
 		}
 

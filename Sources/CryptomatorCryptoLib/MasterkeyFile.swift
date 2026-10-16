@@ -134,11 +134,7 @@ public final class MasterkeyFile: Sendable {
 			throw MasterkeyFileError.malformedMasterkeyFile("invalid version")
 		}
 		let calculatedVersionMac = MasterkeyFile.versionMac(version: unsignedVersion, macKey: macKey)
-		var diff: UInt8 = 0x00
-		for i in 0 ..< calculatedVersionMac.count {
-			diff |= calculatedVersionMac[i] ^ storedVersionMac[i]
-		}
-		if diff != 0x00 {
+		guard compareBytes(expected: calculatedVersionMac, actual: [UInt8](storedVersionMac)) else {
 			throw MasterkeyFileError.malformedMasterkeyFile("incorrect version or versionMac")
 		}
 	}

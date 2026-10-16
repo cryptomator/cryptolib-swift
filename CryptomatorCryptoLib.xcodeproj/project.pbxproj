@@ -22,6 +22,7 @@
 		749260F425B17B0F004B3426 /* scrypt.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 749260CE25B17A9A004B3426 /* scrypt.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		74A5B57625A869DD002D10F7 /* MasterkeyFileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74A5B57525A869DD002D10F7 /* MasterkeyFileTests.swift */; };
 		74A5B57E25A86A69002D10F7 /* CryptoSupportMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74A5B57D25A86A69002D10F7 /* CryptoSupportMock.swift */; };
+		D41E8A3C6B2F95A07C1B4E52 /* CryptoSupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C37F15E8B4D2603F7A1C98 /* CryptoSupportTests.swift */; };
 		74B4D38D2588CD60006C0567 /* MasterkeyFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B4D38C2588CD60006C0567 /* MasterkeyFile.swift */; };
 		74F0F754248FC89B00B4C26D /* CryptoError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74F0F753248FC89B00B4C26D /* CryptoError.swift */; };
 		74F0F75A2490C1EB00B4C26D /* CryptoSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74F0F7592490C1EB00B4C26D /* CryptoSupport.swift */; };
@@ -84,6 +85,7 @@
 		749260D125B17A9A004B3426 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		74A5B57525A869DD002D10F7 /* MasterkeyFileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterkeyFileTests.swift; sourceTree = "<group>"; };
 		74A5B57D25A86A69002D10F7 /* CryptoSupportMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptoSupportMock.swift; sourceTree = "<group>"; };
+		A9C37F15E8B4D2603F7A1C98 /* CryptoSupportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptoSupportTests.swift; sourceTree = "<group>"; };
 		74B4D38C2588CD60006C0567 /* MasterkeyFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterkeyFile.swift; sourceTree = "<group>"; };
 		74D57DE225B095FA006D81B8 /* insecure_memzero.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = insecure_memzero.c; sourceTree = "<group>"; };
 		74D57DE325B095FA006D81B8 /* crypto_scrypt.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = crypto_scrypt.h; sourceTree = "<group>"; };
@@ -185,6 +187,7 @@
 				9E35C4EA24576A3D0006E50C /* CryptorTests.swift */,
 				FDAD54E0AEE931D7929BD515 /* CryptorTestSupport.swift */,
 				74A5B57D25A86A69002D10F7 /* CryptoSupportMock.swift */,
+				A9C37F15E8B4D2603F7A1C98 /* CryptoSupportTests.swift */,
 				9EBEC946283782E6002210DE /* CtrCryptorTests.swift */,
 				9EBEC94828378308002210DE /* GcmCryptorTests.swift */,
 				74A5B57525A869DD002D10F7 /* MasterkeyFileTests.swift */,
@@ -462,6 +465,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				74A5B57E25A86A69002D10F7 /* CryptoSupportMock.swift in Sources */,
+				D41E8A3C6B2F95A07C1B4E52 /* CryptoSupportTests.swift in Sources */,
 				9E44EEA92459AB1500A37B01 /* AesSivTests.swift in Sources */,
 				9EBEC947283782E6002210DE /* CtrCryptorTests.swift in Sources */,
 				9EB822C3248AF9C500879838 /* AesCtrTests.swift in Sources */,
