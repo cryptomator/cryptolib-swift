@@ -13,7 +13,7 @@ class AesCtr {
 	/**
 	 High-level AES-CTR wrapper around CommonCrypto primitives. Can be used for encryption and decryption (it is the same in CTR mode).
 
-	 Returns its output in an ordinary array, so it is meant for output that is not secret, like ciphertext or filenames.
+	 Returns its output in an ordinary array, so it is meant for output that is not key material, like ciphertext or filenames.
 
 	 - Parameter key: 128 or 256 bit encryption key
 	 - Parameter iv: 128 bit initialization vector (must not be reused!)
@@ -32,7 +32,7 @@ class AesCtr {
 	}
 
 	/**
-	 Writes into a caller-provided buffer, so that secret output, like a decrypted header payload, can go straight into memory the caller wipes.
+	 Writes into a caller-provided buffer, so that key material, like a decrypted header payload, can go straight into memory the caller wipes.
 
 	 - Parameter key: 128 or 256 bit encryption key
 	 - Parameter iv: 128 bit initialization vector (must not be reused!)

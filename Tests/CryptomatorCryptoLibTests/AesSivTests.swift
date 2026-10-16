@@ -115,7 +115,7 @@ struct AesSivTests {
 			0xBB, 0x1D, 0x69, 0x29, 0xE9, 0x59, 0x37, 0x28,
 			0x7F, 0xA3, 0x7D, 0x12, 0x9B, 0x75, 0x67, 0x46
 		]
-		let result = try AesSiv.cmac(macKey: SecretBytes(copying: macKey), data: message)
+		let result = try AesSiv.cmac(macKey: SecretBytes(copying: macKey), data: message).exportBytes()
 
 		#expect(expected == result)
 	}
@@ -133,7 +133,7 @@ struct AesSivTests {
 			0x07, 0x0A, 0x16, 0xB4, 0x6B, 0x4D, 0x41, 0x44,
 			0xF7, 0x9B, 0xDD, 0x9D, 0xD0, 0x4A, 0x28, 0x7C
 		]
-		let result = try AesSiv.cmac(macKey: SecretBytes(copying: macKey), data: message)
+		let result = try AesSiv.cmac(macKey: SecretBytes(copying: macKey), data: message).exportBytes()
 
 		#expect(expected == result)
 	}
@@ -154,7 +154,7 @@ struct AesSivTests {
 			0xDF, 0xA6, 0x67, 0x47, 0xDE, 0x9A, 0xE6, 0x30,
 			0x30, 0xCA, 0x32, 0x61, 0x14, 0x97, 0xC8, 0x27
 		]
-		let result = try AesSiv.cmac(macKey: SecretBytes(copying: macKey), data: message)
+		let result = try AesSiv.cmac(macKey: SecretBytes(copying: macKey), data: message).exportBytes()
 
 		#expect(expected == result)
 	}
@@ -178,7 +178,7 @@ struct AesSivTests {
 			0x51, 0xF0, 0xBE, 0xBF, 0x7E, 0x3B, 0x9D, 0x92,
 			0xFC, 0x49, 0x74, 0x17, 0x79, 0x36, 0x3C, 0xFE
 		]
-		let result = try AesSiv.cmac(macKey: SecretBytes(copying: macKey), data: message)
+		let result = try AesSiv.cmac(macKey: SecretBytes(copying: macKey), data: message).exportBytes()
 
 		#expect(expected == result)
 	}
