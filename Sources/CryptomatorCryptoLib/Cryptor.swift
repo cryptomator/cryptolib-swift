@@ -8,6 +8,7 @@
 
 import Base32
 import CommonCrypto
+import CryptoKit
 import Foundation
 
 public extension Data {
@@ -146,8 +147,7 @@ public final class Cryptor: Sendable {
 	 */
 	public func encryptDirId(_ dirId: Data) throws -> String {
 		let encrypted = try AesSiv.encrypt(aesKey: masterkey.aesMasterKey, macKey: masterkey.macMasterKey, plaintext: [UInt8](dirId))
-		var digest = [UInt8](repeating: 0x00, count: Int(CC_SHA1_DIGEST_LENGTH))
-		CC_SHA1(encrypted, UInt32(encrypted.count) as CC_LONG, &digest)
+		let digest = Insecure.SHA1.hash(data: encrypted)
 		return Data(digest).base32EncodedString
 	}
 

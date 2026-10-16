@@ -238,7 +238,7 @@ struct AesSivTests {
 		#expect(expected == result)
 	}
 
-	@Test func `s2v with empty ad`() throws {
+	@Test func `s2v with one empty ad component`() throws {
 		let plaintext: [UInt8] = [
 			0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
 			0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE
@@ -252,6 +252,14 @@ struct AesSivTests {
 		let result = try AesSiv.s2v(macKey: SecretBytes(copying: macKey), plaintext: plaintext, ad: [[]])
 
 		#expect(expected == result)
+	}
+
+	@Test func `s2v accepts at most 126 ad components`() throws {
+		_ = try AesSiv.s2v(macKey: SecretBytes(copying: macKey), plaintext: [], ad: Array(repeating: ad, count: 126))
+
+		#expect(throws: CryptoError.invalidParameter("ad must not have more than 126 components")) {
+			try AesSiv.s2v(macKey: SecretBytes(copying: macKey), plaintext: [], ad: Array(repeating: ad, count: 127))
+		}
 	}
 
 	@Test func `cmac reuses one context`() throws {

@@ -18,14 +18,11 @@ class AesSiv {
 
 	 - Parameter aesKey: SIV mode requires two separate keys. You can use one long key, which is split in half. See [RFC 5297 Section 2.2](https://tools.ietf.org/html/rfc5297#section-2.2).
 	 - Parameter macKey: SIV mode requires two separate keys. You can use one long key, which is split in half. See [RFC 5297 Section 2.2](https://tools.ietf.org/html/rfc5297#section-2.2).
-	 - Parameter plaintext: Your plaintext, which shall be encrypted. It must not be longer than 2^32 - 16 bytes.
-	 - Parameter ad: Associated data, which gets authenticated but not encrypted.
+	 - Parameter plaintext: Your plaintext, which shall be encrypted.
+	 - Parameter ad: Associated data, which gets authenticated but not encrypted. It must not have more than 126 components.
 	 - Returns: IV + Ciphertext as a concatenated byte array.
 	 */
 	static func encrypt(aesKey: borrowing SecretBytes, macKey: borrowing SecretBytes, plaintext: [UInt8], ad: [UInt8]...) throws -> [UInt8] {
-		guard plaintext.count <= UInt32.max - 16 else {
-			throw CryptoError.invalidParameter("plaintext must not be longer than 2^32 - 16 bytes")
-		}
 		let iv = try s2v(macKey: macKey, plaintext: plaintext, ad: ad)
 		let ciphertext = try ctr(aesKey: aesKey, iv: iv, plaintext: plaintext)
 		return iv + ciphertext
@@ -37,7 +34,7 @@ class AesSiv {
 	 - Parameter aesKey: SIV mode requires two separate keys. You can use one long key, which is split in half. See [RFC 5297 Section 2.2](https://tools.ietf.org/html/rfc5297#section-2.2).
 	 - Parameter macKey: SIV mode requires two separate keys. You can use one long key, which is split in half. See [RFC 5297 Section 2.2](https://tools.ietf.org/html/rfc5297#section-2.2).
 	 - Parameter ciphertext: Your ciphertext, which shall be decrypted. It must be at least 16 bytes.
-	 - Parameter ad: Associated data, which needs to be authenticated during decryption.
+	 - Parameter ad: Associated data, which needs to be authenticated during decryption. It must not have more than 126 components.
 	 - Returns: Plaintext byte array.
 	 */
 	static func decrypt(aesKey: borrowing SecretBytes, macKey: borrowing SecretBytes, ciphertext: [UInt8], ad: [UInt8]...) throws -> [UInt8] {
@@ -66,7 +63,10 @@ class AesSiv {
 
 	static func s2v(macKey: borrowing SecretBytes, plaintext: [UInt8], ad: [[UInt8]]) throws -> [UInt8] {
 		// Maximum permitted number of AD components is the block size in bits - 2
-		assert(ad.count <= 126, "too many ad")
+		let maxAdCount = 8 * kCCBlockSizeAES128 - 2
+		guard ad.count <= maxAdCount else {
+			throw CryptoError.invalidParameter("ad must not have more than \(maxAdCount) components")
+		}
 
 		// RFC 5297 S2V has a special case for n == 0, where n is the number of components S1 = AD1, ..., Sn = plaintext.
 		// The plaintext is always the last component, so n > 0 and that case never applies.
@@ -202,9 +202,9 @@ class AesSiv {
 
 	private static func dbl(_ block: UnsafeRawBufferPointer, into result: UnsafeMutableRawBufferPointer) {
 		shiftLeft(block, into: result)
-		if block[0] & 0x80 != 0x00 {
-			result[block.count - 1] ^= dblConst
-		}
+		// masked instead of branching on the secret top bit:
+		let mask = 0 &- (block[0] >> 7)
+		result[block.count - 1] ^= dblConst & mask
 	}
 
 	private static func dbl(_ block: borrowing SecretBytes) -> SecretBytes {
