@@ -92,7 +92,7 @@ public final class MasterkeyFile: Sendable {
 	}
 
 	private func deriveSecretKey(passphrase: String, pepper: [UInt8]) throws -> SecretBytes {
-		guard let salt = Data(base64Encoded: content.scryptSalt) else {
+		guard let salt = Data(guavaBase64Encoded: content.scryptSalt) else {
 			throw MasterkeyFileError.malformedMasterkeyFile("invalid base64 data in scryptSalt")
 		}
 		guard let scryptCostParam = UInt64(exactly: content.scryptCostParam), MasterkeyFile.isValidScryptCostParam(scryptCostParam) else {
@@ -118,11 +118,11 @@ public final class MasterkeyFile: Sendable {
 	}
 
 	private func unlock(kek: borrowing SecretBytes) throws -> Masterkey {
-		guard let wrappedMasterKey = Data(base64Encoded: content.primaryMasterKey), wrappedMasterKey.count == MasterkeyFile.wrappedKeySize else {
+		guard let wrappedMasterKey = Data(guavaBase64Encoded: content.primaryMasterKey), wrappedMasterKey.count == MasterkeyFile.wrappedKeySize else {
 			throw MasterkeyFileError.malformedMasterkeyFile("invalid base64 data in primaryMasterKey")
 		}
 		let aesKey = try MasterkeyFile.unwrapKey([UInt8](wrappedMasterKey), kek: kek)
-		guard let wrappedHmacKey = Data(base64Encoded: content.hmacMasterKey), wrappedHmacKey.count == MasterkeyFile.wrappedKeySize else {
+		guard let wrappedHmacKey = Data(guavaBase64Encoded: content.hmacMasterKey), wrappedHmacKey.count == MasterkeyFile.wrappedKeySize else {
 			throw MasterkeyFileError.malformedMasterkeyFile("invalid base64 data in hmacMasterKey")
 		}
 		let macKey = try MasterkeyFile.unwrapKey([UInt8](wrappedHmacKey), kek: kek)
@@ -135,7 +135,7 @@ public final class MasterkeyFile: Sendable {
 	}
 
 	private func checkVaultVersion(macKey: borrowing SecretBytes) throws {
-		guard let storedVersionMac = Data(base64Encoded: content.versionMac), storedVersionMac.count == CC_SHA256_DIGEST_LENGTH else {
+		guard let storedVersionMac = Data(guavaBase64Encoded: content.versionMac), storedVersionMac.count == CC_SHA256_DIGEST_LENGTH else {
 			throw MasterkeyFileError.malformedMasterkeyFile("invalid base64 data in versionMac")
 		}
 		guard let unsignedVersion = UInt32(exactly: version) else {

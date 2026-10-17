@@ -41,8 +41,11 @@ final class CryptorTests {
 		let originalName = "hello.txt"
 
 		let ciphertextName = try cryptor.encryptFileName(originalName, dirId: dirId)
+		#expect(ciphertextName == "GP71XB0uM6ZWwDYeBdhucSXBPpIiDAQz2w==")
 		let cleartextName = try cryptor.decryptFileName(ciphertextName, dirId: dirId)
 		#expect(originalName == cleartextName)
+		let unpaddedCleartextName = try cryptor.decryptFileName("GP71XB0uM6ZWwDYeBdhucSXBPpIiDAQz2w", dirId: dirId)
+		#expect(originalName == unpaddedCleartextName)
 
 		let base32CiphertextName = try cryptor.encryptFileName(originalName, dirId: dirId, encoding: .base32)
 		#expect(base32CiphertextName == "DD7PKXA5FYZ2MVWAGYPALWDOOES4CPUSEIGAIM63")
@@ -54,6 +57,7 @@ final class CryptorTests {
 		let cryptor = scheme.makeCryptor()
 		let dirId = Data("foo".utf8)
 		#expect(throws: CryptoError.invalidParameter("Can't base64url-decode ciphertext name: ****")) { try cryptor.decryptFileName("****", dirId: dirId) }
+		#expect(throws: CryptoError.invalidParameter("Can't base64url-decode ciphertext name: GP7+XB0uM6ZWwDYeBdhucSXBPpIiDAQz2w==")) { try cryptor.decryptFileName("GP7+XB0uM6ZWwDYeBdhucSXBPpIiDAQz2w==", dirId: dirId) }
 		#expect(throws: CryptoError.invalidParameter("ciphertext must be at least 16 bytes")) { try cryptor.decryptFileName("test", dirId: dirId) }
 
 		let ciphertextName = try cryptor.encryptFileName("hello.txt", dirId: dirId)
