@@ -6,7 +6,6 @@
 //  Copyright © 2020 Skymatic GmbH. All rights reserved.
 //
 
-import Base32
 import CommonCrypto
 import CryptoKit
 import Foundation
@@ -148,7 +147,7 @@ public final class Cryptor: Sendable {
 	public func encryptDirId(_ dirId: Data) throws -> String {
 		let encrypted = try AesSiv.encrypt(aesKey: masterkey.aesMasterKey, macKey: masterkey.macMasterKey, plaintext: [UInt8](dirId))
 		let digest = Insecure.SHA1.hash(data: encrypted)
-		return Data(digest).base32EncodedString
+		return Data(digest).base32EncodedString()
 	}
 
 	/**
@@ -167,7 +166,7 @@ public final class Cryptor: Sendable {
 		// encode:
 		switch encoding {
 		case .base64url: return Data(ciphertext).base64UrlEncodedString()
-		case .base32: return Data(ciphertext).base32EncodedString
+		case .base32: return Data(ciphertext).base32EncodedString()
 		}
 	}
 
@@ -184,7 +183,7 @@ public final class Cryptor: Sendable {
 		let maybeCiphertextData: Data? = {
 			switch encoding {
 			case .base64url: return Data(base64UrlEncoded: ciphertextName)
-			case .base32: return ciphertextName.base32DecodedData
+			case .base32: return Data(base32Encoded: ciphertextName)
 			}
 		}()
 		guard let ciphertextData = maybeCiphertextData else {
