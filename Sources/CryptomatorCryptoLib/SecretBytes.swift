@@ -34,28 +34,28 @@ struct SecretBytes: ~Copyable, @unchecked Sendable {
 	 Creates zero-filled secret bytes.
 	 */
 	init(count: Int) {
-		self.init(count: count, deallocator: { $0.deallocate() })
+		self.init(count: count, initializingWith: { _ in })
 	}
 
 	/**
-	 Creates zero-filled secret bytes that are handed to `deallocator` after they have been wiped. Only tests pass a custom `deallocator`.
+	 Creates secret bytes that `body` fills in, starting from zeros. If `body` throws, the bytes are wiped and deallocated before the error propagates.
 
-	 - Parameter deallocator: Deallocates the whole allocation, which may be larger than `count`.
+	 - Parameter deallocator: Receives the whole allocation after it has been wiped. The allocation may be larger than `count`. Lets tests observe the wipe.
 	 */
-	init(count: Int, deallocator: @escaping @Sendable (UnsafeMutableRawBufferPointer) -> Void) {
+	init<E: Error>(count: Int, deallocator: @escaping @Sendable (UnsafeMutableRawBufferPointer) -> Void = { $0.deallocate() }, initializingWith body: (UnsafeMutableRawBufferPointer) throws(E) -> Void) throws(E) {
 		// at least one byte, so that C functions never receive a nil pointer, even for empty secrets:
 		self.storage = .allocate(byteCount: max(count, 1), alignment: MemoryLayout<UInt8>.alignment)
 		storage.initializeMemory(as: UInt8.self, repeating: 0x00)
 		self.deallocator = deallocator
 		self.count = count
+		try withUnsafeMutableBytes(body)
 	}
 
 	/**
 	 Creates secret bytes from a copy of `bytes`, without retaining them.
 	 */
 	init(copying bytes: some Collection<UInt8>) {
-		self.init(count: bytes.count)
-		storage.copyBytes(from: bytes)
+		self.init(count: bytes.count) { $0.copyBytes(from: bytes) }
 	}
 
 	deinit {

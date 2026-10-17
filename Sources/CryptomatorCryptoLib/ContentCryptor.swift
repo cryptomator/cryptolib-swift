@@ -51,9 +51,7 @@ extension ContentCryptor {
 	}
 
 	func decryptHeader(_ header: [UInt8], key: borrowing SecretBytes) throws -> SecretBytes {
-		var payload = try SecretBytes(count: cleartextLen(of: header))
-		try payload.withUnsafeMutableBytes { try decrypt(header, key: key, ad: [], into: $0) }
-		return payload
+		return try SecretBytes(count: cleartextLen(of: header)) { try decrypt(header, key: key, ad: [], into: $0) }
 	}
 
 	func encryptChunk(_ chunk: [UInt8], chunkNumber: UInt64, chunkNonce: [UInt8], fileKey: borrowing SecretBytes, headerNonce: [UInt8]) throws -> [UInt8] {

@@ -30,9 +30,7 @@ extension CryptoSupport {
 	 Creates cryptographically secure random secret bytes, such as keys.
 	 */
 	func createRandomSecret(size: Int) throws -> SecretBytes {
-		var randomSecret = SecretBytes(count: size)
-		try randomSecret.withUnsafeMutableBytes { try fillRandomBytes($0) }
-		return randomSecret
+		return try SecretBytes(count: size) { try fillRandomBytes($0) }
 	}
 }
 

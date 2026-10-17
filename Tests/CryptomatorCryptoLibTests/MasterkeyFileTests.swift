@@ -226,6 +226,12 @@ struct MasterkeyFileTests {
 		#expect(throws: MasterkeyFileError.keyWrapFailed(CCCryptorStatus(kCCParamError))) { try MasterkeyFile.wrapKey(key, kek: kek) }
 	}
 
+	@Test func `unwrap key with invalid kek`() throws {
+		let wrapped = [UInt8](repeating: 0x77, count: 40)
+		let kek = SecretBytes(copying: [UInt8](repeating: 0x55, count: 17))
+		#expect(throws: MasterkeyFileError.keyWrapFailed(CCCryptorStatus(kCCParamError))) { _ = try MasterkeyFile.unwrapKey(wrapped, kek: kek) }
+	}
+
 	private static func makeContent(version: Int = 7, scryptSalt: String = "AAAAAAAAAAA=", scryptCostParam: Int = 2, scryptBlockSize: Int = 8, primaryMasterKey: String = "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==", hmacMasterKey: String = "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==", versionMac: String = "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g=") -> Content {
 		return Content(
 			version: version,

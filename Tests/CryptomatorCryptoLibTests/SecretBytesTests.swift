@@ -13,9 +13,17 @@ import Testing
 struct SecretBytesTests {
 	@Test func `deinit wipes before deallocating`() {
 		let recorder = DeallocationRecorder()
-		do {
-			var secret = SecretBytes(count: 32, deallocator: { recorder.deallocate($0) })
-			secret.withUnsafeMutableBytes { _ = $0.initializeMemory(as: UInt8.self, repeating: 0xAA) }
+		_ = SecretBytes(count: 32, deallocator: { recorder.deallocate($0) }, initializingWith: { _ = $0.initializeMemory(as: UInt8.self, repeating: 0xAA) })
+		#expect(recorder.wipedDeallocations == [true])
+	}
+
+	@Test func `initializingWith wipes when the closure throws`() {
+		let recorder = DeallocationRecorder()
+		#expect(throws: CryptoError.ioError) {
+			_ = try SecretBytes(count: 32, deallocator: { recorder.deallocate($0) }, initializingWith: {
+				_ = $0.initializeMemory(as: UInt8.self, repeating: 0xAA)
+				throw CryptoError.ioError
+			})
 		}
 		#expect(recorder.wipedDeallocations == [true])
 	}
@@ -36,9 +44,8 @@ struct SecretBytesTests {
 	}
 
 	private func createSecretAndThrow(recorder: DeallocationRecorder) throws {
-		var secret = SecretBytes(count: 32, deallocator: { recorder.deallocate($0) })
-		secret.withUnsafeMutableBytes { _ = $0.initializeMemory(as: UInt8.self, repeating: 0xAA) }
-		throw CryptoError.ioError
+		let secret = SecretBytes(count: 32, deallocator: { recorder.deallocate($0) }, initializingWith: { _ = $0.initializeMemory(as: UInt8.self, repeating: 0xAA) })
+		try secret.withUnsafeBytes { _ in throw CryptoError.ioError }
 	}
 }
 
