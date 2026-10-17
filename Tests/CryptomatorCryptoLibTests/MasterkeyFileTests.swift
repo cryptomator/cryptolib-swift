@@ -52,6 +52,13 @@ struct MasterkeyFileTests {
 		#expect(expectedKey + expectedKey == masterkey.rawKey)
 	}
 
+	@Test func `unlock with unpadded fields`() throws {
+		let expectedKey = [UInt8](repeating: 0x00, count: 32)
+		let content = Self.makeContent(scryptSalt: "AAAAAAAAAAA", primaryMasterKey: "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q", hmacMasterKey: "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q", versionMac: "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g")
+		let masterkey = try MasterkeyFile(content: content).unlock(passphrase: "asd", pepper: [UInt8]())
+		#expect(expectedKey + expectedKey == masterkey.rawKey)
+	}
+
 	@Test func `unlock with wrong passphrase`() throws {
 		let data = Data("""
 		{
@@ -70,6 +77,7 @@ struct MasterkeyFileTests {
 
 	@Test(arguments: [
 		(makeContent(scryptSalt: "AAAAAAAAAA!!"), "invalid base64 data in scryptSalt"),
+		(makeContent(scryptSalt: "AAAAAAAAAA-_"), "invalid base64 data in scryptSalt"),
 		(makeContent(scryptCostParam: -1), "invalid scryptCostParam"),
 		(makeContent(scryptCostParam: 1), "invalid scryptCostParam"),
 		(makeContent(scryptCostParam: 3), "invalid scryptCostParam"),

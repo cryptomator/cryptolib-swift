@@ -10,16 +10,6 @@ import CommonCrypto
 import CryptoKit
 import Foundation
 
-public extension Data {
-	init?(base64UrlEncoded base64String: String, options: Data.Base64DecodingOptions = []) {
-		self.init(base64Encoded: base64String.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/"), options: options)
-	}
-
-	func base64UrlEncodedString(options: Data.Base64EncodingOptions = []) -> String {
-		return base64EncodedString(options: options).replacingOccurrences(of: "+", with: "-").replacingOccurrences(of: "/", with: "_")
-	}
-}
-
 public extension FixedWidthInteger {
 	func byteArray() -> [UInt8] {
 		return withUnsafeBytes(of: self, { [UInt8]($0) })
