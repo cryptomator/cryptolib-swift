@@ -43,6 +43,11 @@ final class CryptorTests {
 		let ciphertextName = try cryptor.encryptFileName(originalName, dirId: dirId)
 		let cleartextName = try cryptor.decryptFileName(ciphertextName, dirId: dirId)
 		#expect(originalName == cleartextName)
+
+		let base32CiphertextName = try cryptor.encryptFileName(originalName, dirId: dirId, encoding: .base32)
+		#expect(base32CiphertextName == "DD7PKXA5FYZ2MVWAGYPALWDOOES4CPUSEIGAIM63")
+		let base32CleartextName = try cryptor.decryptFileName(base32CiphertextName, dirId: dirId, encoding: .base32)
+		#expect(originalName == base32CleartextName)
 	}
 
 	@Test(arguments: schemes) func `decrypt invalid name`(scheme: CryptorScheme) throws {
