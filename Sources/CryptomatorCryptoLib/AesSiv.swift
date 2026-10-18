@@ -185,19 +185,20 @@ class AesSiv {
 		}
 	}
 
-	private static func shiftLeft(_ input: UnsafeRawBufferPointer, into output: UnsafeMutableRawBufferPointer) {
-		var bit: UInt8 = 0
+	private static func shiftLeft(_ input: UnsafeRawBufferPointer, into output: UnsafeMutableRawBufferPointer) -> UInt8 {
+		var carry: UInt8 = 0
 		for i in (0 ..< input.count).reversed() {
-			let b = input[i] & 0xFF
-			output[i] = (b << 1) | bit
-			bit = (b >> 7) & 1
+			let b = input[i]
+			output[i] = (b << 1) | carry
+			carry = b >> 7
 		}
+		return carry
 	}
 
 	private static func dbl(_ block: UnsafeRawBufferPointer, into result: UnsafeMutableRawBufferPointer) {
-		shiftLeft(block, into: result)
+		let carry = shiftLeft(block, into: result)
 		// masked instead of branching on the secret top bit:
-		let mask = 0 &- (block[0] >> 7)
+		let mask = 0 &- carry
 		result[block.count - 1] ^= dblConst & mask
 	}
 
