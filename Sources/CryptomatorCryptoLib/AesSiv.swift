@@ -110,9 +110,8 @@ class AesSiv {
 			}
 
 			// subkey generation:
-			var l = SecretBytes(count: 16)
-			try zero.withUnsafeBytes { zeroBytes in
-				try l.withUnsafeMutableBytes { try Cmac.aes(cryptor: cryptor, plaintext: zeroBytes, into: $0) }
+			let l = try SecretBytes(count: 16) { lBytes in
+				try zero.withUnsafeBytes { try Cmac.aes(cryptor: cryptor, plaintext: $0, into: lBytes) }
 			}
 			let k1 = dbl(l)
 			let k2 = dbl(k1)
@@ -129,20 +128,20 @@ class AesSiv {
 		}
 
 		mutating func mac(_ data: [UInt8]) throws -> SecretBytes {
-			var mac = SecretBytes(count: 16)
-			try data.withUnsafeBytes { try self.mac($0, into: &mac) }
-			return mac
+			return try SecretBytes(count: 16) { macBytes in
+				try data.withUnsafeBytes { try mac($0, into: macBytes) }
+			}
 		}
 
 		mutating func mac(_ data: borrowing SecretBytes) throws -> SecretBytes {
-			var mac = SecretBytes(count: 16)
-			try data.withUnsafeBytes { try self.mac($0, into: &mac) }
-			return mac
+			return try SecretBytes(count: 16) { macBytes in
+				try data.withUnsafeBytes { try mac($0, into: macBytes) }
+			}
 		}
 
-		/// `mac` must be zero-filled, because it serves as the CBC-MAC chaining state. It is passed in rather than returned because `Array.withUnsafeBytes` cannot return a noncopyable value.
-		private mutating func mac(_ data: UnsafeRawBufferPointer, into mac: inout SecretBytes) throws {
-			assert(mac.count == kCCBlockSizeAES128 && mac.withUnsafeBytes { $0.allSatisfy { $0 == 0x00 } }, "mac expected to be one zero-filled block")
+		/// `mac` must be zero-filled, because it serves as the CBC-MAC chaining state.
+		private mutating func mac(_ data: UnsafeRawBufferPointer, into mac: UnsafeMutableRawBufferPointer) throws {
+			assert(mac.count == kCCBlockSizeAES128 && mac.allSatisfy { $0 == 0x00 }, "mac expected to be one zero-filled block")
 
 			// determine the last block, treating empty data as one incomplete block:
 			let lastBlockIdx = data.isEmpty ? 0 : (data.count - 1) / 16
@@ -151,30 +150,25 @@ class AesSiv {
 			// all but the last block:
 			var y = SecretBytes(count: 16)
 			for i in 0 ..< lastBlockIdx {
-				try chain(UnsafeRawBufferPointer(rebasing: data[(16 * i) ..< (16 * (i + 1))]), mac: &mac, y: &y)
+				try chain(UnsafeRawBufferPointer(rebasing: data[(16 * i) ..< (16 * (i + 1))]), mac: mac, y: &y)
 			}
 
 			// last block:
 			let lastBlockData = UnsafeRawBufferPointer(rebasing: data[(16 * lastBlockIdx)...])
-			var lastBlock = SecretBytes(count: 16)
-			lastBlock.withUnsafeMutableBytes { lastBlockBytes in
+			let lastBlock = SecretBytes(count: 16) { lastBlockBytes in
 				if lastBlockComplete {
 					k1.withUnsafeBytes { xor(lastBlockData, $0, into: lastBlockBytes) }
 				} else {
 					k2.withUnsafeBytes { xorPadded(lastBlockData, $0, into: lastBlockBytes) }
 				}
 			}
-			try lastBlock.withUnsafeBytes { try chain($0, mac: &mac, y: &y) }
+			try lastBlock.withUnsafeBytes { try chain($0, mac: mac, y: &y) }
 		}
 
 		/// One CBC-MAC step, `mac = AES(K, mac ^ block)`, with `y` as scratch for the XOR.
-		private mutating func chain(_ block: UnsafeRawBufferPointer, mac: inout SecretBytes, y: inout SecretBytes) throws {
-			mac.withUnsafeBytes { macBytes in
-				y.withUnsafeMutableBytes { xor(macBytes, block, into: $0) }
-			}
-			try y.withUnsafeBytes { yBytes in
-				try mac.withUnsafeMutableBytes { try Cmac.aes(cryptor: cryptor, plaintext: yBytes, into: $0) }
-			}
+		private mutating func chain(_ block: UnsafeRawBufferPointer, mac: UnsafeMutableRawBufferPointer, y: inout SecretBytes) throws {
+			y.withUnsafeMutableBytes { xor(UnsafeRawBufferPointer(mac), block, into: $0) }
+			try y.withUnsafeBytes { try Cmac.aes(cryptor: cryptor, plaintext: $0, into: mac) }
 		}
 
 		/// `plaintext` and `ciphertext` must be separate buffers, because `CCCryptorUpdate` does not support in-place ECB. Without padding, ECB needs no `CCCryptorFinal`, so the cryptor stays usable for the next block.
@@ -208,11 +202,9 @@ class AesSiv {
 	}
 
 	private static func dbl(_ block: borrowing SecretBytes) -> SecretBytes {
-		var result = SecretBytes(count: block.count)
-		block.withUnsafeBytes { blockBytes in
-			result.withUnsafeMutableBytes { dbl(blockBytes, into: $0) }
+		return SecretBytes(count: block.count) { resultBytes in
+			block.withUnsafeBytes { dbl($0, into: resultBytes) }
 		}
-		return result
 	}
 
 	private static func xor(_ data1: UnsafeRawBufferPointer, _ data2: UnsafeRawBufferPointer, into result: UnsafeMutableRawBufferPointer) {
@@ -223,27 +215,24 @@ class AesSiv {
 	}
 
 	private static func xor(_ data1: borrowing SecretBytes, _ data2: borrowing SecretBytes) -> SecretBytes {
-		var result = SecretBytes(count: data1.count)
-		data1.withUnsafeBytes { data1Bytes in
-			data2.withUnsafeBytes { data2Bytes in
-				result.withUnsafeMutableBytes { xor(data1Bytes, data2Bytes, into: $0) }
+		return SecretBytes(count: data1.count) { resultBytes in
+			data1.withUnsafeBytes { data1Bytes in
+				data2.withUnsafeBytes { xor(data1Bytes, $0, into: resultBytes) }
 			}
 		}
-		return result
 	}
 
 	private static func xorend(_ data1: [UInt8], _ data2: borrowing SecretBytes) -> SecretBytes {
 		assert(data1.count >= data2.count, "Length of first input must be >= length of second input.")
-		var result = SecretBytes(copying: data1)
 		let diff = data1.count - data2.count
-		result.withUnsafeMutableBytes { resultBytes in
+		return SecretBytes(count: data1.count) { resultBytes in
+			resultBytes.copyBytes(from: data1)
 			data2.withUnsafeBytes { data2Bytes in
 				for i in 0 ..< data2Bytes.count {
 					resultBytes[i + diff] ^= data2Bytes[i]
 				}
 			}
 		}
-		return result
 	}
 
 	/// ISO/IEC 7816-4:2005 Padding: First bit 1, following bits 0
@@ -265,12 +254,10 @@ class AesSiv {
 	}
 
 	private static func xorPadded(_ data: [UInt8], _ key: borrowing SecretBytes) -> SecretBytes {
-		var result = SecretBytes(count: key.count)
-		data.withUnsafeBytes { dataBytes in
-			key.withUnsafeBytes { keyBytes in
-				result.withUnsafeMutableBytes { xorPadded(dataBytes, keyBytes, into: $0) }
+		return SecretBytes(count: key.count) { resultBytes in
+			data.withUnsafeBytes { dataBytes in
+				key.withUnsafeBytes { xorPadded(dataBytes, $0, into: resultBytes) }
 			}
 		}
-		return result
 	}
 }

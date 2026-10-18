@@ -197,8 +197,7 @@ public final class Cryptor: Sendable {
 	}
 
 	func encryptHeader(_ header: borrowing FileHeader) throws -> [UInt8] {
-		var payload = SecretBytes(count: fileHeaderLegacyPayloadSize + kCCKeySizeAES256)
-		payload.withUnsafeMutableBytes { payloadBytes in
+		let payload = SecretBytes(count: fileHeaderLegacyPayloadSize + kCCKeySizeAES256) { payloadBytes in
 			payloadBytes[..<fileHeaderLegacyPayloadSize].initializeMemory(as: UInt8.self, repeating: 0xFF)
 			header.contentKey.withUnsafeBytes { payloadBytes[fileHeaderLegacyPayloadSize...].copyBytes(from: $0) }
 		}

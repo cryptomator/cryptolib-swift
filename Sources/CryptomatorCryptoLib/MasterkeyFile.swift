@@ -228,23 +228,20 @@ public final class MasterkeyFile: Sendable {
 	 */
 	private static func scrypt(passphrase: String, salt: [UInt8], pepper: [UInt8], scryptCostParam: UInt64, scryptBlockSize: UInt32) throws -> SecretBytes {
 		let pw = SecretBytes(copying: passphrase.precomposedStringWithCanonicalMapping.utf8)
-		var saltAndPepper = SecretBytes(count: salt.count + pepper.count)
-		saltAndPepper.withUnsafeMutableBytes { saltAndPepperBytes in
+		let saltAndPepper = SecretBytes(count: salt.count + pepper.count) { saltAndPepperBytes in
 			saltAndPepperBytes[..<salt.count].copyBytes(from: salt)
 			saltAndPepperBytes[salt.count...].copyBytes(from: pepper)
 		}
-		var kek = SecretBytes(count: kCCKeySizeAES256)
-		let scryptResult = pw.withUnsafeBytes { pwBytes in
-			saltAndPepper.withUnsafeBytes { saltAndPepperBytes in
-				kek.withUnsafeMutableBytes { kekBytes in
+		return try SecretBytes(count: kCCKeySizeAES256) { kekBytes in
+			let scryptResult = pw.withUnsafeBytes { pwBytes in
+				saltAndPepper.withUnsafeBytes { saltAndPepperBytes in
 					crypto_scrypt(pwBytes.baseAddress?.assumingMemoryBound(to: UInt8.self), pwBytes.count, saltAndPepperBytes.baseAddress?.assumingMemoryBound(to: UInt8.self), saltAndPepperBytes.count, scryptCostParam, scryptBlockSize, 1, kekBytes.baseAddress?.assumingMemoryBound(to: UInt8.self), kekBytes.count)
 				}
 			}
+			guard scryptResult == 0 else {
+				throw MasterkeyFileError.keyDerivationFailed
+			}
 		}
-		guard scryptResult == 0 else {
-			throw MasterkeyFileError.keyDerivationFailed
-		}
-		return kek
 	}
 
 	private static func versionMac(version: UInt32, macKey: borrowing SecretBytes) -> [UInt8] {
@@ -269,20 +266,18 @@ public final class MasterkeyFile: Sendable {
 	}
 
 	static func unwrapKey(_ wrappedKey: [UInt8], kek: borrowing SecretBytes) throws -> SecretBytes {
-		var unwrappedKeyLen = CCSymmetricUnwrappedSize(CCWrappingAlgorithm(kCCWRAPAES), wrappedKey.count)
-		var unwrappedKey = SecretBytes(count: unwrappedKeyLen)
-		let status = kek.withUnsafeBytes { kekBytes in
-			unwrappedKey.withUnsafeMutableBytes { unwrappedKeyBytes in
+		return try SecretBytes(count: CCSymmetricUnwrappedSize(CCWrappingAlgorithm(kCCWRAPAES), wrappedKey.count)) { unwrappedKeyBytes in
+			var unwrappedKeyLen = unwrappedKeyBytes.count
+			let status = kek.withUnsafeBytes { kekBytes in
 				CCSymmetricKeyUnwrap(CCWrappingAlgorithm(kCCWRAPAES), CCrfc3394_iv, CCrfc3394_ivLen, kekBytes.baseAddress?.assumingMemoryBound(to: UInt8.self), kekBytes.count, wrappedKey, wrappedKey.count, unwrappedKeyBytes.baseAddress?.assumingMemoryBound(to: UInt8.self), &unwrappedKeyLen)
 			}
-		}
-		if status == kCCSuccess {
-			assert(unwrappedKeyLen == kCCKeySizeAES256)
-			return unwrappedKey
-		} else if status == kCCDecodeError {
-			throw MasterkeyFileError.invalidPassphrase
-		} else {
-			throw MasterkeyFileError.keyWrapFailed(status)
+			if status == kCCSuccess {
+				assert(unwrappedKeyLen == kCCKeySizeAES256)
+			} else if status == kCCDecodeError {
+				throw MasterkeyFileError.invalidPassphrase
+			} else {
+				throw MasterkeyFileError.keyWrapFailed(status)
+			}
 		}
 	}
 }
