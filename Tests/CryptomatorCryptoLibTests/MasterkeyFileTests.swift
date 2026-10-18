@@ -7,11 +7,12 @@
 //
 
 import CommonCrypto
-import XCTest
+import Foundation
+import Testing
 @testable import CryptomatorCryptoLib
 
-class MasterkeyFileTests: XCTestCase {
-	func testCreateWithContentFromData() throws {
+struct MasterkeyFileTests {
+	@Test func `create with content from data`() throws {
 		let data = Data("""
 		{
 			"version": 7,
@@ -24,16 +25,16 @@ class MasterkeyFileTests: XCTestCase {
 		}
 		""".utf8)
 		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
-		XCTAssertEqual(7, masterkeyFile.content.version)
-		XCTAssertEqual("AAAAAAAAAAA=", masterkeyFile.content.scryptSalt)
-		XCTAssertEqual(2, masterkeyFile.content.scryptCostParam)
-		XCTAssertEqual(8, masterkeyFile.content.scryptBlockSize)
-		XCTAssertEqual("mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==", masterkeyFile.content.primaryMasterKey)
-		XCTAssertEqual("mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==", masterkeyFile.content.hmacMasterKey)
-		XCTAssertEqual("cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g=", masterkeyFile.content.versionMac)
+		#expect(masterkeyFile.content.version == 7)
+		#expect(masterkeyFile.content.scryptSalt == "AAAAAAAAAAA=")
+		#expect(masterkeyFile.content.scryptCostParam == 2)
+		#expect(masterkeyFile.content.scryptBlockSize == 8)
+		#expect(masterkeyFile.content.primaryMasterKey == "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==")
+		#expect(masterkeyFile.content.hmacMasterKey == "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==")
+		#expect(masterkeyFile.content.versionMac == "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g=")
 	}
 
-	func testUnlockWithPassphrase() throws {
+	@Test func `unlock with passphrase`() throws {
 		let expectedKey = [UInt8](repeating: 0x00, count: 32)
 		let data = Data("""
 		{
@@ -48,11 +49,17 @@ class MasterkeyFileTests: XCTestCase {
 		""".utf8)
 		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
 		let masterkey = try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]())
-		XCTAssertEqual(expectedKey, masterkey.aesMasterKey)
-		XCTAssertEqual(expectedKey, masterkey.macMasterKey)
+		#expect(expectedKey + expectedKey == masterkey.rawKey)
 	}
 
-	func testUnlockWithWrongPassphrase() throws {
+	@Test func `unlock with unpadded fields`() throws {
+		let expectedKey = [UInt8](repeating: 0x00, count: 32)
+		let content = Self.makeContent(scryptSalt: "AAAAAAAAAAA", primaryMasterKey: "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q", hmacMasterKey: "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q", versionMac: "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g")
+		let masterkey = try MasterkeyFile(content: content).unlock(passphrase: "asd", pepper: [UInt8]())
+		#expect(expectedKey + expectedKey == masterkey.rawKey)
+	}
+
+	@Test func `unlock with wrong passphrase`() throws {
 		let data = Data("""
 		{
 			"version": 7,
@@ -65,84 +72,32 @@ class MasterkeyFileTests: XCTestCase {
 		}
 		""".utf8)
 		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
-		XCTAssertThrowsError(try masterkeyFile.unlock(passphrase: "qwe", pepper: [UInt8]()), "wrong passphrase") { error in
-			XCTAssertEqual(.invalidPassphrase, error as? MasterkeyFileError)
-		}
+		#expect(throws: MasterkeyFileError.invalidPassphrase) { try masterkeyFile.unlock(passphrase: "qwe", pepper: [UInt8]()) }
 	}
 
-	func testUnlockWithInvalidVersionMac() throws {
-		let data = Data("""
-		{
-			"version": 7,
-			"scryptSalt": "AAAAAAAAAAA=",
-			"scryptCostParam": 2,
-			"scryptBlockSize": 8,
-			"primaryMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
-			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
-			"versionMac": "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+G="
-		}
-		""".utf8)
-		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
-		XCTAssertThrowsError(try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]()), "invalid version mac") { error in
-			XCTAssertEqual(.malformedMasterkeyFile("incorrect version or versionMac"), error as? MasterkeyFileError)
-		}
+	@Test(arguments: [
+		(makeContent(scryptSalt: "AAAAAAAAAA!!"), "invalid base64 data in scryptSalt"),
+		(makeContent(scryptSalt: "AAAAAAAAAA-_"), "invalid base64 data in scryptSalt"),
+		(makeContent(scryptCostParam: -1), "invalid scryptCostParam"),
+		(makeContent(scryptCostParam: 1), "invalid scryptCostParam"),
+		(makeContent(scryptCostParam: 3), "invalid scryptCostParam"),
+		(makeContent(scryptBlockSize: -1), "invalid scryptBlockSize"),
+		(makeContent(scryptBlockSize: 0), "invalid scryptBlockSize"),
+		(makeContent(scryptCostParam: 1 << 21), "scrypt parameters exceed memory limit"),
+		(makeContent(scryptCostParam: 2, scryptBlockSize: 1 << 22), "scrypt parameters exceed memory limit"),
+		(makeContent(primaryMasterKey: "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q!!"), "invalid base64 data in primaryMasterKey"),
+		(makeContent(primaryMasterKey: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="), "invalid base64 data in primaryMasterKey"),
+		(makeContent(hmacMasterKey: "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q!!"), "invalid base64 data in hmacMasterKey"),
+		(makeContent(hmacMasterKey: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="), "invalid base64 data in hmacMasterKey"),
+		(makeContent(versionMac: "cn2sAK6l"), "invalid base64 data in versionMac"),
+		(makeContent(versionMac: "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+G="), "incorrect version or versionMac"),
+		(makeContent(version: -1), "invalid version")
+	]) func `unlock with malformed content`(content: Content, reason: String) throws {
+		let masterkeyFile = MasterkeyFile(content: content)
+		#expect(throws: MasterkeyFileError.malformedMasterkeyFile(reason)) { try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]()) }
 	}
 
-	func testUnlockWithMalformedJson1() throws {
-		let data = Data("""
-		{
-			"version": 7,
-			"scryptSalt": "AAAAAAAAAAA=",
-			"scryptCostParam": 2,
-			"scryptBlockSize": 8,
-			"primaryMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q!!",
-			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
-			"versionMac": "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g="
-		}
-		""".utf8)
-		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
-		XCTAssertThrowsError(try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]()), "malformed json") { error in
-			XCTAssertEqual(.malformedMasterkeyFile("invalid base64 data in primaryMasterKey"), error as? MasterkeyFileError)
-		}
-	}
-
-	func testUnlockWithMalformedJson2() throws {
-		let data = Data("""
-		{
-			"version": 7,
-			"scryptSalt": "AAAAAAAAAAA=",
-			"scryptCostParam": 2,
-			"scryptBlockSize": 8,
-			"primaryMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
-			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q!!",
-			"versionMac": "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g="
-		}
-		""".utf8)
-		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
-		XCTAssertThrowsError(try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]()), "malformed json") { error in
-			XCTAssertEqual(.malformedMasterkeyFile("invalid base64 data in hmacMasterKey"), error as? MasterkeyFileError)
-		}
-	}
-
-	func testUnlockWithMalformedJson3() throws {
-		let data = Data("""
-		{
-			"version": 7,
-			"scryptSalt": "AAAAAAAAAAA=",
-			"scryptCostParam": 2,
-			"scryptBlockSize": 8,
-			"primaryMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
-			"hmacMasterKey": "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==",
-			"versionMac": "cn2sAK6l"
-		}
-		""".utf8)
-		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
-		XCTAssertThrowsError(try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]()), "malformed json") { error in
-			XCTAssertEqual(.malformedMasterkeyFile("invalid base64 data in versionMac"), error as? MasterkeyFileError)
-		}
-	}
-
-	func testDeriveKey() throws {
+	@Test func `derive key`() throws {
 		let expectedKey: [UInt8] = [
 			0x8C, 0xF4, 0xA0, 0x4E, 0xC8, 0x45, 0xF4, 0x28,
 			0xB2, 0xF9, 0xF9, 0xE1, 0xD9, 0xDF, 0x08, 0xD2,
@@ -162,10 +117,22 @@ class MasterkeyFileTests: XCTestCase {
 		""".utf8)
 		let masterkeyFile = try MasterkeyFile.withContentFromData(data: data)
 		let kek = try masterkeyFile.deriveKey(passphrase: "asd", pepper: [UInt8]())
-		XCTAssertEqual(expectedKey, kek)
+		#expect(expectedKey == kek)
 	}
 
-	func testUnlockWithKEK() throws {
+	@Test func `derive key with pepper`() throws {
+		let expectedKey: [UInt8] = [
+			0x76, 0x87, 0x4B, 0x08, 0x08, 0xB1, 0xC3, 0x11,
+			0x09, 0x50, 0x7B, 0x6E, 0x0C, 0x8E, 0xA7, 0x24,
+			0xA7, 0xFB, 0x51, 0x27, 0x78, 0x40, 0xB3, 0x20,
+			0x1B, 0x3D, 0x7E, 0x71, 0x67, 0xE3, 0x91, 0x90
+		]
+		let masterkeyFile = MasterkeyFile(content: Self.makeContent())
+		let kek = try masterkeyFile.deriveKey(passphrase: "asd", pepper: [0x01, 0x02, 0x03])
+		#expect(expectedKey == kek)
+	}
+
+	@Test func `unlock with KEK`() throws {
 		let expectedKey = [UInt8](repeating: 0x00, count: 32)
 		let data = Data("""
 		{
@@ -186,30 +153,46 @@ class MasterkeyFileTests: XCTestCase {
 			0xDF, 0xCB, 0xB5, 0xE7, 0x5A, 0xEF, 0x34, 0xF9
 		]
 		let masterkey = try masterkeyFile.unlock(kek: kek)
-		XCTAssertEqual(expectedKey, masterkey.aesMasterKey)
-		XCTAssertEqual(expectedKey, masterkey.macMasterKey)
+		#expect(expectedKey + expectedKey == masterkey.rawKey)
 	}
 
-	func testLock() throws {
-		let masterkey = Masterkey.createFromRaw(aesMasterKey: [UInt8](repeating: 0x55, count: 32), macMasterKey: [UInt8](repeating: 0x77, count: 32))
-		let content = try MasterkeyFile.lock(masterkey: masterkey, vaultVersion: 7, passphrase: "asd", pepper: [UInt8](), scryptCostParam: 2, cryptoSupport: CryptoSupportMock())
-		XCTAssertEqual(7, content.version)
-		XCTAssertEqual("8PDw8PDw8PA=", content.scryptSalt)
-		XCTAssertEqual(2, content.scryptCostParam)
-		XCTAssertEqual(8, content.scryptBlockSize)
-		XCTAssertEqual("jvdghkTc01VISrFly37pgaT/UKtXrDCvZcU3tT9Y98zyzn/pJ91bxw==", content.primaryMasterKey)
-		XCTAssertEqual("99I+J4bT3rVpZE8yZwKRV9gHVRmQ8XQEujAL9IuwLTc2D3mg5JEjKA==", content.hmacMasterKey)
-		XCTAssertEqual("sAWFgFNhmtMPeNWr4zh+9Ps7GOtT0pknX11PRQ7eC9Q=", content.versionMac)
+	@Test func lock() throws {
+		let content = try MasterkeyFile.lock(masterkey: .test, vaultVersion: 7, passphrase: "asd", pepper: [UInt8](), scryptCostParam: 2, cryptoSupport: CryptoSupportMock())
+		#expect(content.version == 7)
+		#expect(content.scryptSalt == "8PDw8PDw8PA=")
+		#expect(content.scryptCostParam == 2)
+		#expect(content.scryptBlockSize == 8)
+		#expect(content.primaryMasterKey == "jvdghkTc01VISrFly37pgaT/UKtXrDCvZcU3tT9Y98zyzn/pJ91bxw==")
+		#expect(content.hmacMasterKey == "99I+J4bT3rVpZE8yZwKRV9gHVRmQ8XQEujAL9IuwLTc2D3mg5JEjKA==")
+		#expect(content.versionMac == "sAWFgFNhmtMPeNWr4zh+9Ps7GOtT0pknX11PRQ7eC9Q=")
 	}
 
-	func testLockWithDifferentPeppers() throws {
-		let masterkey = Masterkey.createFromRaw(aesMasterKey: [UInt8](repeating: 0x55, count: 32), macMasterKey: [UInt8](repeating: 0x77, count: 32))
-		let content1 = try MasterkeyFile.lock(masterkey: masterkey, vaultVersion: 7, passphrase: "asd", pepper: [UInt8](arrayLiteral: 0x01), scryptCostParam: 2, cryptoSupport: CryptoSupportMock())
-		let content2 = try MasterkeyFile.lock(masterkey: masterkey, vaultVersion: 7, passphrase: "asd", pepper: [UInt8](arrayLiteral: 0x02), scryptCostParam: 2, cryptoSupport: CryptoSupportMock())
-		XCTAssertNotEqual(content1, content2)
+	@Test func `lock with invalid parameters`() {
+		#expect(throws: CryptoError.invalidParameter("vaultVersion must be in range 0...\(UInt32.max)")) { try MasterkeyFile.lock(masterkey: .test, vaultVersion: -1, passphrase: "asd") }
+		#expect(throws: CryptoError.invalidParameter("scryptCostParam must be a power of 2 greater than 1")) { try MasterkeyFile.lock(masterkey: .test, vaultVersion: 7, passphrase: "asd", scryptCostParam: -1) }
+		#expect(throws: CryptoError.invalidParameter("scryptCostParam must be a power of 2 greater than 1")) { try MasterkeyFile.lock(masterkey: .test, vaultVersion: 7, passphrase: "asd", scryptCostParam: 3) }
+		#expect(throws: CryptoError.invalidParameter("scryptCostParam exceeds memory limit")) { try MasterkeyFile.lock(masterkey: .test, vaultVersion: 7, passphrase: "asd", scryptCostParam: 1 << 21) }
 	}
 
-	func testChangePassphrase() throws {
+	@Test func `lock with different peppers`() throws {
+		let content1 = try MasterkeyFile.lock(masterkey: .test, vaultVersion: 7, passphrase: "asd", pepper: [UInt8](arrayLiteral: 0x01), scryptCostParam: 2, cryptoSupport: CryptoSupportMock())
+		let content2 = try MasterkeyFile.lock(masterkey: .test, vaultVersion: 7, passphrase: "asd", pepper: [UInt8](arrayLiteral: 0x02), scryptCostParam: 2, cryptoSupport: CryptoSupportMock())
+		#expect(content1 != content2)
+	}
+
+	@Test func `lock and unlock with empty passphrase`() throws {
+		let content = try MasterkeyFile.lock(masterkey: .test, vaultVersion: 7, passphrase: "", pepper: [UInt8](), scryptCostParam: 2, cryptoSupport: CryptoSupportMock())
+		let masterkey = try MasterkeyFile(content: content).unlock(passphrase: "")
+		#expect(Masterkey.test.rawKey == masterkey.rawKey)
+	}
+
+	@Test func `unlock with canonically equivalent passphrase`() throws {
+		let content = try MasterkeyFile.lock(masterkey: .test, vaultVersion: 7, passphrase: "e\u{301}", pepper: [UInt8](), scryptCostParam: 2, cryptoSupport: CryptoSupportMock())
+		let masterkey = try MasterkeyFile(content: content).unlock(passphrase: "\u{E9}")
+		#expect(Masterkey.test.rawKey == masterkey.rawKey)
+	}
+
+	@Test func `change passphrase`() throws {
 		let expectedKey = [UInt8](repeating: 0x00, count: 32)
 		let data = Data("""
 		{
@@ -225,26 +208,39 @@ class MasterkeyFileTests: XCTestCase {
 		let content = try MasterkeyFile.changePassphrase(masterkeyFileData: data, oldPassphrase: "asd", newPassphrase: "qwe", pepper: [UInt8](), scryptCostParam: 2, cryptoSupport: CryptoSupportMock())
 		let masterkeyFile = MasterkeyFile(content: content)
 		let masterkey = try masterkeyFile.unlock(passphrase: "qwe", pepper: [UInt8]())
-		XCTAssertEqual(expectedKey, masterkey.aesMasterKey)
-		XCTAssertEqual(expectedKey, masterkey.macMasterKey)
-		XCTAssertThrowsError(try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]()), "wrong passphrase") { error in
-			XCTAssertEqual(.invalidPassphrase, error as? MasterkeyFileError)
-		}
+		#expect(expectedKey + expectedKey == masterkey.rawKey)
+		#expect(throws: MasterkeyFileError.invalidPassphrase) { try masterkeyFile.unlock(passphrase: "asd", pepper: [UInt8]()) }
 	}
 
-	func testWrapAndUnwrapKey() throws {
+	@Test func `wrap and unwrap key`() throws {
 		let key = [UInt8](repeating: 0x77, count: 32)
-		let kek = [UInt8](repeating: 0x55, count: 32)
-		let wrapped = try MasterkeyFile.wrapKey(key, kek: kek)
-		let unwrapped = try MasterkeyFile.unwrapKey(wrapped, kek: kek)
-		XCTAssertEqual(key, unwrapped)
+		let kek = SecretBytes(copying: [UInt8](repeating: 0x55, count: 32))
+		let wrapped = try MasterkeyFile.wrapKey(SecretBytes(copying: key), kek: kek)
+		let unwrapped = try MasterkeyFile.unwrapKey(wrapped, kek: kek).exportBytes()
+		#expect(key == unwrapped)
 	}
 
-	func testWrapKeyWithInvalidKey() throws {
-		let key = [UInt8](repeating: 0x77, count: 17)
-		let kek = [UInt8](repeating: 0x55, count: 32)
-		XCTAssertThrowsError(try MasterkeyFile.wrapKey(key, kek: kek), "invalid key") { error in
-			XCTAssertEqual(.keyWrapFailed(CCCryptorStatus(kCCParamError)), error as? MasterkeyFileError)
-		}
+	@Test func `wrap key with invalid key`() throws {
+		let key = SecretBytes(copying: [UInt8](repeating: 0x77, count: 17))
+		let kek = SecretBytes(copying: [UInt8](repeating: 0x55, count: 32))
+		#expect(throws: MasterkeyFileError.keyWrapFailed(CCCryptorStatus(kCCParamError))) { try MasterkeyFile.wrapKey(key, kek: kek) }
+	}
+
+	@Test func `unwrap key with invalid kek`() throws {
+		let wrapped = [UInt8](repeating: 0x77, count: 40)
+		let kek = SecretBytes(copying: [UInt8](repeating: 0x55, count: 17))
+		#expect(throws: MasterkeyFileError.keyWrapFailed(CCCryptorStatus(kCCParamError))) { _ = try MasterkeyFile.unwrapKey(wrapped, kek: kek) }
+	}
+
+	private static func makeContent(version: Int = 7, scryptSalt: String = "AAAAAAAAAAA=", scryptCostParam: Int = 2, scryptBlockSize: Int = 8, primaryMasterKey: String = "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==", hmacMasterKey: String = "mM+qoQ+o0qvPTiDAZYt+flaC3WbpNAx1sTXaUzxwpy0M9Ctj6Tih/Q==", versionMac: String = "cn2sAK6l9p1/w9deJVUuW3h7br056mpv5srvALiYw+g=") -> Content {
+		return Content(
+			version: version,
+			scryptSalt: scryptSalt,
+			scryptCostParam: scryptCostParam,
+			scryptBlockSize: scryptBlockSize,
+			primaryMasterKey: primaryMasterKey,
+			hmacMasterKey: hmacMasterKey,
+			versionMac: versionMac
+		)
 	}
 }

@@ -9,27 +9,23 @@
 import CommonCrypto
 import Foundation
 
-public final class Masterkey: @unchecked Sendable {
-	// `@unchecked Sendable` is safe because the key arrays are written only in `init` and in `deinit`, which has exclusive access.
+public final class Masterkey: Sendable {
+	let aesMasterKey: SecretBytes
+	let macMasterKey: SecretBytes
 
-	private(set) var aesMasterKey: [UInt8]
-	private(set) var macMasterKey: [UInt8]
+	/// A copy of the 32-byte `aesMasterKey` followed by the 32-byte `macMasterKey`. The returned array belongs to the caller, and the library cannot wipe it.
 	public var rawKey: [UInt8] {
-		return aesMasterKey + macMasterKey
+		var rawKey = [UInt8]()
+		// reserve the full size, so that appending never reallocates and leaves key bytes behind in a freed buffer:
+		rawKey.reserveCapacity(aesMasterKey.count + macMasterKey.count)
+		aesMasterKey.withUnsafeBytes { rawKey.append(contentsOf: $0) }
+		macMasterKey.withUnsafeBytes { rawKey.append(contentsOf: $0) }
+		return rawKey
 	}
 
-	private init(aesMasterKey: [UInt8], macMasterKey: [UInt8]) {
+	private init(aesMasterKey: consuming SecretBytes, macMasterKey: consuming SecretBytes) {
 		self.aesMasterKey = aesMasterKey
 		self.macMasterKey = macMasterKey
-	}
-
-	deinit {
-		for i in 0 ..< aesMasterKey.count {
-			aesMasterKey[i] = 0
-		}
-		for i in 0 ..< macMasterKey.count {
-			macMasterKey[i] = 0
-		}
 	}
 
 	// MARK: - Factory
@@ -41,22 +37,24 @@ public final class Masterkey: @unchecked Sendable {
 	 */
 	public static func createNew() throws -> Masterkey {
 		let cryptoSupport = DefaultCryptoSupport()
-		let aesMasterKey = try cryptoSupport.createRandomBytes(size: kCCKeySizeAES256)
-		let macMasterKey = try cryptoSupport.createRandomBytes(size: kCCKeySizeAES256)
+		let aesMasterKey = try cryptoSupport.createRandomSecret(size: kCCKeySizeAES256)
+		let macMasterKey = try cryptoSupport.createRandomSecret(size: kCCKeySizeAES256)
 		return createFromRaw(aesMasterKey: aesMasterKey, macMasterKey: macMasterKey)
 	}
 
 	/**
 	 Creates masterkey from raw bytes.
 
-	 - Parameter rawKey: Key combination of `aesMasterKey` (used for encryption of file specific keys) and `macMasterKey` (used for file authentication).
+	 - Parameter rawKey: The 32-byte `aesMasterKey` (used for encryption of file specific keys) followed by the 32-byte `macMasterKey` (used for file authentication). The bytes are copied and never retained, so wiping `rawKey` remains the caller's responsibility.
 	 - Returns: New masterkey instance using the keys from the supplied raw bytes.
 	 */
-	public static func createFromRaw(rawKey: [UInt8]) -> Masterkey {
-		assert(rawKey.count == 2 * kCCKeySizeAES256)
-		let aesMasterkey = Array(rawKey[0 ..< kCCKeySizeAES256])
-		let macMasterKey = Array(rawKey[kCCKeySizeAES256...])
-		return createFromRaw(aesMasterKey: aesMasterkey, macMasterKey: macMasterKey)
+	public static func createFromRaw(rawKey: [UInt8]) throws -> Masterkey {
+		guard rawKey.count == 2 * kCCKeySizeAES256 else {
+			throw CryptoError.invalidParameter("rawKey must be \(2 * kCCKeySizeAES256) bytes")
+		}
+		let aesMasterKey = SecretBytes(copying: rawKey[0 ..< kCCKeySizeAES256])
+		let macMasterKey = SecretBytes(copying: rawKey[kCCKeySizeAES256...])
+		return createFromRaw(aesMasterKey: aesMasterKey, macMasterKey: macMasterKey)
 	}
 
 	/**
@@ -66,7 +64,7 @@ public final class Masterkey: @unchecked Sendable {
 	 - Parameter macMasterKey: Key used for file authentication.
 	 - Returns: New masterkey instance using the keys from the supplied raw bytes.
 	 */
-	static func createFromRaw(aesMasterKey: [UInt8], macMasterKey: [UInt8]) -> Masterkey {
+	static func createFromRaw(aesMasterKey: consuming SecretBytes, macMasterKey: consuming SecretBytes) -> Masterkey {
 		assert(aesMasterKey.count == kCCKeySizeAES256)
 		assert(macMasterKey.count == kCCKeySizeAES256)
 		return Masterkey(aesMasterKey: aesMasterKey, macMasterKey: macMasterKey)

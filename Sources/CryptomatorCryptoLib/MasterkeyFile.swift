@@ -31,6 +31,7 @@ public final class MasterkeyFile: Sendable {
 	public static let defaultScryptCostParam = 1 << 15 // 2^15
 	static let defaultScryptSaltSize = 8
 	static let defaultScryptBlockSize = 8
+	private static let wrappedKeySize = CCSymmetricWrappedSize(CCWrappingAlgorithm(kCCWRAPAES), kCCKeySizeAES256)
 
 	let content: Content
 	public var version: Int {
@@ -70,45 +71,58 @@ public final class MasterkeyFile: Sendable {
 	/**
 	 Derives a KEK from the given passphrase and the params from this masterkey file using scrypt and unwraps the stored encryption and MAC keys.
 
-	 - Parameter passphrase: The passphrase used during key derivation.
-	 - Parameter pepper: An optional application-specific pepper added to the scrypt's salt. Defaults to empty byte array.
+	 - Parameter passphrase: The passphrase used during key derivation. The library cannot wipe the string.
+	 - Parameter pepper: An optional application-specific pepper added to the scrypt's salt. Defaults to empty byte array. The bytes are copied and never retained.
 	 - Returns: A masterkey with the unwrapped keys.
 	 */
 	public func unlock(passphrase: String, pepper: [UInt8] = [UInt8]()) throws -> Masterkey {
-		let kek = try deriveKey(passphrase: passphrase, pepper: pepper)
+		let kek = try deriveSecretKey(passphrase: passphrase, pepper: pepper)
 		return try unlock(kek: kek)
 	}
 
 	/**
 	 Derives a KEK from the given passphrase and the params from this masterkey file using scrypt.
 
-	 - Parameter passphrase: The passphrase used during key derivation.
-	 - Parameter pepper: An optional application-specific pepper added to the scrypt's salt. Defaults to empty byte array.
-	 - Returns: A 256-bit key derived from passphrase using scrypt.
+	 - Parameter passphrase: The passphrase used during key derivation. The library cannot wipe the string.
+	 - Parameter pepper: An optional application-specific pepper added to the scrypt's salt. Defaults to empty byte array. The bytes are copied and never retained.
+	 - Returns: A copy of the 256-bit key derived from passphrase using scrypt. The returned array belongs to the caller, and the library cannot wipe it.
 	 */
 	public func deriveKey(passphrase: String, pepper: [UInt8] = [UInt8]()) throws -> [UInt8] {
-		let pw = [UInt8](passphrase.precomposedStringWithCanonicalMapping.utf8)
-		let salt = [UInt8](Data(base64Encoded: content.scryptSalt)!)
-		var kek = [UInt8](repeating: 0x00, count: kCCKeySizeAES256)
-		let scryptResult = crypto_scrypt(pw, pw.count, salt + pepper, salt.count + pepper.count, UInt64(content.scryptCostParam), UInt32(content.scryptBlockSize), 1, &kek, kCCKeySizeAES256)
-		guard scryptResult == 0 else {
-			throw MasterkeyFileError.keyDerivationFailed
+		return try deriveSecretKey(passphrase: passphrase, pepper: pepper).exportBytes()
+	}
+
+	private func deriveSecretKey(passphrase: String, pepper: [UInt8]) throws -> SecretBytes {
+		guard let salt = Data(guavaBase64Encoded: content.scryptSalt) else {
+			throw MasterkeyFileError.malformedMasterkeyFile("invalid base64 data in scryptSalt")
 		}
-		return kek
+		guard let scryptCostParam = UInt64(exactly: content.scryptCostParam), MasterkeyFile.isValidScryptCostParam(scryptCostParam) else {
+			throw MasterkeyFileError.malformedMasterkeyFile("invalid scryptCostParam")
+		}
+		guard let scryptBlockSize = UInt32(exactly: content.scryptBlockSize), scryptBlockSize > 0 else {
+			throw MasterkeyFileError.malformedMasterkeyFile("invalid scryptBlockSize")
+		}
+		guard MasterkeyFile.isWithinScryptMemoryLimit(scryptCostParam: scryptCostParam, scryptBlockSize: scryptBlockSize) else {
+			throw MasterkeyFileError.malformedMasterkeyFile("scrypt parameters exceed memory limit")
+		}
+		return try MasterkeyFile.scrypt(passphrase: passphrase, salt: [UInt8](salt), pepper: pepper, scryptCostParam: scryptCostParam, scryptBlockSize: scryptBlockSize)
 	}
 
 	/**
 	  Unwraps the stored encryption and MAC keys with the given KEK.
 
-	  - Parameter kek: The KEK for unwrapping the keys from this masterkey file.
+	  - Parameter kek: The KEK for unwrapping the keys from this masterkey file. The bytes are copied and never retained, so wiping `kek` remains the caller's responsibility.
 	  - Returns: A masterkey with the unwrapped keys.
 	 */
 	public func unlock(kek: [UInt8]) throws -> Masterkey {
-		guard let wrappedMasterKey = Data(base64Encoded: content.primaryMasterKey) else {
+		return try unlock(kek: SecretBytes(copying: kek))
+	}
+
+	private func unlock(kek: borrowing SecretBytes) throws -> Masterkey {
+		guard let wrappedMasterKey = Data(guavaBase64Encoded: content.primaryMasterKey), wrappedMasterKey.count == MasterkeyFile.wrappedKeySize else {
 			throw MasterkeyFileError.malformedMasterkeyFile("invalid base64 data in primaryMasterKey")
 		}
 		let aesKey = try MasterkeyFile.unwrapKey([UInt8](wrappedMasterKey), kek: kek)
-		guard let wrappedHmacKey = Data(base64Encoded: content.hmacMasterKey) else {
+		guard let wrappedHmacKey = Data(guavaBase64Encoded: content.hmacMasterKey), wrappedHmacKey.count == MasterkeyFile.wrappedKeySize else {
 			throw MasterkeyFileError.malformedMasterkeyFile("invalid base64 data in hmacMasterKey")
 		}
 		let macKey = try MasterkeyFile.unwrapKey([UInt8](wrappedHmacKey), kek: kek)
@@ -120,18 +134,15 @@ public final class MasterkeyFile: Sendable {
 		return Masterkey.createFromRaw(aesMasterKey: aesKey, macMasterKey: macKey)
 	}
 
-	private func checkVaultVersion(macKey: [UInt8]) throws {
-		guard let storedVersionMac = Data(base64Encoded: content.versionMac), storedVersionMac.count == CC_SHA256_DIGEST_LENGTH else {
+	private func checkVaultVersion(macKey: borrowing SecretBytes) throws {
+		guard let storedVersionMac = Data(guavaBase64Encoded: content.versionMac), storedVersionMac.count == CC_SHA256_DIGEST_LENGTH else {
 			throw MasterkeyFileError.malformedMasterkeyFile("invalid base64 data in versionMac")
 		}
-		var calculatedVersionMac = [UInt8](repeating: 0x00, count: Int(CC_SHA256_DIGEST_LENGTH))
-		let versionBytes = withUnsafeBytes(of: UInt32(version).bigEndian, Array.init)
-		CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), macKey, macKey.count, versionBytes, versionBytes.count, &calculatedVersionMac)
-		var diff: UInt8 = 0x00
-		for i in 0 ..< calculatedVersionMac.count {
-			diff |= calculatedVersionMac[i] ^ storedVersionMac[i]
+		guard let unsignedVersion = UInt32(exactly: version) else {
+			throw MasterkeyFileError.malformedMasterkeyFile("invalid version")
 		}
-		if diff != 0x00 {
+		let calculatedVersionMac = MasterkeyFile.versionMac(version: unsignedVersion, macKey: macKey)
+		guard compareBytes(expected: calculatedVersionMac, actual: [UInt8](storedVersionMac)) else {
 			throw MasterkeyFileError.malformedMasterkeyFile("incorrect version or versionMac")
 		}
 	}
@@ -142,9 +153,9 @@ public final class MasterkeyFile: Sendable {
 
 	 - Parameter masterkey: The key to protect.
 	 - Parameter vaultVersion: The vault version that should be stored in this masterkey file (for downwards compatibility).
-	 - Parameter passphrase: The passphrase used during key derivation.
-	 - Parameter pepper: An optional application-specific pepper added to the scrypt's salt. Defaults to empty byte array.
-	 - Parameter scryptCostParam: The work factor for the key derivation function (scrypt). Defaults to 32768.
+	 - Parameter passphrase: The passphrase used during key derivation. The library cannot wipe the string.
+	 - Parameter pepper: An optional application-specific pepper added to the scrypt's salt. Defaults to empty byte array. The bytes are copied and never retained.
+	 - Parameter scryptCostParam: The work factor for the key derivation function (scrypt). Must be a power of 2 from 2 to 2^20. Defaults to 32768.
 	 - Returns: A JSON representation of the encrypted masterkey with its key derivation parameters.
 	 */
 	public static func lock(masterkey: Masterkey, vaultVersion: Int, passphrase: String, pepper: [UInt8] = [UInt8](), scryptCostParam: Int = defaultScryptCostParam) throws -> Data {
@@ -153,20 +164,21 @@ public final class MasterkeyFile: Sendable {
 	}
 
 	static func lock(masterkey: Masterkey, vaultVersion: Int, passphrase: String, pepper: [UInt8], scryptCostParam: Int, cryptoSupport: CryptoSupport = DefaultCryptoSupport()) throws -> Content {
-		let pw = [UInt8](passphrase.precomposedStringWithCanonicalMapping.utf8)
-		let salt = try cryptoSupport.createRandomBytes(size: defaultScryptSaltSize)
-		var kek = [UInt8](repeating: 0x00, count: kCCKeySizeAES256)
-		let scryptResult = crypto_scrypt(pw, pw.count, salt + pepper, salt.count + pepper.count, UInt64(scryptCostParam), UInt32(defaultScryptBlockSize), 1, &kek, kCCKeySizeAES256)
-		guard scryptResult == 0 else {
-			throw MasterkeyFileError.keyDerivationFailed
+		guard let unsignedVaultVersion = UInt32(exactly: vaultVersion) else {
+			throw CryptoError.invalidParameter("vaultVersion must be in range 0...\(UInt32.max)")
 		}
+		guard let unsignedScryptCostParam = UInt64(exactly: scryptCostParam), isValidScryptCostParam(unsignedScryptCostParam) else {
+			throw CryptoError.invalidParameter("scryptCostParam must be a power of 2 greater than 1")
+		}
+		guard isWithinScryptMemoryLimit(scryptCostParam: unsignedScryptCostParam, scryptBlockSize: UInt32(defaultScryptBlockSize)) else {
+			throw CryptoError.invalidParameter("scryptCostParam exceeds memory limit")
+		}
+		let salt = try cryptoSupport.createRandomBytes(size: defaultScryptSaltSize)
+		let kek = try scrypt(passphrase: passphrase, salt: salt, pepper: pepper, scryptCostParam: unsignedScryptCostParam, scryptBlockSize: UInt32(defaultScryptBlockSize))
 
 		let wrappedMasterKey = try wrapKey(masterkey.aesMasterKey, kek: kek)
 		let wrappedHmacKey = try wrapKey(masterkey.macMasterKey, kek: kek)
-
-		var versionMac = [UInt8](repeating: 0x00, count: Int(CC_SHA256_DIGEST_LENGTH))
-		let versionBytes = withUnsafeBytes(of: UInt32(vaultVersion).bigEndian, Array.init)
-		CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), masterkey.macMasterKey, masterkey.macMasterKey.count, versionBytes, versionBytes.count, &versionMac)
+		let versionMac = MasterkeyFile.versionMac(version: unsignedVaultVersion, macKey: masterkey.macMasterKey)
 
 		return Content(
 			version: vaultVersion,
@@ -183,10 +195,10 @@ public final class MasterkeyFile: Sendable {
 	 Re-encrypts a masterkey with a new passphrase.
 
 	 - Parameter masterkeyFileData: The original JSON representation of the masterkey.
-	 - Parameter oldPassphrase: The old passphrase.
-	 - Parameter newPassphrase: The new passphrase
-	 - Parameter pepper: An optional application-specific pepper added to the scrypt's salt. Defaults to empty byte array.
-	 - Parameter scryptCostParam: The work factor for the key derivation function (scrypt). Defaults to 32768.
+	 - Parameter oldPassphrase: The old passphrase. The library cannot wipe the string.
+	 - Parameter newPassphrase: The new passphrase. The library cannot wipe the string.
+	 - Parameter pepper: An optional application-specific pepper added to the scrypt's salt. Defaults to empty byte array. The bytes are copied and never retained.
+	 - Parameter scryptCostParam: The work factor for the key derivation function (scrypt). Must be a power of 2 from 2 to 2^20. Defaults to 32768.
 	 - Returns: A JSON representation of the masterkey, now encrypted with `newPassphrase`.
 	 */
 	public static func changePassphrase(masterkeyFileData: Data, oldPassphrase: String, newPassphrase: String, pepper: [UInt8] = [UInt8](), scryptCostParam: Int = defaultScryptCostParam) throws -> Data {
@@ -200,12 +212,52 @@ public final class MasterkeyFile: Sendable {
 		return try MasterkeyFile.lock(masterkey: masterkey, vaultVersion: masterkeyFile.version, passphrase: newPassphrase, pepper: pepper, scryptCostParam: scryptCostParam, cryptoSupport: cryptoSupport)
 	}
 
+	private static func isValidScryptCostParam(_ scryptCostParam: UInt64) -> Bool {
+		return scryptCostParam > 1 && scryptCostParam.nonzeroBitCount == 1
+	}
+
+	/// Caps the `128 * r * (N + 3)` bytes that `crypto_scrypt` allocates at `Int32.max`, so an untrusted masterkey file cannot force huge allocations before the passphrase is checked.
+	private static func isWithinScryptMemoryLimit(scryptCostParam: UInt64, scryptBlockSize: UInt32) -> Bool {
+		return scryptCostParam + 3 <= UInt64(Int32.max) / 128 / UInt64(scryptBlockSize)
+	}
+
+	/**
+	 Derives a KEK from the given passphrase using scrypt.
+
+	 The `passphrase` string and its normalized copy cannot be wiped. The vendored scrypt core also leaves its stack scratch unwiped, for performance.
+	 */
+	private static func scrypt(passphrase: String, salt: [UInt8], pepper: [UInt8], scryptCostParam: UInt64, scryptBlockSize: UInt32) throws -> SecretBytes {
+		let pw = SecretBytes(copying: passphrase.precomposedStringWithCanonicalMapping.utf8)
+		let saltAndPepper = SecretBytes(count: salt.count + pepper.count) { saltAndPepperBytes in
+			saltAndPepperBytes[..<salt.count].copyBytes(from: salt)
+			saltAndPepperBytes[salt.count...].copyBytes(from: pepper)
+		}
+		return try SecretBytes(count: kCCKeySizeAES256) { kekBytes in
+			let scryptResult = pw.withUnsafeBytes { pwBytes in
+				saltAndPepper.withUnsafeBytes { saltAndPepperBytes in
+					crypto_scrypt(pwBytes.baseAddress?.assumingMemoryBound(to: UInt8.self), pwBytes.count, saltAndPepperBytes.baseAddress?.assumingMemoryBound(to: UInt8.self), saltAndPepperBytes.count, scryptCostParam, scryptBlockSize, 1, kekBytes.baseAddress?.assumingMemoryBound(to: UInt8.self), kekBytes.count)
+				}
+			}
+			guard scryptResult == 0 else {
+				throw MasterkeyFileError.keyDerivationFailed
+			}
+		}
+	}
+
+	private static func versionMac(version: UInt32, macKey: borrowing SecretBytes) -> [UInt8] {
+		return hmacSha256(key: macKey, data: version.bigEndian.byteArray())
+	}
+
 	// MARK: - RFC 3394 Key Wrapping
 
-	static func wrapKey(_ rawKey: [UInt8], kek: [UInt8]) throws -> [UInt8] {
+	static func wrapKey(_ rawKey: borrowing SecretBytes, kek: borrowing SecretBytes) throws -> [UInt8] {
 		var wrappedKeyLen = CCSymmetricWrappedSize(CCWrappingAlgorithm(kCCWRAPAES), rawKey.count)
 		var wrappedKey = [UInt8](repeating: 0x00, count: wrappedKeyLen)
-		let status = CCSymmetricKeyWrap(CCWrappingAlgorithm(kCCWRAPAES), CCrfc3394_iv, CCrfc3394_ivLen, kek, kek.count, rawKey, rawKey.count, &wrappedKey, &wrappedKeyLen)
+		let status = kek.withUnsafeBytes { kekBytes in
+			rawKey.withUnsafeBytes { rawKeyBytes in
+				CCSymmetricKeyWrap(CCWrappingAlgorithm(kCCWRAPAES), CCrfc3394_iv, CCrfc3394_ivLen, kekBytes.baseAddress?.assumingMemoryBound(to: UInt8.self), kekBytes.count, rawKeyBytes.baseAddress?.assumingMemoryBound(to: UInt8.self), rawKeyBytes.count, &wrappedKey, &wrappedKeyLen)
+			}
+		}
 		if status == kCCSuccess {
 			return wrappedKey
 		} else {
@@ -213,17 +265,19 @@ public final class MasterkeyFile: Sendable {
 		}
 	}
 
-	static func unwrapKey(_ wrappedKey: [UInt8], kek: [UInt8]) throws -> [UInt8] {
-		var unwrappedKeyLen = CCSymmetricUnwrappedSize(CCWrappingAlgorithm(kCCWRAPAES), wrappedKey.count)
-		var unwrappedKey = [UInt8](repeating: 0x00, count: unwrappedKeyLen)
-		let status = CCSymmetricKeyUnwrap(CCWrappingAlgorithm(kCCWRAPAES), CCrfc3394_iv, CCrfc3394_ivLen, kek, kek.count, wrappedKey, wrappedKey.count, &unwrappedKey, &unwrappedKeyLen)
-		if status == kCCSuccess {
-			assert(unwrappedKeyLen == kCCKeySizeAES256)
-			return unwrappedKey
-		} else if status == kCCDecodeError {
-			throw MasterkeyFileError.invalidPassphrase
-		} else {
-			throw MasterkeyFileError.keyWrapFailed(status)
+	static func unwrapKey(_ wrappedKey: [UInt8], kek: borrowing SecretBytes) throws -> SecretBytes {
+		return try SecretBytes(count: CCSymmetricUnwrappedSize(CCWrappingAlgorithm(kCCWRAPAES), wrappedKey.count)) { unwrappedKeyBytes in
+			var unwrappedKeyLen = unwrappedKeyBytes.count
+			let status = kek.withUnsafeBytes { kekBytes in
+				CCSymmetricKeyUnwrap(CCWrappingAlgorithm(kCCWRAPAES), CCrfc3394_iv, CCrfc3394_ivLen, kekBytes.baseAddress?.assumingMemoryBound(to: UInt8.self), kekBytes.count, wrappedKey, wrappedKey.count, unwrappedKeyBytes.baseAddress?.assumingMemoryBound(to: UInt8.self), &unwrappedKeyLen)
+			}
+			if status == kCCSuccess {
+				assert(unwrappedKeyLen == kCCKeySizeAES256)
+			} else if status == kCCDecodeError {
+				throw MasterkeyFileError.invalidPassphrase
+			} else {
+				throw MasterkeyFileError.keyWrapFailed(status)
+			}
 		}
 	}
 }

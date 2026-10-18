@@ -13,17 +13,14 @@ import PackageDescription
 let package = Package(
 	name: "CryptomatorCryptoLib",
 	platforms: [
-		.iOS(.v13),
-		.macOS(.v10_15)
+		.iOS(.v15),
+		.macOS(.v12)
 	],
 	products: [
 		.library(name: "CryptomatorCryptoLib", targets: ["CryptomatorCryptoLib"])
 	],
-	dependencies: [
-		.package(url: "https://github.com/norio-nomura/Base32.git", .upToNextMinor(from: "0.9.0"))
-	],
 	targets: [
-		.target(name: "CryptomatorCryptoLib", dependencies: ["Base32", "scrypt"], exclude: ["Info.plist"]),
+		.target(name: "CryptomatorCryptoLib", dependencies: ["scrypt"], exclude: ["Info.plist"]),
 		.target(name: "scrypt"),
 		.testTarget(name: "CryptomatorCryptoLibTests", dependencies: ["CryptomatorCryptoLib"], exclude: ["Info.plist"])
 	],

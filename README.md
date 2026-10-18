@@ -11,8 +11,8 @@ For more information on the Cryptomator encryption scheme, visit the security ar
 
 ## Requirements
 
-- iOS 13.0 or higher
-- macOS 10.15 or higher
+- iOS 15.0 or higher
+- macOS 12.0 or higher
 - Swift 6.2 (Xcode 26) or newer
 
 ## Installation
@@ -22,7 +22,7 @@ For more information on the Cryptomator encryption scheme, visit the security ar
 You can use [Swift Package Manager](https://swift.org/package-manager/ "Swift Package Manager").
 
 ```swift
-.package(url: "https://github.com/cryptomator/cryptolib-swift.git", .upToNextMinor(from: "2.0.0"))
+.package(url: "https://github.com/cryptomator/cryptolib-swift.git", .upToNextMinor(from: "3.0.0"))
 ```
 
 ## Usage
@@ -42,10 +42,11 @@ let masterkey = try Masterkey.createNew()
 Another way is to create a masterkey from raw bytes.
 
 ```swift
-let aesMasterKey = ...
-let macMasterKey = ...
-let masterkey = Masterkey.createFromRaw(aesMasterKey: aesMasterKey, macMasterKey: macMasterKey)
+let rawKey = ... // 64 bytes: AES master key followed by MAC master key
+let masterkey = try Masterkey.createFromRaw(rawKey: rawKey)
 ```
+
+The masterkey keeps its own copy of `rawKey` and wipes it when the masterkey is deallocated. It never retains your `rawKey`, so wiping it is your responsibility. The same applies to `masterkey.rawKey`, which returns a copy that the library cannot wipe.
 
 ### MasterkeyFile
 
@@ -90,6 +91,8 @@ let masterkey = try masterkeyFile.unlock(kek: kek)
 
 This is useful if you'd like to derive the key in an extra step since the function is memory-intensive (using scrypt). The result can then be used elsewhere, e.g. in a memory-restricted process.
 
+The KEK returned by `deriveKey` belongs to you, and the library cannot wipe it. `unlock(kek:)` copies the KEK without retaining it, so wiping `kek` is your responsibility.
+
 #### Lock
 
 For persisting the masterkey, use this method to export its encrypted/wrapped masterkey and other metadata as JSON data.
@@ -113,7 +116,7 @@ let oldPassphrase = ...
 let newPassphrase = ...
 let pepper = ... // optional
 let scryptCostParam = ... // optional
-try MasterkeyFile.changePassphrase(masterkeyFileData: masterkeyFileData, oldPassphrase: oldPassphrase, newPassphrase: newPassphrase, pepper: pepper, scryptCostParam: scryptCostParam)
+let newMasterkeyFileData = try MasterkeyFile.changePassphrase(masterkeyFileData: masterkeyFileData, oldPassphrase: oldPassphrase, newPassphrase: newPassphrase, pepper: pepper, scryptCostParam: scryptCostParam)
 ```
 
 ### Cryptor
@@ -187,8 +190,8 @@ Please read our [contribution guide](.github/CONTRIBUTING.md), if you would like
 In general, the following preference is used to choose the implementation of cryptographic primitives:
 
 1. Apple CryptoKit (AES-GCM)
-2. Apple Swift Crypto (HMAC)
-3. Apple CommonCrypto (AES-CTR, RFC 3394 Key Derivation)
+2. Apple CommonCrypto (AES-CTR, AES-ECB for AES-SIV, HMAC, SHA-1, RFC 3394 Key Wrap)
+3. Vendored C code from Tarsnap (scrypt)
 
 This project uses [SwiftFormat](https://github.com/nicklockwood/SwiftFormat) and [SwiftLint](https://github.com/realm/SwiftLint) to enforce code style and conventions. Install these tools if you haven't already.
 
@@ -203,6 +206,12 @@ And make your pre-commit hook executable:
 
 ```sh
 chmod +x .git/hooks/pre-commit
+```
+
+To check for memory leaks, such as an unreleased CommonCrypto cryptor, run the test suite on macOS under `leaks` with this script. It fails when `leaks` reports a leak or a test fails. CI runs it too:
+
+```sh
+./Scripts/check-leaks.sh
 ```
 
 ## Code of Conduct

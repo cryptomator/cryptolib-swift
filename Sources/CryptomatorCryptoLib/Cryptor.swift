@@ -6,19 +6,9 @@
 //  Copyright © 2020 Skymatic GmbH. All rights reserved.
 //
 
-import Base32
 import CommonCrypto
+import CryptoKit
 import Foundation
-
-public extension Data {
-	init?(base64UrlEncoded base64String: String, options: Data.Base64DecodingOptions = []) {
-		self.init(base64Encoded: base64String.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/"), options: options)
-	}
-
-	func base64UrlEncodedString(options: Data.Base64EncodingOptions = []) -> String {
-		return base64EncodedString(options: options).replacingOccurrences(of: "+", with: "-").replacingOccurrences(of: "/", with: "_")
-	}
-}
 
 public extension FixedWidthInteger {
 	func byteArray() -> [UInt8] {
@@ -100,9 +90,9 @@ public enum FileNameEncoding: String, Sendable {
 	case base32
 }
 
-struct FileHeader {
+struct FileHeader: ~Copyable {
 	let nonce: [UInt8]
-	let contentKey: [UInt8]
+	let contentKey: SecretBytes
 }
 
 public final class Cryptor: Sendable {
@@ -121,21 +111,19 @@ public final class Cryptor: Sendable {
 	private let cryptoSupport: CryptoSupport
 	private let contentCryptor: ContentCryptor
 
-	init(masterkey: Masterkey, cryptoSupport: CryptoSupport, contentCryptor: ContentCryptor) {
-		self.masterkey = masterkey
-		self.cryptoSupport = cryptoSupport
-		self.contentCryptor = contentCryptor
+	public convenience init(masterkey: Masterkey, scheme: CryptorScheme) {
+		self.init(masterkey: masterkey, scheme: scheme, cryptoSupport: DefaultCryptoSupport())
 	}
 
-	public convenience init(masterkey: Masterkey, scheme: CryptorScheme) {
-		let defaultCryptoSupport = DefaultCryptoSupport()
-		let chosenContentCryptor: ContentCryptor = switch scheme {
+	init(masterkey: Masterkey, scheme: CryptorScheme, cryptoSupport: CryptoSupport) {
+		self.masterkey = masterkey
+		self.cryptoSupport = cryptoSupport
+		self.contentCryptor = switch scheme {
 		case .sivCtrMac:
-			CtrThenHmacContentCryptor(macKey: masterkey.macMasterKey, cryptoSupport: defaultCryptoSupport)
+			CtrThenHmacContentCryptor(masterkey: masterkey)
 		case .sivGcm:
 			GcmContentCryptor()
 		}
-		self.init(masterkey: masterkey, cryptoSupport: defaultCryptoSupport, contentCryptor: chosenContentCryptor)
 	}
 
 	// MARK: - Path Encryption and Decryption
@@ -148,9 +136,8 @@ public final class Cryptor: Sendable {
 	 */
 	public func encryptDirId(_ dirId: Data) throws -> String {
 		let encrypted = try AesSiv.encrypt(aesKey: masterkey.aesMasterKey, macKey: masterkey.macMasterKey, plaintext: [UInt8](dirId))
-		var digest = [UInt8](repeating: 0x00, count: Int(CC_SHA1_DIGEST_LENGTH))
-		CC_SHA1(encrypted, UInt32(encrypted.count) as CC_LONG, &digest)
-		return Data(digest).base32EncodedString
+		let digest = Insecure.SHA1.hash(data: encrypted)
+		return Data(digest).base32EncodedString()
 	}
 
 	/**
@@ -169,7 +156,7 @@ public final class Cryptor: Sendable {
 		// encode:
 		switch encoding {
 		case .base64url: return Data(ciphertext).base64UrlEncodedString()
-		case .base32: return Data(ciphertext).base32EncodedString
+		case .base32: return Data(ciphertext).base32EncodedString()
 		}
 	}
 
@@ -186,7 +173,7 @@ public final class Cryptor: Sendable {
 		let maybeCiphertextData: Data? = {
 			switch encoding {
 			case .base64url: return Data(base64UrlEncoded: ciphertextName)
-			case .base32: return ciphertextName.base32DecodedData
+			case .base32: return Data(base32Encoded: ciphertextName)
 			}
 		}()
 		guard let ciphertextData = maybeCiphertextData else {
@@ -205,13 +192,16 @@ public final class Cryptor: Sendable {
 
 	func createHeader() throws -> FileHeader {
 		let nonce = try cryptoSupport.createRandomBytes(size: contentCryptor.nonceLen)
-		let contentKey = try cryptoSupport.createRandomBytes(size: kCCKeySizeAES256)
+		let contentKey = try cryptoSupport.createRandomSecret(size: kCCKeySizeAES256)
 		return FileHeader(nonce: nonce, contentKey: contentKey)
 	}
 
-	func encryptHeader(_ header: FileHeader) throws -> [UInt8] {
-		let cleartext = [UInt8](repeating: 0xFF, count: fileHeaderLegacyPayloadSize) + header.contentKey
-		return try contentCryptor.encryptHeader(cleartext, key: masterkey.aesMasterKey, nonce: header.nonce)
+	func encryptHeader(_ header: borrowing FileHeader) throws -> [UInt8] {
+		let payload = SecretBytes(count: fileHeaderLegacyPayloadSize + kCCKeySizeAES256) { payloadBytes in
+			payloadBytes[..<fileHeaderLegacyPayloadSize].initializeMemory(as: UInt8.self, repeating: 0xFF)
+			header.contentKey.withUnsafeBytes { payloadBytes[fileHeaderLegacyPayloadSize...].copyBytes(from: $0) }
+		}
+		return try contentCryptor.encryptHeader(payload, key: masterkey.aesMasterKey, nonce: header.nonce)
 	}
 
 	func decryptHeader(_ header: [UInt8]) throws -> FileHeader {
@@ -219,8 +209,8 @@ public final class Cryptor: Sendable {
 			throw CryptoError.unauthenticCiphertext
 		}
 		let nonce = [UInt8](header[0 ..< contentCryptor.nonceLen])
-		let cleartext = try contentCryptor.decryptHeader(header, key: masterkey.aesMasterKey)
-		let contentKey = [UInt8](cleartext[fileHeaderLegacyPayloadSize...])
+		let payload = try contentCryptor.decryptHeader(header, key: masterkey.aesMasterKey)
+		let contentKey = payload.withUnsafeBytes { SecretBytes(copying: $0[fileHeaderLegacyPayloadSize...]) }
 		return FileHeader(nonce: nonce, contentKey: contentKey)
 	}
 
@@ -327,11 +317,7 @@ public final class Cryptor: Sendable {
 	}
 
 	func decryptContent(from ciphertextStream: InputStream, to cleartextStream: OutputStream, ciphertextSize: Int?, progress: Progress?) async throws {
-		if let ciphertextSize, ciphertextSize >= fileHeaderSize {
-			progress?.begin(expectedUnitCount: try? calculateCleartextSize(ciphertextSize - fileHeaderSize))
-		} else {
-			progress?.begin(expectedUnitCount: nil)
-		}
+		progress?.begin(expectedUnitCount: ciphertextSize.flatMap { try? calculateCleartextSize($0 - fileHeaderSize) })
 
 		// read and decrypt header:
 		guard let ciphertextHeader = try ciphertextStream.readChunk(maxLength: fileHeaderSize) else {
@@ -357,12 +343,12 @@ public final class Cryptor: Sendable {
 		progress?.complete(processedUnitCount: processedSize)
 	}
 
-	func encryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {
+	func encryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: borrowing SecretBytes) throws -> [UInt8] {
 		let chunkNonce = try cryptoSupport.createRandomBytes(size: contentCryptor.nonceLen)
 		return try contentCryptor.encryptChunk(chunk, chunkNumber: chunkNumber, chunkNonce: chunkNonce, fileKey: fileKey, headerNonce: headerNonce)
 	}
 
-	func decryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: [UInt8]) throws -> [UInt8] {
+	func decryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: borrowing SecretBytes) throws -> [UInt8] {
 		return try contentCryptor.decryptChunk(chunk, chunkNumber: chunkNumber, fileKey: fileKey, headerNonce: headerNonce)
 	}
 
@@ -372,11 +358,11 @@ public final class Cryptor: Sendable {
 	 Calculates ciphertext size from cleartext size.
 
 	 - Parameter cleartextSize: Size of the unencrypted payload.
-	 - Precondition: `cleartextSize` must be positive.
+	 - Precondition: `cleartextSize` must not be negative.
 	 - Returns: Ciphertext size of a `cleartextSize`-sized cleartext encrypted with this `Cryptor`. Not including the file header.
 	 */
 	public func calculateCiphertextSize(_ cleartextSize: Int) -> Int {
-		precondition(cleartextSize >= 0, "expected cleartextSize to be positive, but was \(cleartextSize)")
+		precondition(cleartextSize >= 0, "expected cleartextSize to be non-negative, but was \(cleartextSize)")
 		let overheadPerChunk = ciphertextChunkSize - cleartextChunkSize
 		let numFullChunks = cleartextSize / cleartextChunkSize // floor by int-truncation
 		let additionalCleartextBytes = cleartextSize % cleartextChunkSize
@@ -389,15 +375,13 @@ public final class Cryptor: Sendable {
 	 Calculates cleartext size from ciphertext size.
 
 	 - Parameter ciphertextSize: Size of the encrypted payload. Not including the file header.
-	 - Precondition: `ciphertextSize` must be positive.
 	 - Returns: Cleartext size of a `ciphertextSize`-sized ciphertext decrypted with this `Cryptor`.
 	 */
 	public func calculateCleartextSize(_ ciphertextSize: Int) throws -> Int {
-		precondition(ciphertextSize >= 0, "expected ciphertextSize to be positive, but was \(ciphertextSize)")
 		let overheadPerChunk = ciphertextChunkSize - cleartextChunkSize
 		let numFullChunks = ciphertextSize / ciphertextChunkSize // floor by int-truncation
 		let additionalCiphertextBytes = ciphertextSize % ciphertextChunkSize
-		guard additionalCiphertextBytes == 0 || additionalCiphertextBytes > overheadPerChunk else {
+		guard ciphertextSize >= 0, additionalCiphertextBytes == 0 || additionalCiphertextBytes > overheadPerChunk else {
 			throw CryptoError.invalidParameter("Method not defined for input value \(ciphertextSize)")
 		}
 		let additionalCleartextBytes = (additionalCiphertextBytes == 0) ? 0 : additionalCiphertextBytes - overheadPerChunk
