@@ -22,7 +22,7 @@ For more information on the Cryptomator encryption scheme, visit the security ar
 You can use [Swift Package Manager](https://swift.org/package-manager/ "Swift Package Manager").
 
 ```swift
-.package(url: "https://github.com/cryptomator/cryptolib-swift.git", .upToNextMinor(from: "2.0.0"))
+.package(url: "https://github.com/cryptomator/cryptolib-swift.git", .upToNextMinor(from: "3.0.0"))
 ```
 
 ## Usage
