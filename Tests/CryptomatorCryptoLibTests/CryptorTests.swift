@@ -418,6 +418,68 @@ final class CryptorTests {
 		#expect(cleartext == decrypted)
 	}
 
+	@Test(arguments: schemes) func `decrypt single chunk of whole-file ciphertext`(scheme: CryptorScheme) async throws {
+		let cryptor = Cryptor(masterkey: .test, scheme: scheme)
+		let cleartext = [UInt8]((0 ..< cryptor.cleartextChunkSize * 3 + 100).map { UInt8($0 % 251) })
+		let cleartextURL = tmpDirURL.appendingPathComponent(UUID().uuidString, isDirectory: false)
+		let ciphertextURL = tmpDirURL.appendingPathComponent(UUID().uuidString, isDirectory: false)
+		try Data(cleartext).write(to: cleartextURL)
+		try await cryptor.encryptContent(from: cleartextURL, to: ciphertextURL)
+		let ciphertext = try [UInt8](Data(contentsOf: ciphertextURL))
+
+		let header = try cryptor.decryptHeader([UInt8](ciphertext[..<cryptor.fileHeaderSize]))
+		for chunkNumber in [2, 3] {
+			let ciphertextStart = cryptor.fileHeaderSize + chunkNumber * cryptor.ciphertextChunkSize
+			let ciphertextChunk = [UInt8](ciphertext[ciphertextStart ..< min(ciphertextStart + cryptor.ciphertextChunkSize, ciphertext.count)])
+			let cleartextStart = chunkNumber * cryptor.cleartextChunkSize
+			let expected = [UInt8](cleartext[cleartextStart ..< min(cleartextStart + cryptor.cleartextChunkSize, cleartext.count)])
+			#expect(try cryptor.decryptChunk(ciphertextChunk, chunkNumber: UInt64(chunkNumber), header: header) == expected)
+		}
+	}
+
+	@Test(arguments: schemes) func `decrypt whole file built from single chunks`(scheme: CryptorScheme) async throws {
+		let cryptor = Cryptor(masterkey: .test, scheme: scheme)
+		let chunks = [[UInt8](repeating: 0x01, count: cryptor.cleartextChunkSize), [UInt8](repeating: 0x02, count: 42)]
+		let header = try cryptor.createHeader()
+		var ciphertext = try cryptor.encryptHeader(header)
+		for (chunkNumber, chunk) in chunks.enumerated() {
+			ciphertext += try cryptor.encryptChunk(chunk, chunkNumber: UInt64(chunkNumber), header: header)
+		}
+		#expect(ciphertext.count == cryptor.fileHeaderSize + cryptor.calculateCiphertextSize(chunks.joined().count))
+
+		let ciphertextURL = tmpDirURL.appendingPathComponent(UUID().uuidString, isDirectory: false)
+		let cleartextURL = tmpDirURL.appendingPathComponent(UUID().uuidString, isDirectory: false)
+		try Data(ciphertext).write(to: ciphertextURL)
+		try await cryptor.decryptContent(from: ciphertextURL, to: cleartextURL)
+		#expect(try [UInt8](Data(contentsOf: cleartextURL)) == Array(chunks.joined()))
+	}
+
+	@Test(arguments: schemes) func `decrypt chunk with wrong chunk number throws`(scheme: CryptorScheme) throws {
+		let cryptor = scheme.makeCryptor()
+		let header = try cryptor.createHeader()
+		let ciphertext = try cryptor.encryptChunk([UInt8]("hello world".utf8), chunkNumber: 1, header: header)
+		#expect(throws: CryptoError.unauthenticCiphertext) { try cryptor.decryptChunk(ciphertext, chunkNumber: 0, header: header) }
+	}
+
+	@Test(arguments: schemes) func `decrypt chunk of other file throws`(scheme: CryptorScheme) throws {
+		let cryptor = Cryptor(masterkey: .test, scheme: scheme)
+		let ciphertext = try cryptor.encryptChunk([UInt8]("hello world".utf8), chunkNumber: 0, header: cryptor.createHeader())
+		#expect(throws: CryptoError.unauthenticCiphertext) { try cryptor.decryptChunk(ciphertext, chunkNumber: 0, header: cryptor.createHeader()) }
+	}
+
+	@Test(arguments: schemes) func `oversized chunks throw`(scheme: CryptorScheme) throws {
+		let cryptor = scheme.makeCryptor()
+		let header = try cryptor.createHeader()
+		let cleartextChunkSize = cryptor.cleartextChunkSize
+		let ciphertextChunkSize = cryptor.ciphertextChunkSize
+		#expect(throws: CryptoError.invalidParameter("Cleartext chunk must not exceed \(cleartextChunkSize) bytes, but was \(cleartextChunkSize + 1)")) {
+			try cryptor.encryptChunk([UInt8](repeating: 0x00, count: cleartextChunkSize + 1), chunkNumber: 0, header: header)
+		}
+		#expect(throws: CryptoError.invalidParameter("Ciphertext chunk must not exceed \(ciphertextChunkSize) bytes, but was \(ciphertextChunkSize + 1)")) {
+			try cryptor.decryptChunk([UInt8](repeating: 0x00, count: ciphertextChunkSize + 1), chunkNumber: 0, header: header)
+		}
+	}
+
 	@Test(arguments: schemes) func `calculate ciphertext size`(scheme: CryptorScheme) {
 		let cryptor = scheme.makeCryptor()
 		let overheadPerChunk = scheme.nonceLength + scheme.tagLength

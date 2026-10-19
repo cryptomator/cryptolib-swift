@@ -172,6 +172,20 @@ try await cryptor.encryptContent(from: fileURL, to: ciphertextURL, progress: enc
 try await cryptor.decryptContent(from: ciphertextURL, to: cleartextURL)
 ```
 
+#### Random-Access Chunk Encryption and Decryption
+
+Encrypt and decrypt single chunks to read or write a file at arbitrary offsets, e.g. in a file system implementation. A ciphertext file consists of a `fileHeaderSize`-byte header followed by chunks of `ciphertextChunkSize` bytes, each holding `cleartextChunkSize` bytes of cleartext. Only the last chunk may be shorter.
+
+```swift
+let cryptor = ...
+let header = try cryptor.createHeader()
+let ciphertextHeader = try cryptor.encryptHeader(header)
+let ciphertextChunk = try cryptor.encryptChunk(cleartextChunk, chunkNumber: 0, header: header)
+
+let decryptedHeader = try cryptor.decryptHeader(ciphertextHeader)
+let cleartextChunk = try cryptor.decryptChunk(ciphertextChunk, chunkNumber: 0, header: decryptedHeader)
+```
+
 #### File Size Calculation
 
 Determine the cleartext and ciphertext sizes in O(1).

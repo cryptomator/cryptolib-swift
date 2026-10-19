@@ -90,7 +90,8 @@ public enum FileNameEncoding: String, Sendable {
 	case base32
 }
 
-struct FileHeader: ~Copyable {
+/// Cleartext file header holding the per-file content key. Opaque so the content key never leaves this library.
+public struct FileHeader: ~Copyable {
 	let nonce: [UInt8]
 	let contentKey: SecretBytes
 }
@@ -102,8 +103,8 @@ public final class Cryptor: Sendable {
 		return contentCryptor.nonceLen + fileHeaderPayloadSize + contentCryptor.tagLen
 	}
 
-	let cleartextChunkSize = 32 * 1024
-	var ciphertextChunkSize: Int {
+	public let cleartextChunkSize = 32 * 1024
+	public var ciphertextChunkSize: Int {
 		return contentCryptor.nonceLen + cleartextChunkSize + contentCryptor.tagLen
 	}
 
@@ -190,13 +191,24 @@ public final class Cryptor: Sendable {
 
 	// MARK: - File Header Encryption and Decryption
 
-	func createHeader() throws -> FileHeader {
+	/**
+	 Creates a new file header with a random nonce and content key.
+
+	 - Returns: A file header to encrypt with `encryptHeader(_:)` and to pass to `encryptChunk(_:chunkNumber:header:)`.
+	 */
+	public func createHeader() throws -> FileHeader {
 		let nonce = try cryptoSupport.createRandomBytes(size: contentCryptor.nonceLen)
 		let contentKey = try cryptoSupport.createRandomSecret(size: kCCKeySizeAES256)
 		return FileHeader(nonce: nonce, contentKey: contentKey)
 	}
 
-	func encryptHeader(_ header: borrowing FileHeader) throws -> [UInt8] {
+	/**
+	 Encrypts a file header.
+
+	 - Parameter header: The cleartext file header.
+	 - Returns: The ciphertext file header of `fileHeaderSize` bytes that precedes the first ciphertext chunk.
+	 */
+	public func encryptHeader(_ header: borrowing FileHeader) throws -> [UInt8] {
 		let payload = SecretBytes(count: fileHeaderLegacyPayloadSize + kCCKeySizeAES256) { payloadBytes in
 			payloadBytes[..<fileHeaderLegacyPayloadSize].initializeMemory(as: UInt8.self, repeating: 0xFF)
 			header.contentKey.withUnsafeBytes { payloadBytes[fileHeaderLegacyPayloadSize...].copyBytes(from: $0) }
@@ -204,7 +216,14 @@ public final class Cryptor: Sendable {
 		return try contentCryptor.encryptHeader(payload, key: masterkey.aesMasterKey, nonce: header.nonce)
 	}
 
-	func decryptHeader(_ header: [UInt8]) throws -> FileHeader {
+	/**
+	 Decrypts a file header.
+
+	 - Parameter header: The first `fileHeaderSize` bytes of a ciphertext file.
+	 - Returns: The cleartext file header.
+	 - Throws: `CryptoError.unauthenticCiphertext` if the header has the wrong size or fails authentication.
+	 */
+	public func decryptHeader(_ header: [UInt8]) throws -> FileHeader {
 		guard header.count == fileHeaderSize else {
 			throw CryptoError.unauthenticCiphertext
 		}
@@ -341,6 +360,41 @@ public final class Cryptor: Sendable {
 			await Task.yield()
 		}
 		progress?.complete(processedUnitCount: processedSize)
+	}
+
+	// MARK: - Random-Access Chunk Encryption and Decryption
+
+	/**
+	 Encrypts a single chunk of file content, for callers that read and write files at arbitrary offsets instead of as a whole.
+
+	 Chunk `n` covers cleartext bytes `n * cleartextChunkSize ..< (n + 1) * cleartextChunkSize` and is stored at ciphertext offset `fileHeaderSize + n * ciphertextChunkSize`. Every chunk except the last one must be exactly `cleartextChunkSize` bytes long.
+
+	 - Parameter cleartext: Up to `cleartextChunkSize` bytes of cleartext.
+	 - Parameter chunkNumber: Zero-based index of the chunk within its file. Binds the chunk to its position, so chunks can't be reordered.
+	 - Parameter header: The cleartext header of the file the chunk belongs to.
+	 - Returns: The ciphertext chunk, `cleartext.count + ciphertextChunkSize - cleartextChunkSize` bytes long.
+	 */
+	public func encryptChunk(_ cleartext: [UInt8], chunkNumber: UInt64, header: borrowing FileHeader) throws -> [UInt8] {
+		guard cleartext.count <= cleartextChunkSize else {
+			throw CryptoError.invalidParameter("Cleartext chunk must not exceed \(cleartextChunkSize) bytes, but was \(cleartext.count)")
+		}
+		return try encryptSingleChunk(cleartext, chunkNumber: chunkNumber, headerNonce: header.nonce, fileKey: header.contentKey)
+	}
+
+	/**
+	 Decrypts a single chunk of file content, for callers that read and write files at arbitrary offsets instead of as a whole.
+
+	 - Parameter ciphertext: Up to `ciphertextChunkSize` bytes read from ciphertext offset `fileHeaderSize + chunkNumber * ciphertextChunkSize`.
+	 - Parameter chunkNumber: Zero-based index of the chunk within its file.
+	 - Parameter header: The cleartext header of the file the chunk belongs to.
+	 - Returns: The cleartext chunk.
+	 - Throws: `CryptoError.invalidParameter` if the chunk is longer than `ciphertextChunkSize`, `CryptoError.unauthenticCiphertext` if it fails authentication, e.g. because it was tampered with, belongs to another file or has another chunk number.
+	 */
+	public func decryptChunk(_ ciphertext: [UInt8], chunkNumber: UInt64, header: borrowing FileHeader) throws -> [UInt8] {
+		guard ciphertext.count <= ciphertextChunkSize else {
+			throw CryptoError.invalidParameter("Ciphertext chunk must not exceed \(ciphertextChunkSize) bytes, but was \(ciphertext.count)")
+		}
+		return try decryptSingleChunk(ciphertext, chunkNumber: chunkNumber, headerNonce: header.nonce, fileKey: header.contentKey)
 	}
 
 	func encryptSingleChunk(_ chunk: [UInt8], chunkNumber: UInt64, headerNonce: [UInt8], fileKey: borrowing SecretBytes) throws -> [UInt8] {
