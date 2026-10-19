@@ -26,7 +26,9 @@ jobs:
           sudo xcode-select -s "/Applications/Xcode_$(cat .xcode-version).app"
           xcodebuild -version
       - name: Install SwiftFormat and SwiftLint
-        run: brew install swiftformat swiftlint
+        run: |
+          brew update
+          brew install swiftformat swiftlint
       - name: Run process.sh script
         run: |
           ./Scripts/process.sh
