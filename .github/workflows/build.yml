@@ -11,16 +11,22 @@ permissions:
 jobs:
   build:
     name: Build and test
-    runs-on: [self-hosted, macOS, ARM64]
+    runs-on: xcode-27
     env:
       DERIVED_DATA_PATH: 'DerivedData'
-      DEVICE: 'iPhone 17 Pro'
+      DEVICE: 'iPhone 17'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # Disable shallow clone for SonarCloud analysis
           # https://docs.sonarsource.com/sonarqube-cloud/advanced-setup/ci-based-analysis/github-actions-for-sonarcloud
           fetch-depth: 0
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s "/Applications/Xcode_$(cat .xcode-version).app"
+          xcodebuild -version
+      - name: Install SwiftFormat and SwiftLint
+        run: brew install swiftformat swiftlint
       - name: Run process.sh script
         run: |
           ./Scripts/process.sh
