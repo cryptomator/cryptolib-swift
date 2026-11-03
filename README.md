@@ -185,7 +185,7 @@ let cleartextSize = try cryptor.calculateCleartextSize(ciphertextSize)
 
 ## Contributing
 
-Please read our [contribution guide](.github/CONTRIBUTING.md), if you would like to report a bug, ask a question or help us with coding.
+Please read our [contribution guide](https://github.com/cryptomator/.github/blob/main/CONTRIBUTING.md), if you would like to report a bug, ask a question or help us with coding.
 
 In general, the following preference is used to choose the implementation of cryptographic primitives:
 
@@ -216,7 +216,7 @@ To check for memory leaks, such as an unreleased CommonCrypto cryptor, run the t
 
 ## Code of Conduct
 
-Help us keep Cryptomator open and inclusive. Please read and follow our [Code of Conduct](.github/CODE_OF_CONDUCT.md).
+Help us keep Cryptomator open and inclusive. Please read and follow our [Code of Conduct](https://github.com/cryptomator/.github/blob/main/CODE_OF_CONDUCT.md).
 
 ## License
 
