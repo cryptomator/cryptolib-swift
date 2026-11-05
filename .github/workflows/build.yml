@@ -21,6 +21,7 @@ jobs:
           # Disable shallow clone for SonarCloud analysis
           # https://docs.sonarsource.com/sonarqube-cloud/advanced-setup/ci-based-analysis/github-actions-for-sonarcloud
           fetch-depth: 0
+          persist-credentials: false
       - name: Select Xcode
         run: |
           sudo xcode-select -s "/Applications/Xcode_$(cat .xcode-version).app"
