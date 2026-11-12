@@ -27,7 +27,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "include/insecure_memzero.h"
+#include "insecure_memzero.h"
 
 /* Function which does the zeroing. */
 static void

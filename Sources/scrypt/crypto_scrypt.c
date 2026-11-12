@@ -33,10 +33,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "include/sha256.h"
-#include "include/sysendian.h"
+#include "sha256.h"
+#include "sysendian.h"
 
-#include "include/crypto_scrypt.h"
+#include "crypto_scrypt.h"
 
 static void blkcpy(uint8_t *, uint8_t *, size_t);
 static void blkxor(uint8_t *, uint8_t *, size_t);
