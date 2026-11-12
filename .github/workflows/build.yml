@@ -31,11 +31,9 @@ jobs:
           brew update
           brew install swiftformat swiftlint
       - name: Run process.sh script
-        run: |
-          ./Scripts/process.sh
-          exit $?
+        run: ./Scripts/process.sh
       - name: Build and test
-        run: set -o pipefail && env NSUnbufferedIO=YES xcodebuild -scheme 'CryptomatorCryptoLib' -destination "name=$DEVICE" -derivedDataPath $DERIVED_DATA_PATH -enableCodeCoverage YES clean test | xcbeautify
+        run: set -o pipefail && env NSUnbufferedIO=YES xcodebuild -scheme 'CryptomatorCryptoLib' -destination "name=$DEVICE" -derivedDataPath $DERIVED_DATA_PATH -enableCodeCoverage YES test | xcbeautify
       - name: Check for memory leaks
         run: ./Scripts/check-leaks.sh
         timeout-minutes: 15
@@ -51,7 +49,7 @@ jobs:
 
   release:
     name: Deploy and draft a release
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     needs: build
     permissions:
       contents: write # Required for drafting the release
