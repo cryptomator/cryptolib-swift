@@ -20,9 +20,9 @@ let package = Package(
 		.library(name: "CryptomatorCryptoLib", targets: ["CryptomatorCryptoLib"])
 	],
 	targets: [
-		.target(name: "CryptomatorCryptoLib", dependencies: ["scrypt"], exclude: ["Info.plist"]),
+		.target(name: "CryptomatorCryptoLib", dependencies: ["scrypt"]),
 		.target(name: "scrypt"),
-		.testTarget(name: "CryptomatorCryptoLibTests", dependencies: ["CryptomatorCryptoLib"], exclude: ["Info.plist"])
+		.testTarget(name: "CryptomatorCryptoLibTests", dependencies: ["CryptomatorCryptoLib"])
 	],
 	swiftLanguageModes: [.v6]
 )
